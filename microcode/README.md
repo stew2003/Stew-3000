@@ -1,0 +1,55 @@
+# Microcode Documentation:
+- **HLT**: Halt (when active this line stops the clock)
+- **RST**: Reset (reset the step counter of the instruction)
+- **PCE**: Program Counter Enable (program counter will increment on next clock pulse)
+- **PCO**: Program Counter Out
+- **PCI**: Program Counter In
+- **MI**: Memory Address Register In
+- **RO**: RAM Out
+- **RI**: RAM In (write to RAM)
+- **IO**: Instruction Register Out (never used)
+- **II**: Instruction Register In
+- **AO**: A-register Out
+- **AI**: A-register In
+- **BO**: B-register Out
+- **BI**: B-register In
+- **CO**: C-register Out
+- **CI**: C-register In
+- **TO**: Temp-register Out
+- **TI**: Temp-register In
+- **OI**: Output-register In (Decimal display)
+- **LCS**: LCD Select (Data vs. Command)
+- **LCE**: LCD Enable (Actively listening to bus)
+- **EO**: ALU Out
+- **EI**: ALU In
+- **FI**: Flags-register In
+- **NOT**: NOT ALU Operation
+- **AND**: AND ALU Operation
+- **XOR**: XOR ALU Operation
+- **OR**: OR ALU Operation
+- **SUM**: ADD ALU Operation
+- **TS**: Select Temp-register as other operand or all 0s
+- **CAR**: Set Carry/Borrow for addition and subtraction
+- **SUB**: SUB ALU operation (add but with 1s compliment (2s compliment comes from setting CAR line))
+- **PGM**: TODO: Accessing program or instruction memory
+- **SO**: TODO: Stack pointer out
+- **SI**: TODO: Stack pointer in
+
+# Instruction Documentation:
+- **ADD B**: Add the contents of B-register to contents of A-register, then save result in A-register
+- **ADD C**: Add the contents of C-register to contents of A-register, then save result in A-register
+- **ANA B**: AND the contents of B-register with contents of A-register, then save result in A-register
+- **ANA C**: AND the contents of C-register with contents of A-register, then save result in A-register
+- **ANI byte**: AND the byte operand with the A-register, then save the result in the A-register
+- **DCR A**: Decrement the A-register by 1
+- **DCR B**: Decrement the B-register by 1
+- **DCR C**: Decrement the C-register by 1
+- **HLT**: Halt the clock
+- **INR A**: Increment the A-register by 1
+- **INR B**: Increment the B-register by 1
+- **INR C**: Increment the C-register by 1
+- **JMP byte**: Jump to the location specified by the byte operand
+- **LDA byte**: Load the A-register with the value at the RAM location specified by the byte operand
+- **MOV A, B**: Move the contents of the A-register to the B-register
+- **MOV A, C**: Move the contents of the A-register to the C-register
+- **MOV B, A**: Move the contents of the B-register to the A-register
