@@ -94,6 +94,9 @@
   - **ADD C, A**
   - **ADD C, B**
   - **ADD C, C**
+  - **ADD SP, A**
+  - **ADD SP, B**
+  - **ADD SP, C**
 - **SUB $r1, $r2**: $r1 = $r1 - $r2
   - **SUB A, B**
   - **SUB A, C**
@@ -101,6 +104,9 @@
   - **SUB B, C**
   - **SUB C, A**
   - **SUB C, B**
+  - **SUB SP, A**
+  - **SUB SP, B**
+  - **SUB SP, C**
 - **AND $r1, $r2**: $r1 = $r1 & $r2
   - **AND A, B**
   - **AND A, C**
@@ -142,10 +148,12 @@
   - **INR A**
   - **INR B**
   - **INR C**
+  - **INR SP**
 - **DCR $r1**: $r1 = $r1 - 1
   - **DCR A**
   - **DCR B**
   - **DCR C**
+  - **DCR SP**
 - **MOV $r1, $r2**: $r2 = $r1
   - **MOV A, B**
   - **MOV A, C**
@@ -157,36 +165,30 @@
   - **LDI A, byte**
   - **LDI B, byte**
   - **LDI C, byte**
-- **LDB $r1, $r2, byte**: $r1 = RAM[$r2 + byte]
-  - **LDB A, A, byte**
-  - **LDB A, B, byte**
-  - **LDB A, C, byte**
-  - **LDB A, SP, byte**
-  - **LDB B, A, byte**
-  - **LDB B, B, byte**
-  - **LDB B, C, byte**
-  - **LDB B, SP, byte**
-  - **LDB C, A, byte**
-  - **LDB C, B, byte**
-  - **LDB C, C, byte**
-  - **LDB C, SP, byte**
+- **LDB $r1, $r2**: $r1 = RAM[$r2]
+  - **LDB A, A**
+  - **LDB A, B**
+  - **LDB A, C**
+  - **LDB B, A**
+  - **LDB B, B**
+  - **LDB B, C**
+  - **LDB C, A**
+  - **LDB C, B**
+  - **LDB C, C**
 - **STI $r1, byte**: RAM[byte] = $r1
   - **STI A, byte**
   - **STI B, byte**
   - **STI C, byte**
-- **STB $r1, $r2, byte**: RAM[$r2 + byte] = $r1
-  - **STB A, A, byte**
-  - **STB A, B, byte**
-  - **STB A, C, byte**
-  - **STB A, SP, byte**
-  - **STB B, A, byte**
-  - **STB B, B, byte**
-  - **STB B, C, byte**
-  - **STB B, SP, byte**
-  - **STB C, A, byte**
-  - **STB C, B, byte**
-  - **STB C, C, byte**
-  - **STB B, SP, byte**
+- **STB $r1, $r2**: RAM[$r2] = $r1
+  - **STB A, A**
+  - **STB A, B**
+  - **STB A, C**
+  - **STB B, A**
+  - **STB B, B**
+  - **STB B, C**
+  - **STB C, A**
+  - **STB C, B**
+  - **STB C, C**
 - **CMP $r1, $r2**: $r1 - $r2 and set flags
   - **CMP A, B**
   - **CMP A, C**
@@ -205,6 +207,8 @@
 - **JGE/JNL byte**: ~(SF ^ OF) ? PC = byte
 - **JL/JNGE byte**: SF ^ OF ? PC = byte
 - **JLE/JNG byte**: (SF ^ OF) | ZF ? PC = byte
+- **CALL byte**: SP += 1, Stack[SP] = PC, PC = byte
+- **RET**: PC = Stack[SP], SP -= 1
 - **DIC byte**: LCD command byte
 - **DID byte**: LCD data byte
 - **HLT**: Halt

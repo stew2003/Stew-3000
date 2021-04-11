@@ -89,6 +89,7 @@ const uint32_t PROGMEM microcode[NUM_INSTRUCTIONS][INSTRUCTION_ARR_LENGTH] = {
   { 0xAC, CO|TI,            TS|NOT|SUB|EI|FI,        EO|CI,           RST,       0,   0 }, // NOT C
   { 0xF0, PCO|MI,           RO|LCE|PCE,              RST,             0,         0,   0 }, // DIC
   { 0xF1, PCO|MI,           RO|LCE|LCS|PCE,          RST,             0,         0,   0 }, // DID 
+  { 0xFF, BO|TI,            PCO|MI,                  RO|TS|ADD|EI,    EO|MI,     RO|AI|PCE, RST} //LDB A, B, offset
 };
 
 // microcode dependent on the c flag
