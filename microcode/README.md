@@ -157,30 +157,36 @@
   - **LDI A, byte**
   - **LDI B, byte**
   - **LDI C, byte**
-- **LDB $r1, $r2**: $r1 = RAM[$r2]
-  - **LDB A, A**
-  - **LDB A, B**
-  - **LDB A, C**
-  - **LDB B, A**
-  - **LDB B, B**
-  - **LDB B, C**
-  - **LDB C, A**
-  - **LDB C, B**
-  - **LDB C, C**
+- **LDB $r1, $r2, byte**: $r1 = RAM[$r2 + byte]
+  - **LDB A, A, byte**
+  - **LDB A, B, byte**
+  - **LDB A, C, byte**
+  - **LDB A, SP, byte**
+  - **LDB B, A, byte**
+  - **LDB B, B, byte**
+  - **LDB B, C, byte**
+  - **LDB B, SP, byte**
+  - **LDB C, A, byte**
+  - **LDB C, B, byte**
+  - **LDB C, C, byte**
+  - **LDB C, SP, byte**
 - **STI $r1, byte**: RAM[byte] = $r1
   - **STI A, byte**
   - **STI B, byte**
   - **STI C, byte**
-- **STB $r1, $r2**: RAM[$r2] = $r1
-  - **STB A, A**
-  - **STB A, B**
-  - **STB A, C**
-  - **STB B, A**
-  - **STB B, B**
-  - **STB B, C**
-  - **STB C, A**
-  - **STB C, B**
-  - **STB C, C**
+- **STB $r1, $r2, byte**: RAM[$r2 + byte] = $r1
+  - **STB A, A, byte**
+  - **STB A, B, byte**
+  - **STB A, C, byte**
+  - **STB A, SP, byte**
+  - **STB B, A, byte**
+  - **STB B, B, byte**
+  - **STB B, C, byte**
+  - **STB B, SP, byte**
+  - **STB C, A, byte**
+  - **STB C, B, byte**
+  - **STB C, C, byte**
+  - **STB B, SP, byte**
 - **CMP $r1, $r2**: $r1 - $r2 and set flags
   - **CMP A, B**
   - **CMP A, C**
