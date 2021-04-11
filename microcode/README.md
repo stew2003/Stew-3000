@@ -1,4 +1,5 @@
 # Microcode Documentation:
+
 - **HLT**: Halt (when active this line stops the clock)
 - **RST**: Reset (reset the step counter of the instruction)
 - **PCE**: Program Counter Enable (program counter will increment on next clock pulse)
@@ -36,6 +37,7 @@
 - **SI**: TODO: Stack pointer in
 
 # Instruction Documentation:
+
 - **ADD B**: Add the contents of B-register to contents of A-register, then save result in A-register
 - **ADD C**: Add the contents of C-register to contents of A-register, then save result in A-register
 - **ANA B**: AND the contents of B-register with contents of A-register, then save result in A-register
@@ -53,3 +55,29 @@
 - **MOV A, B**: Move the contents of the A-register to the B-register
 - **MOV A, C**: Move the contents of the A-register to the C-register
 - **MOV B, A**: Move the contents of the B-register to the A-register
+- **MOV B, C**: Move the contents of the B-register to the C-register
+- **MOV C, A**: Move the contents of the C-register to the A-register
+- **MOV C, B**: Move the contents of the C-register to the B-register
+- **MVI A byte**: Move the byte operand into the A-register
+- **MVI B byte**: Move the byte operand into the B-register
+- **MVI C byte**: Move the byte operand into the C-register
+- **NOP**: No operation, waste 8 clock cycles
+- **ORA B**: OR the contents of B-register with contents of A-register, then save result in A-register
+- **ORA C**: OR the contents of C-register with contents of A-register, then save result in A-register
+- **ORI byte**: OR the contents of the A-register with the byte operand, then save the result in the A-register
+- **OUT**: Load the contents of the A-register into the decimal display
+- **STA byte**: Store the contents of the A-register into the location specified by the byte operand
+- **SUB B**: Subtract the B-register from the A-register, then save the result in the A-register
+- **SUB C**: Subtract the C-register from the A-register, then save the result in the A-register
+- **XRA B**: XOR the contents of the A-register with the contents of the B-register, then save the result in the A-register
+- **XRA C**: XOR the contents of the A-register with the contents of the C-register, then save the result in the A-register
+- **XRI byte**: XOR the contents of the A-register with the byte operand, then save the result in the A-register
+- **NOT A**: Save the compliment of the A-register in the A-register
+- **NOT B**: Save the compliment of the B-register in the B-register
+- **NOT C**: Save the compliment of the C-register in teh C-register
+- **DIC byte**: Send the byte operand as a command to the LCD display
+- **DID byte**: Send the byte operand as data to the LCD display
+- **JC byte**: Jump to the address of the byte operand if the carry flag is set
+- **JNC byte**: Jump to the address of the byte operand if the carry flag is not set
+- **JZ byte**: Jump to the address of the byte operand if the zero flag is set
+- **JNZ byte**: Jump to the address of the byte operand if the zero flag is not set
