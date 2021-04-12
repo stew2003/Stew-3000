@@ -1,0 +1,19 @@
+
+Hardware
+  [] implement sign flag and signed overflow flag (Stewart)
+  [] implement dream instruction set in microcode (Stewart)
+  [] get the RAM loader working (Stewart)
+
+Assembler
+  [] model our instr set with OCaml datatypes. will be used by assembler,
+    compiler, and virtual machine
+  [] think about how to implement labels
+  [] implement assembler
+
+Compiler
+  [] decide on language constructs
+  [] implement compiler
+  [] implement optimizations for smol code
+
+Virtual Machine
+  [] software simulation of the stew3000, for compiler testing
