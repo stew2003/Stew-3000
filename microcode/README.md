@@ -97,6 +97,11 @@
   - **ADD SP, A**
   - **ADD SP, B**
   - **ADD SP, C**
+- **ADDI $r1, byte**: $r1 = $r1 + byte
+  - **ADDI A, byte**
+  - **ADDI B, byte**
+  - **ADDI C, byte**
+  - **ADDI SP, byte**
 - **SUB $r1, $r2**: $r1 = $r1 - $r2
   - **SUB A, B**
   - **SUB A, C**
@@ -107,6 +112,11 @@
   - **SUB SP, A**
   - **SUB SP, B**
   - **SUB SP, C**
+- **SUBI $r1, byte**: $r1 = $r1 - byte
+  - **SUBI A, byte**
+  - **SUBI B, byte**
+  - **SUBI C, byte**
+  - **SUBI SP, byte**
 - **AND $r1, $r2**: $r1 = $r1 & $r2
   - **AND A, B**
   - **AND A, C**
@@ -189,6 +199,14 @@
   - **STB C, A**
   - **STB C, B**
   - **STB C, C**
+- **LDS $r1, byte**: $r1 = RAM[SP + byte]
+  - **LDS A, byte**
+  - **LDS B, byte**
+  - **LDS C, byte**
+- **STS $r1, byte**: RAM[SP + byte] = $r1
+  - **STS A, byte**
+  - **STS B, byte**
+  - **STS C, byte**
 - **CMP $r1, $r2**: $r1 - $r2 and set flags
   - **CMP A, B**
   - **CMP A, C**
