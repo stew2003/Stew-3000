@@ -185,56 +185,52 @@
   - **LD A, C**: 52
   - **LD B, C**: 53
   - **LD C, C**: 54
-- **STI $r1, byte**: RAM[byte] = $r1
-  - **STI A, byte**: 55
-  - **STI B, byte**: 56
-  - **STI C, byte**: 57
 - **ST $r1, $r2**: RAM[$r2] = $r1
-  - **ST A, A**: 58
-  - **ST A, B**: 59
-  - **ST A, C**: 5a
-  - **ST B, A**: 5b
-  - **ST B, B**: 5c
-  - **ST B, C**: 5d
-  - **ST C, A**: 5e
-  - **ST C, B**: 5f
-  - **ST C, C**: 60
+  - **ST A, A**: 55
+  - **ST A, B**: 56
+  - **ST A, C**: 57
+  - **ST B, A**: 58
+  - **ST B, B**: 59
+  - **ST B, C**: 5a
+  - **ST C, A**: 5b
+  - **ST C, B**: 5c
+  - **ST C, C**: 5d
 - **LDS $r1, byte**: $r1 = RAM[SP + byte]
-  - **LDS A, byte**: 61
-  - **LDS B, byte**: 62
-  - **LDS C, byte**: 63
+  - **LDS A, byte**: 5e
+  - **LDS B, byte**: 5f
+  - **LDS C, byte**: 60
 - **STS $r1, byte**: RAM[SP + byte] = $r1
-  - **STS A, byte**: 64
-  - **STS B, byte**: 65
-  - **STS C, byte**: 66
+  - **STS A, byte**: 61
+  - **STS B, byte**: 62
+  - **STS C, byte**: 63
 - **CMP $r1, $r2**: $r1 - $r2 and set flags
-  - **CMP A, B**: 67
-  - **CMP A, C**: 68
-  - **CMP B, A**: 69
-  - **CMP B, C**: 6a
-  - **CMP C, A**: 6b
-  - **CMP C, B**: 6c
+  - **CMP A, B**: 64
+  - **CMP A, C**: 65
+  - **CMP B, A**: 66
+  - **CMP B, C**: 67
+  - **CMP C, A**: 68
+  - **CMP C, B**: 69
 - **CMPI byte/$r1, $r1/byte**: byte/$r1 - $r1/byte and set flags
-  - **CMPI A, byte**: 6d
-  - **CMPI byte, A**: 6e
-  - **CMPI B, byte**: 6f
-  - **CMPI byte, B**: 70
-  - **CMPI C, byte**: 71
-  - **CMPI byte, C**: 72
-- **JMP byte**: PC = byte: 73
+  - **CMPI A, byte**: 6a
+  - **CMPI byte, A**: 6b
+  - **CMPI B, byte**: 6c
+  - **CMPI byte, B**: 6d
+  - **CMPI C, byte**: 6e
+  - **CMPI byte, C**: 6f
+- **JMP byte**: PC = byte: 70
 - **JMP $r1**: PC = $r1
-  - **JMP A**: 74
-  - **JMP B**: 75
-  - **JMP C**: 76
-- **JE/JZ byte**: ZF ? PC = byte: 77
-- **JNE/JNZ byte**: ~ZF ? PC = byte: 78
-- **JG/JNLE byte**: ~(SF ^ OF) & ~ZF ? PC = byte: 79
-- **JGE/JNL byte**: ~(SF ^ OF) ? PC = byte: 7a
-- **JL/JNGE byte**: SF ^ OF ? PC = byte: 7b
-- **JLE/JNG byte**: (SF ^ OF) | ZF ? PC = byte: 7c
-- **CALL byte**: SP += 1, Stack[SP] = PC, PC = byte: 7d
-- **RET**: PC = Stack[SP], SP -= 1: 7e
-- **DIC byte**: LCD command byte: 7f
-- **DID byte**: LCD data byte: 80
-- **HLT**: Halt: 81
-- **NOP**: No operation: 82
+  - **JMP A**: 71
+  - **JMP B**: 72
+  - **JMP C**: 73
+- **JE/JZ byte**: ZF ? PC = byte: 74
+- **JNE/JNZ byte**: ~ZF ? PC = byte: 75
+- **JG/JNLE byte**: ~(SF ^ OF) & ~ZF ? PC = byte: 76
+- **JGE/JNL byte**: ~(SF ^ OF) ? PC = byte: 77
+- **JL/JNGE byte**: SF ^ OF ? PC = byte: 78
+- **JLE/JNG byte**: (SF ^ OF) | ZF ? PC = byte: 79
+- **CALL byte**: SP += 1, Stack[SP] = PC, PC = byte: 7a
+- **RET**: PC = Stack[SP], SP -= 1: 7b
+- **DIC byte**: LCD command byte: 7c
+- **DID byte**: LCD data byte: 7d
+- **HLT**: Halt: 7e
+- **NOP**: No operation: 7f
