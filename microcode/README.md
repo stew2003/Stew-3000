@@ -84,150 +84,157 @@
 
 # Dream Instruction Set:
 
-- **ADD $r1, $r2**: $r1 = $r1 + $r2
-  - **ADD A, A**
-  - **ADD A, B**
-  - **ADD A, C**
-  - **ADD B, A**
-  - **ADD B, B**
-  - **ADD B, C**
-  - **ADD C, A**
-  - **ADD C, B**
-  - **ADD C, C**
-  - **ADD SP, A**
-  - **ADD SP, B**
-  - **ADD SP, C**
-- **ADDI $r1, byte**: $r1 = $r1 + byte
-  - **ADDI A, byte**
-  - **ADDI B, byte**
-  - **ADDI C, byte**
-  - **ADDI SP, byte**
-- **SUB $r1, $r2**: $r1 = $r1 - $r2
-  - **SUB A, B**
-  - **SUB A, C**
-  - **SUB B, A**
-  - **SUB B, C**
-  - **SUB C, A**
-  - **SUB C, B**
-  - **SUB SP, A**
-  - **SUB SP, B**
-  - **SUB SP, C**
-- **SUBI $r1, byte**: $r1 = $r1 - byte
-  - **SUBI A, byte**
-  - **SUBI B, byte**
-  - **SUBI C, byte**
-  - **SUBI SP, byte**
-- **AND $r1, $r2**: $r1 = $r1 & $r2
-  - **AND A, B**
-  - **AND A, C**
-  - **AND B, A**
-  - **AND B, C**
-  - **AND C, A**
-  - **AND C, B**
-- **ANI $r1, byte**: $r1 = $r1 & byte
-  - **ANI A, byte**
-  - **ANI B, byte**
-  - **ANI C, byte**
-- **OR $r1, $r2**: $r1 = $r1 | $r2
-  - **OR A, B**
-  - **OR A, C**
-  - **OR B, A**
-  - **OR B, C**
-  - **OR C, A**
-  - **OR C, B**
-- **ORI $r1, byte**: $r1 = $r1 | byte
-  - **ORI A, byte**
-  - **ORI B, byte**
-  - **ORI C, byte**
-- **XOR $r1, $r2**: $r1 = $r1 ^ $r2
-  - **XOR A, B**
-  - **XOR A, C**
-  - **XOR B, A**
-  - **XOR B, C**
-  - **XOR C, A**
-  - **XOR C, B**
-- **XRI $r1, byte**: $r1 = $r1 ^ byte
-  - **XRI A, byte**
-  - **XRI B, byte**
-  - **XRI C, byte**
+- **ADD $r1, $r2**: $r2 = $r2 + $r1
+  - **ADD A, A**: 00
+  - **ADD A, B**: 01
+  - **ADD A, C**: 02
+  - **ADD B, A**: 03
+  - **ADD B, B**: 04
+  - **ADD B, C**: 05
+  - **ADD C, A**: 06
+  - **ADD C, B**: 07
+  - **ADD C, C**: 08
+  - **ADD A, SP**: 09
+  - **ADD B, SP**: 0a
+  - **ADD C, SP**: 0b
+- **ADDI $r1, byte**: $r1 = byte + $r1
+  - **ADDI byte, A**: 0c
+  - **ADDI byte, B**: 0d
+  - **ADDI byte, C**: 0e
+  - **ADDI byte, SP**: 0f
+- **SUB $r1, $r2**: $r2 = $r2 - $r1
+  - **SUB B, A**: 10
+  - **SUB C, A**: 11
+  - **SUB A, B**: 12
+  - **SUB C, B**: 13
+  - **SUB A, C**: 14
+  - **SUB B, C**: 15
+  - **SUB A, SP**: 16
+  - **SUB B, SP**: 17
+  - **SUB C, SP**: 18
+- **SUBI byte, $r1**: $r1 = $r1 - byte
+  - **SUBI byte, A**: 19
+  - **SUBI byte, B**: 1a
+  - **SUBI byte, C**: 1b
+  - **SUBI byte, SP**: 1c
+- **AND $r1, $r2**: $r2 = $r2 & $r1
+  - **AND B, A**: 1d
+  - **AND C, A**: 1e
+  - **AND A, B**: 1f
+  - **AND C, B**: 20
+  - **AND A, C**: 21
+  - **AND B, C**: 22
+- **ANI byte, $r1**: $r1 = $r1 & byte
+  - **ANI byte, A**: 23
+  - **ANI byte, B**: 24
+  - **ANI byte, C**: 25
+- **OR $r1, $r2**: $r2 = $r2 | $r1
+  - **OR B, A**: 26
+  - **OR C, A**: 27
+  - **OR A, B**: 28
+  - **OR C, B**: 29
+  - **OR A, C**: 2a
+  - **OR B, C**: 2b
+- **ORI byte, $r1**: $r1 = $r1 | byte
+  - **ORI byte, A**: 2c
+  - **ORI byte, B**: 2d
+  - **ORI byte, C**: 2e
+- **XOR $r1, $r2**: $r2 = $r2 ^ $r1
+  - **XOR B, A**: 2f
+  - **XOR C, A**: 30
+  - **XOR A, B**: 31
+  - **XOR C, B**: 32
+  - **XOR A, C**: 33
+  - **XOR B, C**: 34
+- **XRI byte, $r1**: $r1 = $r1 ^ byte
+  - **XRI byte, A**: 35
+  - **XRI byte, B**: 36
+  - **XRI byte, C**: 37
 - **NOT $r1**: $r1 = ~$r1
-  - **NOT A**
-  - **NOT B**
-  - **NOT C**
+  - **NOT A**: 38
+  - **NOT B**: 39
+  - **NOT C**: 3a
 - **INR $r1**: $r1 = $r1 + 1
-  - **INR A**
-  - **INR B**
-  - **INR C**
-  - **INR SP**
+  - **INR A**: 3b
+  - **INR B**: 3c
+  - **INR C**: 3d
+  - **INR SP**: 3e
 - **DCR $r1**: $r1 = $r1 - 1
-  - **DCR A**
-  - **DCR B**
-  - **DCR C**
-  - **DCR SP**
+  - **DCR A**: 3f
+  - **DCR B**: 40
+  - **DCR C**: 41
+  - **DCR SP**: 42
 - **MOV $r1, $r2**: $r2 = $r1
-  - **MOV A, B**
-  - **MOV A, C**
-  - **MOV B, A**
-  - **MOV B, C**
-  - **MOV C, A**
-  - **MOV C, B**
+  - **MOV A, B**: 43
+  - **MOV A, C**: 44
+  - **MOV B, A**: 45
+  - **MOV B, C**: 46
+  - **MOV C, A**: 47
+  - **MOV C, B**: 48
 - **LDI $r1, byte**: $r1 = byte
-  - **LDI A, byte**
-  - **LDI B, byte**
-  - **LDI C, byte**
-- **LDB $r1, $r2**: $r1 = RAM[$r2]
-  - **LDB A, A**
-  - **LDB A, B**
-  - **LDB A, C**
-  - **LDB B, A**
-  - **LDB B, B**
-  - **LDB B, C**
-  - **LDB C, A**
-  - **LDB C, B**
-  - **LDB C, C**
+  - **LDI A, byte**: 49
+  - **LDI B, byte**: 4a
+  - **LDI C, byte**: 4b
+- **LD $r1, $r2**: $r2 = RAM[$r1]
+  - **LD A, A**: 4c
+  - **LD B, A**: 4d
+  - **LD C, A**: 4e
+  - **LD A, B**: 4f
+  - **LD B, B**: 50
+  - **LD C, B**: 51
+  - **LD A, C**: 52
+  - **LD B, C**: 53
+  - **LD C, C**: 54
 - **STI $r1, byte**: RAM[byte] = $r1
-  - **STI A, byte**
-  - **STI B, byte**
-  - **STI C, byte**
-- **STB $r1, $r2**: RAM[$r2] = $r1
-  - **STB A, A**
-  - **STB A, B**
-  - **STB A, C**
-  - **STB B, A**
-  - **STB B, B**
-  - **STB B, C**
-  - **STB C, A**
-  - **STB C, B**
-  - **STB C, C**
+  - **STI A, byte**: 55
+  - **STI B, byte**: 56
+  - **STI C, byte**: 57
+- **ST $r1, $r2**: RAM[$r2] = $r1
+  - **ST A, A**: 58
+  - **ST A, B**: 59
+  - **ST A, C**: 5a
+  - **ST B, A**: 5b
+  - **ST B, B**: 5c
+  - **ST B, C**: 5d
+  - **ST C, A**: 5e
+  - **ST C, B**: 5f
+  - **ST C, C**: 60
 - **LDS $r1, byte**: $r1 = RAM[SP + byte]
-  - **LDS A, byte**
-  - **LDS B, byte**
-  - **LDS C, byte**
+  - **LDS A, byte**: 61
+  - **LDS B, byte**: 62
+  - **LDS C, byte**: 63
 - **STS $r1, byte**: RAM[SP + byte] = $r1
-  - **STS A, byte**
-  - **STS B, byte**
-  - **STS C, byte**
+  - **STS A, byte**: 64
+  - **STS B, byte**: 65
+  - **STS C, byte**: 66
 - **CMP $r1, $r2**: $r1 - $r2 and set flags
-  - **CMP A, B**
-  - **CMP A, C**
-  - **CMP B, A**
-  - **CMP B, C**
-  - **CMP C, A**
-  - **CMP C, B**
-- **JMP byte**: PC = byte
+  - **CMP A, B**: 67
+  - **CMP A, C**: 68
+  - **CMP B, A**: 69
+  - **CMP B, C**: 6a
+  - **CMP C, A**: 6b
+  - **CMP C, B**: 6c
+- **CMPI byte/$r1, $r1/byte**: byte/$r1 - $r1/byte and set flags
+  - **CMPI A, byte**: 6d
+  - **CMPI byte, A**: 6e
+  - **CMPI B, byte**: 6f
+  - **CMPI byte, B**: 70
+  - **CMPI C, byte**: 71
+  - **CMPI byte, C**: 72
+- **JMP byte**: PC = byte: 73
 - **JMP $r1**: PC = $r1
-  - **JMP A**
-  - **JMP B**
-  - **JMP C**
-- **JE/JZ byte**: ZF ? PC = byte
-- **JNE/JNZ byte**: ~ZF ? PC = byte
-- **JG/JNLE byte**: ~(SF ^ OF) & ~ZF ? PC = byte
-- **JGE/JNL byte**: ~(SF ^ OF) ? PC = byte
-- **JL/JNGE byte**: SF ^ OF ? PC = byte
-- **JLE/JNG byte**: (SF ^ OF) | ZF ? PC = byte
-- **CALL byte**: SP += 1, Stack[SP] = PC, PC = byte
-- **RET**: PC = Stack[SP], SP -= 1
-- **DIC byte**: LCD command byte
-- **DID byte**: LCD data byte
-- **HLT**: Halt
-- **NOP**: No operation
+  - **JMP A**: 74
+  - **JMP B**: 75
+  - **JMP C**: 76
+- **JE/JZ byte**: ZF ? PC = byte: 77
+- **JNE/JNZ byte**: ~ZF ? PC = byte: 78
+- **JG/JNLE byte**: ~(SF ^ OF) & ~ZF ? PC = byte: 79
+- **JGE/JNL byte**: ~(SF ^ OF) ? PC = byte: 7a
+- **JL/JNGE byte**: SF ^ OF ? PC = byte: 7b
+- **JLE/JNG byte**: (SF ^ OF) | ZF ? PC = byte: 7c
+- **CALL byte**: SP += 1, Stack[SP] = PC, PC = byte: 7d
+- **RET**: PC = Stack[SP], SP -= 1: 7e
+- **DIC byte**: LCD command byte: 7f
+- **DID byte**: LCD data byte: 80
+- **HLT**: Halt: 81
+- **NOP**: No operation: 82
