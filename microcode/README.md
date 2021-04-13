@@ -97,7 +97,7 @@
   - **ADD A, SP**: 09
   - **ADD B, SP**: 0a
   - **ADD C, SP**: 0b
-- **ADDI $r1, byte**: $r1 = byte + $r1
+- **ADDI byte, $r1**: $r1 = $r1 + byte
   - **ADDI byte, A**: 0c
   - **ADDI byte, B**: 0d
   - **ADDI byte, C**: 0e
