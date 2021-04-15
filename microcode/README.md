@@ -171,10 +171,10 @@
   - **MOV B, C**: 46
   - **MOV C, A**: 47
   - **MOV C, B**: 48
-- **LDI $r1, byte**: $r1 = byte
-  - **LDI A, byte**: 49
-  - **LDI B, byte**: 4a
-  - **LDI C, byte**: 4b
+- **MVI byte, $r1**: $r1 = byte
+  - **MVI byte, A**: 49
+  - **LDI byte, B**: 4a
+  - **LDI byte, C**: 4b
 - **LD $r1, $r2**: $r2 = RAM[$r1]
   - **LD A, A**: 4c
   - **LD B, A**: 4d
@@ -195,10 +195,10 @@
   - **ST C, A**: 5b
   - **ST C, B**: 5c
   - **ST C, C**: 5d
-- **LDS $r1, byte**: $r1 = RAM[SP + byte]
-  - **LDS A, byte**: 5e
-  - **LDS B, byte**: 5f
-  - **LDS C, byte**: 60
+- **LDS byte, $r1**: $r1 = RAM[SP + byte]
+  - **LDS byte, A**: 5e
+  - **LDS byte, B**: 5f
+  - **LDS byte, C**: 60
 - **STS $r1, byte**: RAM[SP + byte] = $r1
   - **STS A, byte**: 61
   - **STS B, byte**: 62
@@ -228,7 +228,7 @@
 - **JGE/JNL byte**: ~(SF ^ OF) ? PC = byte: 77
 - **JL/JNGE byte**: SF ^ OF ? PC = byte: 78
 - **JLE/JNG byte**: (SF ^ OF) | ZF ? PC = byte: 79
-- **CALL byte**: SP += 1, Stack[SP] = PC, PC = byte: 7a
+- **CALL byte**: SP += 1, PC + 1, Stack[SP] = PC, PC = byte: 7a
 - **RET**: PC = Stack[SP], SP -= 1: 7b
 - **DIC byte**: LCD command byte: 7c
 - **DID byte**: LCD data byte: 7d
