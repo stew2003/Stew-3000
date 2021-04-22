@@ -88,14 +88,14 @@
   - **ADD A, A**: 00
   - **ADD A, B**: 01
   - **ADD A, C**: 02
-  - **ADD B, A**: 03
-  - **ADD B, B**: 04
-  - **ADD B, C**: 05
-  - **ADD C, A**: 06
-  - **ADD C, B**: 07
-  - **ADD C, C**: 08
-  - **ADD A, SP**: 09
-  - **ADD B, SP**: 0a
+  - **ADD A, SP**: 03
+  - **ADD B, A**: 04
+  - **ADD B, B**: 05
+  - **ADD B, C**: 06
+  - **ADD B, SP**: 07
+  - **ADD C, A**: 08
+  - **ADD C, B**: 09
+  - **ADD C, C**: 0a
   - **ADD C, SP**: 0b
 - **ADDI byte, $r1**: $r1 = $r1 + byte
   - **ADDI byte, A**: 0c
@@ -173,8 +173,8 @@
   - **MOV C, B**: 48
 - **MVI byte, $r1**: $r1 = byte
   - **MVI byte, A**: 49
-  - **LDI byte, B**: 4a
-  - **LDI byte, C**: 4b
+  - **MVI byte, B**: 4a
+  - **MVI byte, C**: 4b
 - **LD $r1, $r2**: $r2 = RAM[$r1]
   - **LD A, A**: 4c
   - **LD B, A**: 4d
