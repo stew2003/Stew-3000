@@ -39,13 +39,14 @@ EEPROM_programmer programmer(2, 3, 4, 5, 12, 13, 8192);
 #define SO  0b00000000000000000000000000010000
 #define SI  0b00000000000000000000000000001000  
 
-#define INSTRUCTION_STEPS 8
-#define FETCH_STEPS 2
+const int INSTRUCTION_STEPS = 8;
+const int FETCH_STEPS = 2;
 
-#define NUM_FLAGS 3
+const int NUM_FLAGS = 3;
+const int FLAG_CONFIGURATIONS = pow(2, NUM_FLAGS);
 
-#define NUM_INSTRUCTIONS 122
-#define NUM_CONDITIONAL_INSTRUCTIONS 6
+const int NUM_INSTRUCTIONS = 122;
+const int NUM_CONDITIONAL_INSTRUCTIONS = 6;
 
 const int INSTRUCTION_ARR_LENGTH = 1 + (INSTRUCTION_STEPS - FETCH_STEPS);
 
@@ -191,20 +192,20 @@ const uint32_t PROGMEM microcode[NUM_INSTRUCTIONS][INSTRUCTION_ARR_LENGTH] = {
   { 0x63, PCO|MI, SO|TI, RO|TS|SUM|EI, EO|MI, CO|RI|PGM|PCE, RST }, // STS A, byte
 
   // CMP $r1, $r1: $r1 - $r2 and set flags
-  { 0x64, BO|TI, AO|TS|SUM|SUB|CAR|EI|FI, RST, 0, 0, 0 } // CMP A, B
-  { 0x65, CO|TI, AO|TS|SUM|SUB|CAR|EI|FI, RST, 0, 0, 0 } // CMP A, C
-  { 0x66, AO|TI, BO|TS|SUM|SUB|CAR|EI|FI, RST, 0, 0, 0 } // CMP B, A
-  { 0x67, CO|TI, BO|TS|SUM|SUB|CAR|EI|FI, RST, 0, 0, 0 } // CMP B, C
-  { 0x68, AO|TI, CO|TS|SUM|SUB|CAR|EI|FI, RST, 0, 0, 0 } // CMP C, A
-  { 0x69, BO|TI, CO|TS|SUM|SUB|CAR|EI|FI, RST, 0, 0, 0 } // CMP C, B
+  { 0x64, BO|TI, AO|TS|SUM|SUB|CAR|EI|FI, RST, 0, 0, 0 }, // CMP A, B
+  { 0x65, CO|TI, AO|TS|SUM|SUB|CAR|EI|FI, RST, 0, 0, 0 }, // CMP A, C
+  { 0x66, AO|TI, BO|TS|SUM|SUB|CAR|EI|FI, RST, 0, 0, 0 }, // CMP B, A
+  { 0x67, CO|TI, BO|TS|SUM|SUB|CAR|EI|FI, RST, 0, 0, 0 }, // CMP B, C
+  { 0x68, AO|TI, CO|TS|SUM|SUB|CAR|EI|FI, RST, 0, 0, 0 }, // CMP C, A
+  { 0x69, BO|TI, CO|TS|SUM|SUB|CAR|EI|FI, RST, 0, 0, 0 }, // CMP C, B
 
   // CMPI byte/$r1, $r1/byte: byte/$r1 - $r1/byte and set flags
-  { 0x6a, PCO|MI, RO|TI|PCE, AO|TS|SUM|SUB|CAR|EI|FI, RST, 0, 0 } // CMPI A, byte
-  { 0x6b, PCO|MI, AO|TI|PCE, RO|TS|SUM|SUB|CAR|EI|FI, RST, 0, 0 } // CMPI byte, A
-  { 0x6c, PCO|MI, RO|TI|PCE, BO|TS|SUM|SUB|CAR|EI|FI, RST, 0, 0 } // CMPI B, byte
-  { 0x6d, PCO|MI, BO|TI|PCE, RO|TS|SUM|SUB|CAR|EI|FI, RST, 0, 0 } // CMPI byte, B
-  { 0x6e, PCO|MI, RO|TI|PCE, CO|TS|SUM|SUB|CAR|EI|FI, RST, 0, 0 } // CMPI C, byte
-  { 0x6f, PCO|MI, CO|TI|PCE, RO|TS|SUM|SUB|CAR|EI|FI, RST, 0, 0 } // CMPI byte, C
+  { 0x6a, PCO|MI, RO|TI|PCE, AO|TS|SUM|SUB|CAR|EI|FI, RST, 0, 0 }, // CMPI A, byte
+  { 0x6b, PCO|MI, AO|TI|PCE, RO|TS|SUM|SUB|CAR|EI|FI, RST, 0, 0 }, // CMPI byte, A
+  { 0x6c, PCO|MI, RO|TI|PCE, BO|TS|SUM|SUB|CAR|EI|FI, RST, 0, 0 }, // CMPI B, byte
+  { 0x6d, PCO|MI, BO|TI|PCE, RO|TS|SUM|SUB|CAR|EI|FI, RST, 0, 0 }, // CMPI byte, B
+  { 0x6e, PCO|MI, RO|TI|PCE, CO|TS|SUM|SUB|CAR|EI|FI, RST, 0, 0 }, // CMPI C, byte
+  { 0x6f, PCO|MI, CO|TI|PCE, RO|TS|SUM|SUB|CAR|EI|FI, RST, 0, 0 }, // CMPI byte, C
 
   // JMP byte: PC = byte
   { 0x70, PCO|MI, RO|PCI, RST, 0, 0, 0 },
@@ -215,7 +216,7 @@ const uint32_t PROGMEM microcode[NUM_INSTRUCTIONS][INSTRUCTION_ARR_LENGTH] = {
   { 0x73, CO|PCI, RST, 0, 0, 0, 0 },
 
   // CALL byte: SP +=1, PC + 1, Stack[SP] = PC, PC = byte
-  { 0x7a, RO|TI, SO|SUM|CAR|EI, EO|SI|PCE, SO|MI, PCO|RI|PGM, TO|PCI }
+  { 0x7a, RO|TI, SO|SUM|CAR|EI, EO|SI|PCE, SO|MI, PCO|RI|PGM, TO|PCI },
   
   // RET: PC = Stack[SP], SP -= 1
   { 0x7b, SO|MI, RO|PGM|PCI, SO|SUM|SUB|CAR|EI, EO|SI, RST, 0 },
@@ -235,7 +236,7 @@ const uint32_t PROGMEM microcode[NUM_INSTRUCTIONS][INSTRUCTION_ARR_LENGTH] = {
 
 //  0   0   0
 // ZF  OF  SF
-const uint32_t PROGMEM conditional_microcode[NUM_CONDITIONAL_INSTRUCTIONS][pow(2, NUM_FLAGS)][INSTRUCTION_ARR_LENGTH] = {
+const uint32_t PROGMEM conditional_microcode[NUM_CONDITIONAL_INSTRUCTIONS][FLAG_CONFIGURATIONS][INSTRUCTION_ARR_LENGTH] = {
   // JE/JZ byte: ZF ? PC = byte
   {
     { 0x74, PCE,    RST,    0,   0, 0, 0 }, // 000
@@ -321,7 +322,7 @@ void program_EEPROM(int num) {
   // write all the unconditional instructions
   for (int instruction_index = 0; instruction_index < NUM_INSTRUCTIONS; instruction_index++) {
     for (int step_index = 0; step_index < INSTRUCTION_STEPS; step_index++) {
-      for (int flags = 0; flags < pow(2, NUM_FLAGS); flags++) {
+      for (int flags = 0; flags < FLAG_CONFIGURATIONS; flags++) {
         programmer.write_byte(
           pgm_read_dword_near(&microcode[instruction_index][0]) + (128 * step_index) + (1024 * flags), 
           reverse_bits(
@@ -335,7 +336,7 @@ void program_EEPROM(int num) {
   // write all the conditional instructions
   for (int instruction_index = 0; instruction_index < NUM_CONDITIONAL_INSTRUCTIONS; instruction_index++) {
     for (int step_index = 0; step_index < INSTRUCTION_STEPS; step_index++) {
-      for (int flags = 0; flags < pow(2, NUM_FLAGS); flags++) {
+      for (int flags = 0; flags < FLAG_CONFIGURATIONS; flags++) {
         programmer.write_byte(
           pgm_read_dword_near(&conditional_microcode[instruction_index][0][0]) + (128 * step_index) + (1024 * flags), 
           reverse_bits(
