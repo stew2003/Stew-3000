@@ -146,7 +146,7 @@ const uint32_t PROGMEM microcode[NUM_INSTRUCTIONS][INSTRUCTION_ARR_LENGTH] = {
   { 0x41, CO|SUM|SUB|EI|FI, EO|CI, RST, 0, 0, 0 }, // DCR C
   { 0x42, SO|SUM|SUB|EI|FI, EO|SI, RST, 0, 0, 0 }, // DCR A
 
-  // MOV $r1, $r1: $r2 = $r1
+  // MOV $r1, $r2: $r2 = $r1
   { 0x43, AO|BI, RST, 0, 0, 0, 0 }, // MOV A, B
   { 0x44, AO|CI, RST, 0, 0, 0, 0 }, // MOV A, C
   { 0x45, BO|AI, RST, 0, 0, 0, 0 }, // MOV B, A
