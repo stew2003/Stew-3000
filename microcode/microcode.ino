@@ -159,37 +159,37 @@ const uint32_t PROGMEM microcode[NUM_INSTRUCTIONS][INSTRUCTION_ARR_LENGTH] = {
   { 0x4a, PCO|MI, RO|BI|PCE, RST, 0, 0, 0 }, // MVI byte, B
   { 0x4b, PCO|MI, RO|CI|PCE, RST, 0, 0, 0 }, // MVI byte, C
 
-  // LD $r1, $r2
-  { 0x4c, AO|MI, RO|AI, RST, 0, 0, 0 }, // LD A, A
-  { 0x4d, BO|MI, RO|AI, RST, 0, 0, 0 }, // LD B, A
-  { 0x4e, CO|MI, RO|AI, RST, 0, 0, 0 }, // LD C, A
-  { 0x4f, AO|MI, RO|BI, RST, 0, 0, 0 }, // LD A, B
-  { 0x50, BO|MI, RO|BI, RST, 0, 0, 0 }, // LD B, B
-  { 0x51, CO|MI, RO|BI, RST, 0, 0, 0 }, // LD C, B
-  { 0x52, AO|MI, RO|CI, RST, 0, 0, 0 }, // LD A, C
-  { 0x53, BO|MI, RO|CI, RST, 0, 0, 0 }, // LD B, C
-  { 0x54, CO|MI, RO|CI, RST, 0, 0, 0 }, // LD C, C
+  // LD $r1, $r2: $r2 = RAM[$r1]
+  { 0x4c, AO|MI, PGM|RO|AI, RST, 0, 0, 0 }, // LD A, A
+  { 0x4d, BO|MI, PGM|RO|AI, RST, 0, 0, 0 }, // LD B, A
+  { 0x4e, CO|MI, PGM|RO|AI, RST, 0, 0, 0 }, // LD C, A
+  { 0x4f, AO|MI, PGM|RO|BI, RST, 0, 0, 0 }, // LD A, B
+  { 0x50, BO|MI, PGM|RO|BI, RST, 0, 0, 0 }, // LD B, B
+  { 0x51, CO|MI, PGM|RO|BI, RST, 0, 0, 0 }, // LD C, B
+  { 0x52, AO|MI, PGM|RO|CI, RST, 0, 0, 0 }, // LD A, C
+  { 0x53, BO|MI, PGM|RO|CI, RST, 0, 0, 0 }, // LD B, C
+  { 0x54, CO|MI, PGM|RO|CI, RST, 0, 0, 0 }, // LD C, C
 
-  // ST $r1, $r2
-  { 0x55, AO|MI, AO|RI, RST, 0, 0, 0 }, //ST A, A
-  { 0x56, BO|MI, AO|RI, RST, 0, 0, 0 }, //ST A, B
-  { 0x57, CO|MI, AO|RI, RST, 0, 0, 0 }, //ST A, C
-  { 0x58, AO|MI, BO|RI, RST, 0, 0, 0 }, //ST B, A
-  { 0x59, BO|MI, BO|RI, RST, 0, 0, 0 }, //ST B, B
-  { 0x5a, CO|MI, BO|RI, RST, 0, 0, 0 }, //ST B, C
-  { 0x5b, AO|MI, CO|RI, RST, 0, 0, 0 }, //ST C, A
-  { 0x5c, BO|MI, CO|RI, RST, 0, 0, 0 }, //ST C, B
-  { 0x5d, CO|MI, CO|RI, RST, 0, 0, 0 }, //ST C, C
+  // ST $r1, $r2: RAM[$r2] = $r1
+  { 0x55, AO|MI, PGM|AO|RI, RST, 0, 0, 0 }, //ST A, A
+  { 0x56, BO|MI, PGM|AO|RI, RST, 0, 0, 0 }, //ST A, B
+  { 0x57, CO|MI, PGM|AO|RI, RST, 0, 0, 0 }, //ST A, C
+  { 0x58, AO|MI, PGM|BO|RI, RST, 0, 0, 0 }, //ST B, A
+  { 0x59, BO|MI, PGM|BO|RI, RST, 0, 0, 0 }, //ST B, B
+  { 0x5a, CO|MI, PGM|BO|RI, RST, 0, 0, 0 }, //ST B, C
+  { 0x5b, AO|MI, PGM|CO|RI, RST, 0, 0, 0 }, //ST C, A
+  { 0x5c, BO|MI, PGM|CO|RI, RST, 0, 0, 0 }, //ST C, B
+  { 0x5d, CO|MI, PGMCO|RI, RST, 0, 0, 0 }, //ST C, C
 
   // LDS byte, $r1: $r1 = RAM[SP + byte]
-  { 0x5e, PCO|MI, SO|TI, RO|TS|SUM|EI, EO|MI, RO|AI|PCE, RST }, // LDS byte, A
-  { 0x5f, PCO|MI, SO|TI, RO|TS|SUM|EI, EO|MI, RO|BI|PCE, RST }, // LDS byte, B
-  { 0x60, PCO|MI, SO|TI, RO|TS|SUM|EI, EO|MI, RO|CI|PCE, RST }, // LDS byte, C
+  { 0x5e, PCO|MI, SO|TI, RO|TS|SUM|EI, EO|MI, PGM|RO|AI|PCE, RST }, // LDS byte, A
+  { 0x5f, PCO|MI, SO|TI, RO|TS|SUM|EI, EO|MI, PGM|RO|BI|PCE, RST }, // LDS byte, B
+  { 0x60, PCO|MI, SO|TI, RO|TS|SUM|EI, EO|MI, PGM|RO|CI|PCE, RST }, // LDS byte, C
 
   // STS $r1, byte: RAM[SP + byte] = $r1
-  { 0x61, PCO|MI, SO|TI, RO|TS|SUM|EI, EO|MI, AO|RI|PGM|PCE, RST }, // STS A, byte
-  { 0x62, PCO|MI, SO|TI, RO|TS|SUM|EI, EO|MI, BO|RI|PGM|PCE, RST }, // STS B, byte
-  { 0x63, PCO|MI, SO|TI, RO|TS|SUM|EI, EO|MI, CO|RI|PGM|PCE, RST }, // STS A, byte
+  { 0x61, PCO|MI, SO|TI, RO|TS|SUM|EI, EO|MI, PGM|AO|RI|PGM|PCE, RST }, // STS A, byte
+  { 0x62, PCO|MI, SO|TI, RO|TS|SUM|EI, EO|MI, PGM|BO|RI|PGM|PCE, RST }, // STS B, byte
+  { 0x63, PCO|MI, SO|TI, RO|TS|SUM|EI, EO|MI, PGM|CO|RI|PGM|PCE, RST }, // STS A, byte
 
   // CMP $r1, $r1: $r1 - $r2 and set flags
   { 0x64, BO|TI, AO|TS|SUM|SUB|CAR|EI|FI, RST, 0, 0, 0 }, // CMP A, B
@@ -216,10 +216,10 @@ const uint32_t PROGMEM microcode[NUM_INSTRUCTIONS][INSTRUCTION_ARR_LENGTH] = {
   { 0x73, CO|PCI, RST, 0, 0, 0, 0 },
 
   // CALL byte: SP +=1, PC + 1, Stack[SP] = PC, PC = byte
-  { 0x7a, RO|TI, SO|SUM|CAR|EI, EO|SI|PCE, SO|MI, PCO|RI|PGM, TO|PCI },
+  { 0x7a, RO|TI, SO|SUM|CAR|EI, EO|SI|PCE, SO|MI, PGM|PCO|RI, TO|PCI },
   
   // RET: PC = Stack[SP], SP -= 1
-  { 0x7b, SO|MI, RO|PGM|PCI, SO|SUM|SUB|CAR|EI, EO|SI, RST, 0 },
+  { 0x7b, SO|MI, PGM|RO|PCI, SO|SUM|SUB|CAR|EI, EO|SI, RST, 0 },
 
   // DIC byte: LCD command byte
   { 0x7c, PCO|MI, RO|LCE|PCE, RST, 0, 0, 0 }, // DIC byte
