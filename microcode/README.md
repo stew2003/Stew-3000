@@ -218,18 +218,18 @@
   - **CMPI C, byte**: 6e
   - **CMPI byte, C**: 6f
 - **JMP byte**: PC = byte: 70
-- **JMP $r1**: PC = $r1
-  - **JMP A**: 71
-  - **JMP B**: 72
-  - **JMP C**: 73
-- **JE/JZ byte**: ZF ? PC = byte: 74
-- **JNE/JNZ byte**: ~ZF ? PC = byte: 75
-- **JG/JNLE byte**: ~(SF ^ OF) & ~ZF ? PC = byte: 76
-- **JGE/JNL byte**: ~(SF ^ OF) ? PC = byte: 77
-- **JL/JNGE byte**: SF ^ OF ? PC = byte: 78
-- **JLE/JNG byte**: (SF ^ OF) | ZF ? PC = byte: 79
-- **CALL byte**: SP += 1, PC + 1, Stack[SP] = PC, PC = byte: 7a
-- **RET**: PC = Stack[SP], SP -= 1: 7b
+- **JE/JZ byte**: ZF ? PC = byte: 71
+- **JNE/JNZ byte**: ~ZF ? PC = byte: 72
+- **JG/JNLE byte**: ~(SF ^ OF) & ~ZF ? PC = byte: 73
+- **JGE/JNL byte**: ~(SF ^ OF) ? PC = byte: 74
+- **JL/JNGE byte**: SF ^ OF ? PC = byte: 75
+- **JLE/JNG byte**: (SF ^ OF) | ZF ? PC = byte: 76
+- **CALL byte**: SP += 1, PC + 1, Stack[SP] = PC, PC = byte: 77
+- **RET**: PC = Stack[SP], SP -= 1: 78
+- **OUT $r1**: Display = $r1
+  - **OUT A**: 79
+  - **OUT B**: 7a
+  - **OUT C**: 7b
 - **DIC byte**: LCD command byte: 7c
 - **DID byte**: LCD data byte: 7d
 - **HLT**: Halt: 7e
