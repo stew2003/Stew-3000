@@ -1,1 +1,5 @@
 .DS_Store
+
+# ocaml dev things
+_build/
+.merlin
