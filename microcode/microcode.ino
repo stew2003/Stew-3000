@@ -210,16 +210,16 @@ const uint32_t PROGMEM microcode[NUM_INSTRUCTIONS][INSTRUCTION_ARR_LENGTH] = {
   // JMP byte: PC = byte
   { 0x70, PCO|MI, RO|PCI, RST, 0, 0, 0 },
 
-  // JMP $r1: PC = $r1
-  { 0x71, AO|PCI, RST, 0, 0, 0, 0 },
-  { 0x72, BO|PCI, RST, 0, 0, 0, 0 },
-  { 0x73, CO|PCI, RST, 0, 0, 0, 0 },
-
   // CALL byte: SP +=1, PC + 1, Stack[SP] = PC, PC = byte
-  { 0x7a, RO|TI, SO|SUM|CAR|EI, EO|SI|PCE, SO|MI, PGM|PCO|RI, TO|PCI },
+  { 0x77, RO|TI, SO|SUM|CAR|EI, EO|SI|PCE, SO|MI, PGM|PCO|RI, TO|PCI },
   
   // RET: PC = Stack[SP], SP -= 1
-  { 0x7b, SO|MI, PGM|RO|PCI, SO|SUM|SUB|CAR|EI, EO|SI, RST, 0 },
+  { 0x78, SO|MI, PGM|RO|PCI, SO|SUM|SUB|CAR|EI, EO|SI, RST, 0 },
+
+  // OUT $r1: Display = $r1
+  { 0x79, AO|OI, RST, 0, 0, 0, 0 }, // OUT A
+  { 0x7a, BO|OI, RST, 0, 0, 0, 0 }, // OUT B
+  { 0x7b, CO|OI, RST, 0, 0, 0, 0 }, // OUT C
 
   // DIC byte: LCD command byte
   { 0x7c, PCO|MI, RO|LCE|PCE, RST, 0, 0, 0 }, // DIC byte
@@ -239,74 +239,74 @@ const uint32_t PROGMEM microcode[NUM_INSTRUCTIONS][INSTRUCTION_ARR_LENGTH] = {
 const uint32_t PROGMEM conditional_microcode[NUM_CONDITIONAL_INSTRUCTIONS][FLAG_CONFIGURATIONS][INSTRUCTION_ARR_LENGTH] = {
   // JE/JZ byte: ZF ? PC = byte
   {
-    { 0x74, PCE,    RST,    0,   0, 0, 0 }, // 000
-    { 0x74, PCE,    RST,    0,   0, 0, 0 }, // 001
-    { 0x74, PCE,    RST,    0,   0, 0, 0 }, // 010
-    { 0x74, PCE,    RST,    0,   0, 0, 0 }, // 011
-    { 0x74, PCO|MI, RO|PCI, RST, 0, 0, 0 }, // 100
-    { 0x74, PCO|MI, RO|PCI, RST, 0, 0, 0 }, // 101
-    { 0x74, PCO|MI, RO|PCI, RST, 0, 0, 0 }, // 110
-    { 0x74, PCO|MI, RO|PCI, RST, 0, 0, 0 }, // 111
+    { 0x71, PCE,    RST,    0,   0, 0, 0 }, // 000
+    { 0x71, PCE,    RST,    0,   0, 0, 0 }, // 001
+    { 0x71, PCE,    RST,    0,   0, 0, 0 }, // 010
+    { 0x71, PCE,    RST,    0,   0, 0, 0 }, // 011
+    { 0x71, PCO|MI, RO|PCI, RST, 0, 0, 0 }, // 100
+    { 0x71, PCO|MI, RO|PCI, RST, 0, 0, 0 }, // 101
+    { 0x71, PCO|MI, RO|PCI, RST, 0, 0, 0 }, // 110
+    { 0x71, PCO|MI, RO|PCI, RST, 0, 0, 0 }, // 111
   },
   
   // JNE/JNZ byte: ~ZF ? PC = byte
   {
-    { 0x75, PCO|MI, RO|PCI, RST, 0, 0, 0 }, // 000
-    { 0x75, PCO|MI, RO|PCI, RST, 0, 0, 0 }, // 001
-    { 0x75, PCO|MI, RO|PCI, RST, 0, 0, 0 }, // 010
-    { 0x75, PCO|MI, RO|PCI, RST, 0, 0, 0 }, // 011
-    { 0x75, PCE,    RST,    0,   0, 0, 0 }, // 100
-    { 0x75, PCE,    RST,    0,   0, 0, 0 }, // 101
-    { 0x75, PCE,    RST,    0,   0, 0, 0 }, // 110
-    { 0x75, PCE,    RST,    0,   0, 0, 0 }, // 111
+    { 0x72, PCO|MI, RO|PCI, RST, 0, 0, 0 }, // 000
+    { 0x72, PCO|MI, RO|PCI, RST, 0, 0, 0 }, // 001
+    { 0x72, PCO|MI, RO|PCI, RST, 0, 0, 0 }, // 010
+    { 0x72, PCO|MI, RO|PCI, RST, 0, 0, 0 }, // 011
+    { 0x72, PCE,    RST,    0,   0, 0, 0 }, // 100
+    { 0x72, PCE,    RST,    0,   0, 0, 0 }, // 101
+    { 0x72, PCE,    RST,    0,   0, 0, 0 }, // 110
+    { 0x72, PCE,    RST,    0,   0, 0, 0 }, // 111
   },
 
   // JG/JNLE byte: ~(SF ^ OF) & ~ZF ? PC = byte
   {
-    { 0x76, PCO|MI, RO|PCI, RST, 0, 0, 0 }, // 000
-    { 0x76, PCE,    RST,    0,   0, 0, 0 }, // 001
-    { 0x76, PCE,    RST,    0,   0, 0, 0 }, // 010
-    { 0x76, PCO|MI, RO|PCI, RST, 0, 0, 0 }, // 011
-    { 0x76, PCE,    RST,    0,   0, 0, 0 }, // 100
-    { 0x76, PCE,    RST,    0,   0, 0, 0 }, // 101
-    { 0x76, PCE,    RST,    0,   0, 0, 0 }, // 110
-    { 0x76, PCE,    RST,    0,   0, 0, 0 }, // 111
+    { 0x73, PCO|MI, RO|PCI, RST, 0, 0, 0 }, // 000
+    { 0x73, PCE,    RST,    0,   0, 0, 0 }, // 001
+    { 0x73, PCE,    RST,    0,   0, 0, 0 }, // 010
+    { 0x73, PCO|MI, RO|PCI, RST, 0, 0, 0 }, // 011
+    { 0x73, PCE,    RST,    0,   0, 0, 0 }, // 100
+    { 0x73, PCE,    RST,    0,   0, 0, 0 }, // 101
+    { 0x73, PCE,    RST,    0,   0, 0, 0 }, // 110
+    { 0x73, PCE,    RST,    0,   0, 0, 0 }, // 111
   },
 
   // JGE/JNL byte: ~(SF ^ OF) ? PC = byte
   {
-    { 0x77, PCO|MI, RO|PCI, RST, 0, 0, 0 }, // 000
-    { 0x77, PCE,    RST,    0,   0, 0, 0 }, // 001
-    { 0x77, PCE,    RST,    0,   0, 0, 0 }, // 010
-    { 0x77, PCO|MI, RO|PCI, RST, 0, 0, 0 }, // 011
-    { 0x77, PCO|MI, RO|PCI, RST, 0, 0, 0 }, // 100
-    { 0x77, PCE,    RST,    0,   0, 0, 0 }, // 101
-    { 0x77, PCE,    RST,    0,   0, 0, 0 }, // 110
-    { 0x77, PCO|MI, RO|PCI, RST, 0, 0, 0 }, // 111
+    { 0x74, PCO|MI, RO|PCI, RST, 0, 0, 0 }, // 000
+    { 0x74, PCE,    RST,    0,   0, 0, 0 }, // 001
+    { 0x74, PCE,    RST,    0,   0, 0, 0 }, // 010
+    { 0x74, PCO|MI, RO|PCI, RST, 0, 0, 0 }, // 011
+    { 0x74, PCO|MI, RO|PCI, RST, 0, 0, 0 }, // 100
+    { 0x74, PCE,    RST,    0,   0, 0, 0 }, // 101
+    { 0x74, PCE,    RST,    0,   0, 0, 0 }, // 110
+    { 0x74, PCO|MI, RO|PCI, RST, 0, 0, 0 }, // 111
   },
 
   // JL/JNGE byte: SF ^ OF ? PC = byte
   {
-    { 0x78, PCE,    RST,    0,   0, 0, 0 }, // 000
-    { 0x78, PCO|MI, RO|PCI, RST, 0, 0, 0 }, // 001
-    { 0x78, PCO|MI, RO|PCI, RST, 0, 0, 0 }, // 010
-    { 0x78, PCE,    RST,    0,   0, 0, 0 }, // 011
-    { 0x78, PCE,    RST,    0,   0, 0, 0 }, // 100
-    { 0x78, PCO|MI, RO|PCI, RST, 0, 0, 0 }, // 101
-    { 0x78, PCO|MI, RO|PCI, RST, 0, 0, 0 }, // 110
-    { 0x78, PCE,    RST,    0,   0, 0, 0 }, // 111
+    { 0x75, PCE,    RST,    0,   0, 0, 0 }, // 000
+    { 0x75, PCO|MI, RO|PCI, RST, 0, 0, 0 }, // 001
+    { 0x75, PCO|MI, RO|PCI, RST, 0, 0, 0 }, // 010
+    { 0x75, PCE,    RST,    0,   0, 0, 0 }, // 011
+    { 0x75, PCE,    RST,    0,   0, 0, 0 }, // 100
+    { 0x75, PCO|MI, RO|PCI, RST, 0, 0, 0 }, // 101
+    { 0x75, PCO|MI, RO|PCI, RST, 0, 0, 0 }, // 110
+    { 0x75, PCE,    RST,    0,   0, 0, 0 }, // 111
   },
 
   // JLE/JNG byte: (SF ^ OF) | ZF ? PC = byte
   {
-    { 0x79, PCE,    RST,    0,   0, 0, 0 }, // 000
-    { 0x79, PCO|MI, RO|PCI, RST, 0, 0, 0 }, // 001
-    { 0x79, PCO|MI, RO|PCI, RST, 0, 0, 0 }, // 010
-    { 0x79, PCE,    RST,    0,   0, 0, 0 }, // 011
-    { 0x79, PCO|MI, RO|PCI, RST, 0, 0, 0 }, // 100
-    { 0x79, PCO|MI, RO|PCI, RST, 0, 0, 0 }, // 101
-    { 0x79, PCO|MI, RO|PCI, RST, 0, 0, 0 }, // 110
-    { 0x79, PCO|MI, RO|PCI, RST, 0, 0, 0 }, // 111
+    { 0x76, PCE,    RST,    0,   0, 0, 0 }, // 000
+    { 0x76, PCO|MI, RO|PCI, RST, 0, 0, 0 }, // 001
+    { 0x76, PCO|MI, RO|PCI, RST, 0, 0, 0 }, // 010
+    { 0x76, PCE,    RST,    0,   0, 0, 0 }, // 011
+    { 0x76, PCO|MI, RO|PCI, RST, 0, 0, 0 }, // 100
+    { 0x76, PCO|MI, RO|PCI, RST, 0, 0, 0 }, // 101
+    { 0x76, PCO|MI, RO|PCI, RST, 0, 0, 0 }, // 110
+    { 0x76, PCO|MI, RO|PCI, RST, 0, 0, 0 }, // 111
   },
 };
 
