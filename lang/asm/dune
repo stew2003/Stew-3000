@@ -1,3 +1,9 @@
+(ocamllex
+ (modules lex))
+
+(menhir
+ (modules parse))
+
 (library
   (name asm))
 
