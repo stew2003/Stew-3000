@@ -5,7 +5,7 @@ Hardware
   [] get the RAM loader working (Stewart)
 
 Assembler
-  [] model our instr set with OCaml datatypes. will be used by assembler,
+  [x] model our instr set with OCaml datatypes. will be used by assembler,
     compiler, and virtual machine
   [] think about how to implement labels
   [] implement assembler
