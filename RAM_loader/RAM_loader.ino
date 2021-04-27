@@ -6,9 +6,8 @@ int address_pins[] = { 2, 3, 4, 5, 6, 7, 8, 9 };
 RAM_loader loader(address_pins, data_pins, 10);
 
 void setup() {
-  loader.write_byte(3, 0x11);
-  loader.standby();
 }
 
 void loop() {
+  
 }
