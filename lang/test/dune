@@ -1,3 +1,7 @@
 (tests 
   (names test_assembler)
   (libraries ounit2 asm))
+
+(env
+  (dev
+    (flags (:standard -warn-error -A))))

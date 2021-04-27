@@ -9,12 +9,12 @@ let bytes_from_list (l : int list) : bytes =
 
 (* [assemble_to_buf] converts the given instructions to a list of 
   integers representing the assembled bytes of the program *)
-let assemble_to_buf (_instrs : instr list)
-    (_label_map : (string, int) Hashtbl.t) : int list =
+let assemble_to_buf (instrs : instr list) (label_map : (string, int) Hashtbl.t)
+    : int list =
   []
 
 (* [map_labels] constructs a mapping from label names to memory addresses *)
-let map_labels (_instrs : instr list) = Hashtbl.create 0
+let map_labels (instrs : instr list) = Hashtbl.create 0
 (* 
 label_to_addr = {}
 byte_pos = 0

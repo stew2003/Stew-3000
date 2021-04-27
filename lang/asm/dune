@@ -1,2 +1,6 @@
 (library
- (name asm))
+  (name asm))
+
+(env
+  (dev
+    (flags (:standard -warn-error -A))))
