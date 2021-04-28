@@ -27,7 +27,7 @@ let validate_stack_offset (off : immediate) : immediate =
 
 (* [assemble_instr] generates bytes for a given instruction. Raises 
   AssembleError InvalidInstr if given an un-assemblable instruction *)
-let rec assemble_instr (ins : instr) (label_map : (string, int) Hashtbl.t) :
+let assemble_instr (ins : instr) (label_map : (string, int) Hashtbl.t) :
     int list =
   (* [to_addr] converts a string label to its corresponding address,
      raising an assembler error if the label_map has no mapping *)
@@ -197,8 +197,8 @@ let rec assemble_instr (ins : instr) (label_map : (string, int) Hashtbl.t) :
 
 (* [assemble_to_list] converts the given instructions to a list of 
   integers representing the assembled bytes of the program. *)
-let rec assemble_to_list (instrs : instr list)
-    (label_map : (string, int) Hashtbl.t) : int list =
+let assemble_to_list (instrs : instr list) (label_map : (string, int) Hashtbl.t)
+    : int list =
   instrs |> List.map (fun ins -> assemble_instr ins label_map) |> List.concat
 
 (* [size_of] determines the size (in bytes) of the given instruction *)
