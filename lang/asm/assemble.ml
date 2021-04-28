@@ -52,12 +52,12 @@ let size_of (ins : instr) : int =
   | Label _ -> 0
   (* one-byte instructions *)
   | Add _ | Sub _ | And _ | Or _ | Xor _ | Mov _ | Ld _ | St _ | Cmp _ | Not _
-  | Inr _ | Dcr _ | Ret | Hlt | Nop ->
+  | Inr _ | Dcr _ | Ret | Hlt | Nop | Out _ ->
       1
   (* two-byte instructions *)
   | Addi _ | Subi _ | Ani _ | Ori _ | Xri _ | Mvi _ | Lds _ | Sts _ | Jmp _
-  | Je _ | Jne _ | Jg _ | Jge _ | Jl _ | Jle _ | Call _ | Dic _ | Did _ | Out _
-  | Cmpi _ ->
+  | Je _ | Jne _ | Jg _ | Jge _ | Jl _ | Jle _ | Call _ | Dic _ | Did _ | Cmpi _
+    ->
       2
 
 (* [assemble] processes a list of asm instructions and 
