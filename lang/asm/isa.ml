@@ -120,3 +120,11 @@ let string_of_instr (ins : instr) : string =
   | Hlt -> "\thlt"
   | Nop -> "\tnop"
   | Out reg -> sprintf "\tout %s" (string_of_register reg)
+
+(* [string_of_instr_list] converts a list of instructions
+    into a single, newline-separated string *)
+let string_of_instr_list (instrs : instr list) =
+  (* convert instrs to strings *)
+  instrs |> List.map string_of_instr
+  (* concat them all into one big string with newline separators *)
+  |> String.concat "\n"

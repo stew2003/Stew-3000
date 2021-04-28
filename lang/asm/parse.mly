@@ -54,12 +54,16 @@
 %%
 
 main:
-| i = instr NEWLINE rest = main
+| maybe_newlines i = instr NEWLINE maybe_newlines rest = main
   { i :: rest }
-| i = instr EOF
+| i = instr maybe_newlines EOF
   { [i] }
-| EOF
+| maybe_newlines EOF
   { [] }
+
+maybe_newlines:
+| {}
+| NEWLINE maybe_newlines {}
 
 reg:
 | REG_A

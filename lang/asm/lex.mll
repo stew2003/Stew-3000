@@ -5,8 +5,10 @@
 
 rule token = parse
 | [' ' '\t']+
-    { token lexbuf }
-| '\n'+ { 
+  { token lexbuf }
+| ';'[^'\n']*?
+  { token lexbuf }
+| '\n' { 
   let pos = lexbuf.lex_curr_p in 
   lexbuf.lex_curr_p <- 
   {

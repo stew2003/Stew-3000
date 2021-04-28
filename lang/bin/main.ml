@@ -1,15 +1,9 @@
 open Asm.Isa
 
-let string_of_instrs (instrs : instr list) =
-  (* convert instrs to strings *)
-  instrs |> List.map string_of_instr
-  (* concat them all into one big string with newline separators *)
-  |> String.concat "\n"
-
 (* just an example of constructing/printing some asm *)
 let () =
   print_endline
-    (string_of_instrs
+    (string_of_instr_list
        [
          Label "entry";
          Mvi (20, A);
