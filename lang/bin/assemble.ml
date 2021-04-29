@@ -6,7 +6,7 @@ let command =
   Command.basic ~summary:"Assembles the given file into a binary"
     Command.Let_syntax.(
       let%map_open asm_filename = anon ("asm_filename" %: Filename.arg_type)
-      and binary_filename = anon ("binary_name" %: Filename.arg_type) in
+      and binary_filename = anon ("binary_filename" %: Filename.arg_type) in
       fun () ->
         try
           (* read input file into string *)
