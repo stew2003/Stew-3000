@@ -56,9 +56,9 @@
 main:
 | maybe_newlines i = instr NEWLINE maybe_newlines rest = main
   { i :: rest }
-| i = instr maybe_newlines EOF
+| maybe_newlines i = instr maybe_newlines EOF
   { [i] }
-| maybe_newlines EOF
+| EOF
   { [] }
 
 maybe_newlines:

@@ -104,7 +104,7 @@ rule token = parse
     { EOF }
 | _
     { raise (Error (Printf.sprintf 
-      "Unexpected character '%s' at position %d:%d" 
+      "unexpected character '%s' at position %d:%d" 
       (Lexing.lexeme lexbuf)
       (Lexing.lexeme_start_p lexbuf).pos_lnum
       (Lexing.lexeme_start lexbuf))) }

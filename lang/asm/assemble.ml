@@ -1,4 +1,5 @@
 open Isa
+open Printf
 
 type asm_err =
   | ProgramTooLarge of int
@@ -10,8 +11,16 @@ type asm_err =
 
 exception AssembleError of asm_err
 
-(* 256 bytes is the size of our program memory *)
-let max_pgrm_size = 256
+(* [string_of_asm_err] converts an assemble error internal into a printable message *)
+let string_of_asm_err = function
+  | ProgramTooLarge size ->
+      sprintf "assembled program was too large (%d bytes)" size
+  | DuplicateLabel label -> sprintf "label `%s` appears more than once" label
+  | InvalidInstr ins -> sprintf "invalid instruction: %s" (string_of_instr ins)
+  | InvalidImm imm -> sprintf "invalid immediate value: %s" (string_of_imm imm)
+  | InvalidStackOffset off ->
+      sprintf "invalid stack offset: %s" (string_of_imm off)
+  | InvalidTarget label -> sprintf "invalid target: %s" label
 
 (* [validate_imm] checks that an immediate value is within the representable 
   range [-128, 128), and throws AssembleError InvalidImm if not *)
@@ -245,6 +254,9 @@ let bytes_from_list (l : int list) : bytes =
   let buf = Bytes.create (List.length l) in
   List.mapi (fun i b -> Bytes.set_int8 buf i b) l |> ignore;
   buf
+
+(* 256 bytes is the size of our program memory *)
+let max_pgrm_size = 256
 
 (* [assemble] processes a list of asm instructions and 
   produces a byte sequence representing the program in binary form *)
