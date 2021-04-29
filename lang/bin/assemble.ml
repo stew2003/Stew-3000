@@ -23,6 +23,7 @@ let command =
             Printf.eprintf "assembler error: %s\n"
               (Assemble.string_of_asm_err err)
         | Parser.AsmParseError msg ->
-            Printf.eprintf "error parsing asm: %s\n" msg)
+            Printf.eprintf "error parsing asm: %s\n" msg
+        | err -> Printf.eprintf "error: %s\n" (Exn.to_string err))
 
 let () = Command.run ~version:"1.0" command
