@@ -1,0 +1,7 @@
+(library
+  (name emulator)
+  (libraries asm))
+
+(env
+  (dev
+    (flags (:standard -warn-error -A))))

@@ -1,6 +1,6 @@
 (tests 
-  (names test_assembler)
-  (libraries ounit2 asm))
+  (names test_assembler test_emulator)
+  (libraries ounit2 asm emulator))
 
 (env
   (dev

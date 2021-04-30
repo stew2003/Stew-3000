@@ -9,6 +9,7 @@ Assembler
     compiler, and virtual machine
   [x] think about how to implement labels
   [x] implement assembler
+  [] maybe switch from hashtable to different map
 
 Compiler
   [] decide on language constructs
