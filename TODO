@@ -8,7 +8,7 @@ Assembler
   [x] model our instr set with OCaml datatypes. will be used by assembler,
     compiler, and virtual machine
   [x] think about how to implement labels
-  [] implement assembler
+  [x] implement assembler
 
 Compiler
   [] decide on language constructs
