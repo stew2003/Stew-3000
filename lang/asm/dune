@@ -5,7 +5,8 @@
  (modules parse))
 
 (library
-  (name asm))
+  (name asm)
+  (libraries util))
 
 (env
   (dev

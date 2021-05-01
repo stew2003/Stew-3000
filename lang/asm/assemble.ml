@@ -1,6 +1,7 @@
 open Isa
 open Printf
 open Validate
+open Util.Env
 
 type asm_err =
   | ProgramTooLarge of int
@@ -25,12 +26,11 @@ let string_of_asm_err = function
 
 (* [assemble_instr] generates bytes for a given instruction. Raises 
   AssembleError InvalidInstr if given an un-assemblable instruction *)
-let assemble_instr (ins : instr) (label_map : (string, int) Hashtbl.t) :
-    int list =
+let assemble_instr (ins : instr) (label_map : int env) : int list =
   (* [to_addr] converts a string label to its corresponding address,
      raising an assembler error if the label_map has no mapping *)
   let to_addr (label : string) =
-    match Hashtbl.find_opt label_map label with
+    match Env.find_opt label label_map with
     | Some addr -> addr
     | None -> raise (AssembleError (InvalidTarget label))
   in
@@ -203,8 +203,7 @@ let assemble_instr (ins : instr) (label_map : (string, int) Hashtbl.t) :
 
 (* [assemble_to_list] converts the given instructions to a list of 
   integers representing the assembled bytes of the program. *)
-let assemble_to_list (instrs : instr list) (label_map : (string, int) Hashtbl.t)
-    : int list =
+let assemble_to_list (instrs : instr list) (label_map : int env) : int list =
   instrs |> List.map (fun ins -> assemble_instr ins label_map) |> List.concat
 
 (* [size_of] determines the size (in bytes) of the given instruction *)
@@ -222,28 +221,21 @@ let size_of (ins : instr) : int =
     ->
       2
 
-(* [map_labels] constructs a Hashtbl that maps label names to memory addresses *)
+(* [map_labels] constructs an environment mapping label names to memory addresses *)
 let map_labels (instrs : instr list) =
-  let map = Hashtbl.create (List.length instrs) in
-  (* [populate_map] iterates over the list of instructions,
-     add mappings as it encounters labels and otherwise keeping
-     a running byte_pos, which is the current address in the binary *)
-  let rec populate_map (byte_pos : int) (instrs : instr list) =
-    match instrs with
-    | [] -> ()
-    | ins :: rest -> (
+  (* accumulate an environment of labels->addresses *)
+  let env, _ =
+    List.fold_left
+      (fun (env, addr) ins ->
         match ins with
         | Label name ->
             (* if label already mapped, this is an error *)
-            if Hashtbl.mem map name then
-              raise (AssembleError (DuplicateLabel name))
-            else Hashtbl.add map name byte_pos;
-            populate_map byte_pos rest
-        | _ -> populate_map (byte_pos + size_of ins) rest)
+            if Env.mem name env then raise (AssembleError (DuplicateLabel name))
+            else (Env.add name addr env, addr)
+        | _ -> (env, addr + size_of ins))
+      (Env.empty, 0) instrs
   in
-  (* populate map starting from byte position 0 *)
-  populate_map 0 instrs;
-  map
+  env
 
 (* [bytes_from_list] constructs a buffer of raw bytes from
   the given list of integers *)

@@ -1,6 +1,7 @@
 open Asm.Isa
 open Asm.Validate
 open Printf
+open Util.Env
 
 (*  stew_3000 models the programmer-visible state of the machine
     NOTE: dec_disp_history is a record of every byte that has 
@@ -92,8 +93,7 @@ let string_of_emu_err (err : emu_err) =
 
 (* [emulate_instr] emulates the effect of the given instruction
   on the machine, by mutating the machine in-place *)
-let emulate_instr (ins : instr) (machine : stew_3000)
-    (label_map : (string, int) Hashtbl.t) =
+let emulate_instr (ins : instr) (machine : stew_3000) (label_map : int env) =
   (* [load_reg] retrieves the value currently stored in a register *)
   let load_reg (reg : register) : int =
     match reg with
@@ -127,7 +127,7 @@ let emulate_instr (ins : instr) (machine : stew_3000)
   (* [label_to_index] converts a string label to its corresponding index,
      erroring if there is no index for the label *)
   let label_to_index (label : string) =
-    match Hashtbl.find_opt label_map label with
+    match Env.find_opt label label_map with
     | Some index -> index
     | None -> raise (EmulatorError (InvalidTarget label))
   in
@@ -281,23 +281,22 @@ let emulate_instr (ins : instr) (machine : stew_3000)
   | Dic _ | Did _ -> inc_pc ()
   | _ -> raise (EmulatorError (InvalidInstr ins))
 
-(* [map_labels] constructs a Hashtbl that maps label names to indices in
+(* [map_labels] constructs an environment that maps label names to indices in
   the program's list of instructions *)
 let map_labels (instrs : instr list) =
-  let map = Hashtbl.create (List.length instrs) in
-  let _ =
-    List.mapi
-      (fun i ins ->
-        match ins with
-        | Label name ->
-            (* map each label to the index following it *)
-            if Hashtbl.mem map name then
-              raise (EmulatorError (DuplicateLabel name))
-            else Hashtbl.add map name (i + 1)
-        | _ -> ())
-      instrs
-  in
-  map
+  (* pair instructions with their indices in the program *)
+  List.mapi (fun i ins -> (i, ins)) instrs
+  (* accumulate an environment of labels->indices *)
+  |> List.fold_left
+       (fun env (i, ins) ->
+         match ins with
+         | Label name ->
+             (* map each label to the index following it *)
+             if Env.mem name env then
+               raise (EmulatorError (DuplicateLabel name))
+             else Env.add name (i + 1) env
+         | _ -> env)
+       Env.empty
 
 (* [get_current_ins] retrieves the current instruction to execute 
   by indexing into the program using the machine's program counter *)

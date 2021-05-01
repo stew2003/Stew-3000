@@ -1,6 +1,5 @@
 (library
-  (name emulator)
-  (libraries asm util))
+  (name util))
 
 (env
   (dev
