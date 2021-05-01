@@ -1,5 +1,6 @@
 open Isa
 open Printf
+open Validate
 
 type asm_err =
   | ProgramTooLarge of int
@@ -22,18 +23,6 @@ let string_of_asm_err = function
       sprintf "invalid stack offset: %s" (string_of_imm off)
   | InvalidTarget label -> sprintf "invalid target: %s" label
 
-(* [validate_imm] checks that an immediate value is within the representable 
-  range [-128, 128), and throws AssembleError InvalidImm if not *)
-let validate_imm (imm : immediate) : immediate =
-  if imm >= -128 && imm < 128 then imm
-  else raise (AssembleError (InvalidImm imm))
-
-(* [validate_stack_offset] checks that an offset from the stack pointer
-  is within the valid range [0, 256), and throws an AssembleError otherwise *)
-let validate_stack_offset (off : immediate) : immediate =
-  if off >= 0 && off < 256 then off
-  else raise (AssembleError (InvalidStackOffset off))
-
 (* [assemble_instr] generates bytes for a given instruction. Raises 
   AssembleError InvalidInstr if given an un-assemblable instruction *)
 let assemble_instr (ins : instr) (label_map : (string, int) Hashtbl.t) :
@@ -45,6 +34,14 @@ let assemble_instr (ins : instr) (label_map : (string, int) Hashtbl.t) :
     | Some addr -> addr
     | None -> raise (AssembleError (InvalidTarget label))
   in
+
+  (* first, ensure that the instruction is valid *)
+  (try validate_instr ins with
+  | ValidityError (InvalidImm imm) -> raise (AssembleError (InvalidImm imm))
+  | ValidityError (InvalidStackOffset off) ->
+      raise (AssembleError (InvalidStackOffset off))
+  | ValidityError (InvalidInstr ins) -> raise (AssembleError (InvalidInstr ins)));
+
   match ins with
   (* Add src, dest *)
   | Add (A, A) -> [ 0x00 ]
@@ -60,10 +57,10 @@ let assemble_instr (ins : instr) (label_map : (string, int) Hashtbl.t) :
   | Add (C, C) -> [ 0x0a ]
   | Add (C, SP) -> [ 0x0b ]
   (* Addi byte, dest *)
-  | Addi (imm, A) -> [ 0x0c; validate_imm imm ]
-  | Addi (imm, B) -> [ 0x0d; validate_imm imm ]
-  | Addi (imm, C) -> [ 0x0e; validate_imm imm ]
-  | Addi (imm, SP) -> [ 0x0f; validate_imm imm ]
+  | Addi (imm, A) -> [ 0x0c; imm ]
+  | Addi (imm, B) -> [ 0x0d; imm ]
+  | Addi (imm, C) -> [ 0x0e; imm ]
+  | Addi (imm, SP) -> [ 0x0f; imm ]
   (* Sub src, dest *)
   | Sub (B, A) -> [ 0x10 ]
   | Sub (C, A) -> [ 0x11 ]
@@ -75,10 +72,10 @@ let assemble_instr (ins : instr) (label_map : (string, int) Hashtbl.t) :
   | Sub (B, SP) -> [ 0x17 ]
   | Sub (C, SP) -> [ 0x18 ]
   (* Subi byte, dest *)
-  | Subi (imm, A) -> [ 0x19; validate_imm imm ]
-  | Subi (imm, B) -> [ 0x1a; validate_imm imm ]
-  | Subi (imm, C) -> [ 0x1b; validate_imm imm ]
-  | Subi (imm, SP) -> [ 0x1c; validate_imm imm ]
+  | Subi (imm, A) -> [ 0x19; imm ]
+  | Subi (imm, B) -> [ 0x1a; imm ]
+  | Subi (imm, C) -> [ 0x1b; imm ]
+  | Subi (imm, SP) -> [ 0x1c; imm ]
   (* And src, dest *)
   | And (B, A) -> [ 0x1d ]
   | And (C, A) -> [ 0x1e ]
@@ -87,9 +84,9 @@ let assemble_instr (ins : instr) (label_map : (string, int) Hashtbl.t) :
   | And (A, C) -> [ 0x21 ]
   | And (B, C) -> [ 0x22 ]
   (* Ani byte, dest *)
-  | Ani (imm, A) -> [ 0x23; validate_imm imm ]
-  | Ani (imm, B) -> [ 0x24; validate_imm imm ]
-  | Ani (imm, C) -> [ 0x25; validate_imm imm ]
+  | Ani (imm, A) -> [ 0x23; imm ]
+  | Ani (imm, B) -> [ 0x24; imm ]
+  | Ani (imm, C) -> [ 0x25; imm ]
   (* Or src, dest *)
   | Or (B, A) -> [ 0x26 ]
   | Or (C, A) -> [ 0x27 ]
@@ -98,9 +95,9 @@ let assemble_instr (ins : instr) (label_map : (string, int) Hashtbl.t) :
   | Or (A, C) -> [ 0x2a ]
   | Or (B, C) -> [ 0x2b ]
   (* Ori byte, dest *)
-  | Ori (imm, A) -> [ 0x2c; validate_imm imm ]
-  | Ori (imm, B) -> [ 0x2d; validate_imm imm ]
-  | Ori (imm, C) -> [ 0x2e; validate_imm imm ]
+  | Ori (imm, A) -> [ 0x2c; imm ]
+  | Ori (imm, B) -> [ 0x2d; imm ]
+  | Ori (imm, C) -> [ 0x2e; imm ]
   (* Xor src, dest *)
   | Xor (B, A) -> [ 0x2f ]
   | Xor (C, A) -> [ 0x30 ]
@@ -109,9 +106,9 @@ let assemble_instr (ins : instr) (label_map : (string, int) Hashtbl.t) :
   | Xor (A, C) -> [ 0x33 ]
   | Xor (B, C) -> [ 0x34 ]
   (* Xri byte, dest *)
-  | Xri (imm, A) -> [ 0x35; validate_imm imm ]
-  | Xri (imm, B) -> [ 0x36; validate_imm imm ]
-  | Xri (imm, C) -> [ 0x37; validate_imm imm ]
+  | Xri (imm, A) -> [ 0x35; imm ]
+  | Xri (imm, B) -> [ 0x36; imm ]
+  | Xri (imm, C) -> [ 0x37; imm ]
   (* Not dest *)
   | Not A -> [ 0x38 ]
   | Not B -> [ 0x39 ]
@@ -134,9 +131,9 @@ let assemble_instr (ins : instr) (label_map : (string, int) Hashtbl.t) :
   | Mov (C, A) -> [ 0x47 ]
   | Mov (C, B) -> [ 0x48 ]
   (* Mvi byte, dest *)
-  | Mvi (imm, A) -> [ 0x49; validate_imm imm ]
-  | Mvi (imm, B) -> [ 0x4a; validate_imm imm ]
-  | Mvi (imm, C) -> [ 0x4b; validate_imm imm ]
+  | Mvi (imm, A) -> [ 0x49; imm ]
+  | Mvi (imm, B) -> [ 0x4a; imm ]
+  | Mvi (imm, C) -> [ 0x4b; imm ]
   (* Ld src, dest *)
   | Ld (A, A) -> [ 0x4c ]
   | Ld (B, A) -> [ 0x4d ]
@@ -158,13 +155,13 @@ let assemble_instr (ins : instr) (label_map : (string, int) Hashtbl.t) :
   | St (C, B) -> [ 0x5c ]
   | St (C, C) -> [ 0x5d ]
   (* Lds byte, dest *)
-  | Lds (imm, A) -> [ 0x5e; validate_stack_offset imm ]
-  | Lds (imm, B) -> [ 0x5f; validate_stack_offset imm ]
-  | Lds (imm, C) -> [ 0x60; validate_stack_offset imm ]
+  | Lds (imm, A) -> [ 0x5e; imm ]
+  | Lds (imm, B) -> [ 0x5f; imm ]
+  | Lds (imm, C) -> [ 0x60; imm ]
   (* Sts src, byte *)
-  | Sts (A, imm) -> [ 0x61; validate_stack_offset imm ]
-  | Sts (B, imm) -> [ 0x62; validate_stack_offset imm ]
-  | Sts (C, imm) -> [ 0x63; validate_stack_offset imm ]
+  | Sts (A, imm) -> [ 0x61; imm ]
+  | Sts (B, imm) -> [ 0x62; imm ]
+  | Sts (C, imm) -> [ 0x63; imm ]
   (* Cmp left, right *)
   | Cmp (A, B) -> [ 0x64 ]
   | Cmp (A, C) -> [ 0x65 ]
@@ -173,12 +170,12 @@ let assemble_instr (ins : instr) (label_map : (string, int) Hashtbl.t) :
   | Cmp (C, A) -> [ 0x68 ]
   | Cmp (C, B) -> [ 0x69 ]
   (* Cmpi byte, reg or Cmpi reg, byte *)
-  | Cmpi (Reg A, Imm imm) -> [ 0x6a; validate_imm imm ]
-  | Cmpi (Imm imm, Reg A) -> [ 0x6b; validate_imm imm ]
-  | Cmpi (Reg B, Imm imm) -> [ 0x6c; validate_imm imm ]
-  | Cmpi (Imm imm, Reg B) -> [ 0x6d; validate_imm imm ]
-  | Cmpi (Reg C, Imm imm) -> [ 0x6e; validate_imm imm ]
-  | Cmpi (Imm imm, Reg C) -> [ 0x6f; validate_imm imm ]
+  | Cmpi (Reg A, Imm imm) -> [ 0x6a; imm ]
+  | Cmpi (Imm imm, Reg A) -> [ 0x6b; imm ]
+  | Cmpi (Reg B, Imm imm) -> [ 0x6c; imm ]
+  | Cmpi (Imm imm, Reg B) -> [ 0x6d; imm ]
+  | Cmpi (Reg C, Imm imm) -> [ 0x6e; imm ]
+  | Cmpi (Imm imm, Reg C) -> [ 0x6f; imm ]
   (* Jumps *)
   | Jmp label -> [ 0x70; to_addr label ]
   | Je label -> [ 0x71; to_addr label ]
