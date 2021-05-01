@@ -8,7 +8,6 @@ type asm_err =
   | DuplicateLabel of string
   | InvalidInstr of instr
   | InvalidImm of immediate
-  | InvalidStackOffset of immediate
   | InvalidTarget of string
 
 exception AssembleError of asm_err
@@ -20,8 +19,6 @@ let string_of_asm_err = function
   | DuplicateLabel label -> sprintf "label `%s` appears more than once" label
   | InvalidInstr ins -> sprintf "invalid instruction: %s" (string_of_instr ins)
   | InvalidImm imm -> sprintf "invalid immediate value: %s" (string_of_imm imm)
-  | InvalidStackOffset off ->
-      sprintf "invalid stack offset: %s" (string_of_imm off)
   | InvalidTarget label -> sprintf "invalid target: %s" label
 
 (* [assemble_instr] generates bytes for a given instruction. Raises 
@@ -38,8 +35,6 @@ let assemble_instr (ins : instr) (label_map : int env) : int list =
   (* first, ensure that the instruction is valid *)
   (try validate_instr ins with
   | ValidityError (InvalidImm imm) -> raise (AssembleError (InvalidImm imm))
-  | ValidityError (InvalidStackOffset off) ->
-      raise (AssembleError (InvalidStackOffset off))
   | ValidityError (InvalidInstr ins) -> raise (AssembleError (InvalidInstr ins)));
 
   match ins with

@@ -188,31 +188,12 @@ let test_invalid_target _ =
       emulate_program [ Call "not_a_fun" ])
 
 let test_invalid_imm _ =
-  assert_raises (EmulatorError (InvalidImm 128)) (fun _ ->
-      emulate_program [ Mvi (128, A) ]);
   assert_raises (EmulatorError (InvalidImm (-129))) (fun _ ->
-      emulate_program [ Addi (-129, B) ])
-
-let test_invalid_stackoff _ =
-  assert_raises (EmulatorError (InvalidStackOffset (-1))) (fun _ ->
-      emulate_program [ Lds (-1, A) ]);
-  assert_raises (EmulatorError (InvalidStackOffset 256)) (fun _ ->
+      emulate_program [ Addi (-129, B) ]);
+  assert_raises (EmulatorError (InvalidImm (-129))) (fun _ ->
+      emulate_program [ Lds (-129, A) ]);
+  assert_raises (EmulatorError (InvalidImm 256)) (fun _ ->
       emulate_program [ Sts (C, 256) ])
-
-let test_invalid_stackaccess _ =
-  let machine = new_stew_3000 () in
-  machine.a <- -15;
-  machine.pc <- 1;
-  assert_raises
-    (EmulatorError (InvalidStackAccess (-15, machine)))
-    (fun _ -> emulate_program [ Mvi (-15, A); Ld (A, B) ]);
-  let machine = new_stew_3000 () in
-  machine.c <- 256;
-  machine.pc <- 4;
-  assert_raises
-    (EmulatorError (InvalidStackAccess (256, machine)))
-    (fun _ ->
-      emulate_program [ Mvi (127, C); Inr C; Mov (C, A); Add (A, C); St (B, C) ])
 
 let test_invalid_instr _ =
   assert_raises
@@ -221,6 +202,18 @@ let test_invalid_instr _ =
   assert_raises
     (EmulatorError (InvalidInstr (Cmpi (Imm 1, Imm 2))))
     (fun _ -> emulate_program [ Cmpi (Imm 1, Imm 2) ])
+
+let test_overflow_immediates _ =
+  let machine =
+    emulate_program [ Mvi (-1, A); Mvi (101, B); St (B, A); Ld (A, C); Hlt ]
+  in
+  assert_equal 101 machine.c;
+  assert_equal 101 machine.stack.(255);
+  let machine =
+    emulate_program [ Mvi (255, A); Mvi (101, B); St (B, A); Ld (A, C); Hlt ]
+  in
+  assert_equal 101 machine.c;
+  assert_equal 101 machine.stack.(255)
 
 let suite =
   "Emulator Tests"
@@ -238,9 +231,8 @@ let suite =
          "test_invalid_pc" >:: test_invalid_pc;
          "test_invalid_target" >:: test_invalid_target;
          "test_invalid_imm" >:: test_invalid_imm;
-         "test_invalid_stackoff" >:: test_invalid_stackoff;
-         (* "test_invalid_stackaccess" >:: test_invalid_stackaccess; *)
          "test_invalid_instr" >:: test_invalid_instr;
+         "test_overflow_immediates" >:: test_overflow_immediates;
        ]
 
 let () = run_test_tt_main suite

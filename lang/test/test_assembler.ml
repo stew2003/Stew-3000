@@ -42,14 +42,10 @@ let test_invalid_imm _ =
       assemble [ Mvi (500, A) ]);
   assert_raises (AssembleError (InvalidImm (-129))) (fun _ ->
       assemble [ Addi (-129, C) ]);
-  assert_raises (AssembleError (InvalidImm 128)) (fun _ ->
-      assemble [ Subi (128, B) ])
-
-let test_invalid_stack_off _ =
-  assert_raises (AssembleError (InvalidStackOffset (-1))) (fun _ ->
-      assemble [ Lds (-1, C) ]);
-  assert_raises (AssembleError (InvalidStackOffset 256)) (fun _ ->
-      assemble [ Sts (A, 256) ])
+  assert_raises (AssembleError (InvalidImm 256)) (fun _ ->
+      assemble [ Sts (A, 256) ]);
+  assert_raises (AssembleError (InvalidImm (-129))) (fun _ ->
+      assemble [ Lds (-129, C) ])
 
 let test_invalid_target _ =
   assert_raises (AssembleError (InvalidTarget "nonexistent")) (fun _ ->
@@ -62,6 +58,10 @@ let test_pgrm_too_large _ =
   assert_raises (AssembleError (ProgramTooLarge big)) (fun _ ->
       assemble (pgrm big))
 
+let test_overflow_immediates _ =
+  assert_equal (assemble [ Lds (255, A) ]) (assemble [ Lds (-1, A) ]);
+  assert_equal (assemble [ Mvi (128, C) ]) (assemble [ Mvi (-128, C) ])
+
 let suite =
   "Assembler Tests"
   >::: [
@@ -72,6 +72,7 @@ let suite =
          "test_invalid_imm" >:: test_invalid_imm;
          "test_invalid_target" >:: test_invalid_target;
          "test_pgrm_too_large" >:: test_pgrm_too_large;
+         "test_overflow_immediates" >:: test_overflow_immediates;
        ]
 
 let () = run_test_tt_main suite

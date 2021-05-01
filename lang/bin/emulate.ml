@@ -13,6 +13,7 @@ let command =
           let text = In_channel.read_all filename in
           (* parse input program *)
           let instrs = Parser.parse text in
+          (* emulate and print final state *)
           let final_state = emulate_program instrs in
           Printf.printf "%s\n" (string_of_stew_3000 final_state)
         with

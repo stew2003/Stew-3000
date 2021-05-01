@@ -82,8 +82,6 @@ type emu_err =
   | InvalidProgramCounter of stew_3000
   | InvalidTarget of string
   | InvalidImm of immediate
-  | InvalidStackOffset of immediate
-  | InvalidStackAccess of int * stew_3000
   | InvalidInstr of instr
 
 exception EmulatorError of emu_err
@@ -95,11 +93,6 @@ let string_of_emu_err (err : emu_err) =
       sprintf "invalid program counter:\n%s" (string_of_stew_3000 machine)
   | InvalidTarget label -> sprintf "invalid target: %s" label
   | InvalidImm imm -> sprintf "invalid immediate value: %s" (string_of_imm imm)
-  | InvalidStackOffset off ->
-      sprintf "invalid stack offset: %s" (string_of_imm off)
-  | InvalidStackAccess (addr, machine) ->
-      sprintf "invalid stack access at address %s:\n%s" (string_of_int addr)
-        (string_of_stew_3000 machine)
   | InvalidInstr ins -> sprintf "invalid instruction: %s" (string_of_instr ins)
 
 (* [emulate_instr] emulates the effect of the given instruction
@@ -124,17 +117,16 @@ let emulate_instr (ins : instr) (machine : stew_3000) (label_map : int env) =
   (* [load_stack] retrieves the value on the machine's stack at
      the given location, or errors out as appropriate *)
   let load_stack (loc : int) : int =
-    try Array.get machine.stack loc
-    with Invalid_argument _ ->
-      raise (EmulatorError (InvalidStackAccess (loc, machine)))
+    assert (loc >= 0 && loc <= 255);
+    Array.get machine.stack loc
   in
   (* [store_stack] writes a given value to the stack at a given
      location, or errors if the access is bad *)
   let store_stack (loc : int) (value : int) =
-    try Array.set machine.stack loc value
-    with Invalid_argument _ ->
-      raise (EmulatorError (InvalidStackAccess (loc, machine)))
+    assert (loc >= 0 && loc <= 255);
+    Array.set machine.stack loc value
   in
+
   (* [label_to_index] converts a string label to its corresponding index,
      erroring if there is no index for the label *)
   let label_to_index (label : string) =
@@ -158,7 +150,7 @@ let emulate_instr (ins : instr) (machine : stew_3000) (label_map : int env) =
   in
   (* [as_unsigned] interprets the given value as an unsigned 8-bit integer *)
   let as_unsigned (value : int) : int =
-    if value < 0 then 256 - (value mod 256) else value mod 256
+    if value < 0 then 256 + (value mod 256) else value mod 256
   in
   (* [set_zf_sf] sets the zero and sign flags based on the given
      result of an operation. NOTE: overflow flag is set as
@@ -216,8 +208,6 @@ let emulate_instr (ins : instr) (machine : stew_3000) (label_map : int env) =
   (* first, ensure that the instruction is valid *)
   (try validate_instr ins with
   | ValidityError (InvalidImm imm) -> raise (EmulatorError (InvalidImm imm))
-  | ValidityError (InvalidStackOffset off) ->
-      raise (EmulatorError (InvalidStackOffset off))
   | ValidityError (InvalidInstr ins) -> raise (EmulatorError (InvalidInstr ins)));
 
   (* simulate the effects of the instruction*)

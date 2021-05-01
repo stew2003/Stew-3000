@@ -1,31 +1,19 @@
 open Isa
 
-type valid_err =
-  | InvalidImm of immediate
-  | InvalidStackOffset of immediate
-  | InvalidInstr of instr
+type valid_err = InvalidImm of immediate | InvalidInstr of instr
 
 exception ValidityError of valid_err
 
 let i8_min = -128
 
-let i8_max = 127
-
-let u8_min = 0
-
 let u8_max = 255
 
 (* [validate_imm] checks that an immediate value is within the representable
-   range [-128, 128), and raises an error if not *)
+   range for both signed/unsigned 8bit ints, and raises an error if not *)
 let validate_imm (imm : immediate) =
-  if imm >= i8_min && imm <= i8_max then ()
+  (* is it in [-128, 255] *)
+  if imm >= i8_min && imm <= u8_max then ()
   else raise (ValidityError (InvalidImm imm))
-
-(* [validate_stack_offset] checks that an offset from the stack pointer
-   is within the valid range [0, 256), and raises an error if not *)
-let validate_stack_offset (off : immediate) =
-  if off >= u8_min && off <= u8_max then ()
-  else raise (ValidityError (InvalidStackOffset off))
 
 (* [validate_instr] checks if a given instruction is a valid
   instruction for which we have an opcode, and that its 
@@ -114,9 +102,9 @@ let validate_instr (ins : instr) =
   | St (C, C) ->
       ()
   (* Lds byte, dest *)
-  | Lds (off, A) | Lds (off, B) | Lds (off, C) -> validate_stack_offset off
+  | Lds (off, A) | Lds (off, B) | Lds (off, C) -> validate_imm off
   (* Sts src, byte *)
-  | Sts (A, off) | Sts (B, off) | Sts (C, off) -> validate_stack_offset off
+  | Sts (A, off) | Sts (B, off) | Sts (C, off) -> validate_imm off
   (* Cmp left, right *)
   | Cmp (A, B) | Cmp (A, C) | Cmp (B, A) | Cmp (B, C) | Cmp (C, A) | Cmp (C, B)
     ->

@@ -9,7 +9,9 @@ Assembler
     compiler, and virtual machine
   [x] think about how to implement labels
   [x] implement assembler
-  [] maybe switch from hashtable to different map
+  [x] maybe switch from hashtable to different map
+  [] reconsider how we validate immediates: currently prevents you
+    from writing an immediate that is a mem loc >127
 
 Compiler
   [] decide on language constructs
@@ -17,4 +19,4 @@ Compiler
   [] implement optimizations for smol code
 
 Virtual Machine
-  [] software simulation of the stew3000, for compiler testing
+  [x] software simulation of the stew3000, for compiler testing
