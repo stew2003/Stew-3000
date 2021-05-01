@@ -10,6 +10,13 @@
     (pps ppx_let))
   (libraries core asm))
 
+(executable
+  (name emulate)
+  (modules emulate)
+  (preprocess
+    (pps ppx_let))
+  (libraries core asm emulator))
+
 (env
   (dev
     (flags (:standard -warn-error -A))))

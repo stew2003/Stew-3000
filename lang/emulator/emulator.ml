@@ -21,32 +21,43 @@ type stew_3000 = {
 }
 
 let string_of_stew_3000 (machine : stew_3000) : string =
-  let string_of_int_list lst =
-    "[" ^ (List.map string_of_int lst |> String.concat ", ") ^ "]"
+  let string_of_dec_display (history : int list) =
+    match history with
+    | [] -> "(no output)"
+    | _ -> List.map string_of_int history |> String.concat ", "
   in
+  let string_of_stack (stack : int list) : string =
+    List.mapi
+      (fun i elt ->
+        if i mod 8 = 0 then sprintf "\n0x%x:\t%s" i (string_of_int elt)
+        else string_of_int elt)
+      stack
+    |> String.concat ", "
+  in
+
   let bool_to_int (b : bool) = if b then 1 else 0 in
   sprintf
-    "Machine State:\n\
+    "Emulated Stew 3000 State:\n\
+     == Registers ==\n\
      a: %d\n\
      b: %d\n\
      c: %d\n\
      sp: %d\n\
+     pc: %d\n\n\
+     == Flags ==\n\
      zf: %d\n\
      sf: %d\n\
-     of: %d\n\
-     pc: %d\n\
-     halted? %s\n\
-     dec. display history: %s\n\
-     stack:\n\
-     %s"
-    machine.a machine.b machine.c machine.sp
+     of: %d\n\n\
+     halted? %s\n\n\
+     == Decimal Display History == (most recent first)\n\
+     %s\n\n\
+     == Stack ==%s" machine.a machine.b machine.c machine.sp machine.pc
     (bool_to_int machine.zflag)
     (bool_to_int machine.sflag)
     (bool_to_int machine.oflag)
-    machine.pc
     (if machine.halted then "yes" else "no")
-    (string_of_int_list machine.dec_disp_history)
-    (string_of_int_list (Array.to_list machine.stack))
+    (string_of_dec_display machine.dec_disp_history)
+    (string_of_stack (Array.to_list machine.stack))
 
 let stack_size = 256
 
@@ -81,13 +92,13 @@ let string_of_emu_err (err : emu_err) =
   match err with
   | DuplicateLabel label -> sprintf "duplicate label: %s" label
   | InvalidProgramCounter machine ->
-      sprintf "invalid program counter: %s" (string_of_stew_3000 machine)
+      sprintf "invalid program counter:\n%s" (string_of_stew_3000 machine)
   | InvalidTarget label -> sprintf "invalid target: %s" label
   | InvalidImm imm -> sprintf "invalid immediate value: %s" (string_of_imm imm)
   | InvalidStackOffset off ->
       sprintf "invalid stack offset: %s" (string_of_imm off)
   | InvalidStackAccess (addr, machine) ->
-      sprintf "invalid stack access at address %s: %s" (string_of_int addr)
+      sprintf "invalid stack access at address %s:\n%s" (string_of_int addr)
         (string_of_stew_3000 machine)
   | InvalidInstr ins -> sprintf "invalid instruction: %s" (string_of_instr ins)
 
