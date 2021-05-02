@@ -29,10 +29,10 @@ let string_of_stew_3000 (machine : stew_3000) : string =
   let string_of_stack (stack : int list) : string =
     List.mapi
       (fun i elt ->
-        if i mod 8 = 0 then sprintf "\n0x%x:\t%s" i (string_of_int elt)
-        else string_of_int elt)
+        if i mod 8 = 0 then sprintf "\n0x%02x:\t|%3d" i elt
+        else sprintf "%3d" elt)
       stack
-    |> String.concat ", "
+    |> String.concat "|"
   in
 
   let bool_to_int (b : bool) = if b then 1 else 0 in
