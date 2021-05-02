@@ -35,7 +35,7 @@ let string_of_stew_3000 (machine : stew_3000) : string =
     |> String.concat ", "
   in
 
-  let bool_to_int (b : bool) = if b then 1 else 0 inß
+  let bool_to_int (b : bool) = if b then 1 else 0 in
   sprintf
     "Emulated Stew 3000 State:\n\
      == Registers ==\n\
