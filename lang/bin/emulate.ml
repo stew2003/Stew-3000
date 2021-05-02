@@ -1,6 +1,7 @@
 open Core
 open Asm
 open Emulator
+open Util
 
 (* command-line interface for emulator *)
 let command =
@@ -18,9 +19,12 @@ let command =
           Printf.printf "%s\n" (string_of_stew_3000 final_state)
         with
         | Parser.AsmParseError msg ->
-            Printf.eprintf "error parsing asm: %s\n" msg
+            Printf.eprintf "%s: %s\n" (Colors.error "Error Parsing Asm") msg
         | EmulatorError err ->
-            Printf.eprintf "emulator error: %s\n" (string_of_emu_err err)
-        | err -> Printf.eprintf "error: %s\n" (Exn.to_string err))
+            Printf.eprintf "%s: %s\n"
+              (Colors.error "Emulator Error")
+              (string_of_emu_err err)
+        | err ->
+            Printf.eprintf "%s: %s\n" (Colors.error "Error") (Exn.to_string err))
 
 let () = Command.run ~version:"1.0" command
