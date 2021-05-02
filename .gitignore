@@ -3,3 +3,6 @@
 # ocaml dev things
 _build/
 .merlin
+
+# vscode things
+.vscode/
