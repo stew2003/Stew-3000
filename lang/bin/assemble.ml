@@ -14,6 +14,10 @@ let command =
           (* parse and assemble input program *)
           let instrs = Parser.parse text in
           let assembled = Assemble.assemble instrs in
+
+          Printf.printf "program `%s` assembled to %d bytes!" asm_filename
+            (Bytes.length assembled);
+
           (* write assembled binary to out file *)
           let out = Out_channel.create binary_filename in
           Out_channel.output_bytes out assembled;
