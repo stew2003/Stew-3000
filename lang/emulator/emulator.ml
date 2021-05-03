@@ -29,10 +29,10 @@ let string_of_stew_3000 (machine : stew_3000) : string =
   let string_of_stack (stack : int list) : string =
     List.mapi
       (fun i elt ->
-        if i mod 8 = 0 then sprintf "\n0x%x:\t%s" i (string_of_int elt)
-        else string_of_int elt)
+        if i mod 8 = 0 then sprintf "\n0x%02x:\t|%3d" i elt
+        else sprintf "%3d" elt)
       stack
-    |> String.concat ", "
+    |> String.concat "|"
   in
 
   let bool_to_int (b : bool) = if b then 1 else 0 in
@@ -83,6 +83,7 @@ type emu_err =
   | InvalidTarget of string
   | InvalidImm of immediate
   | InvalidInstr of instr
+  | InvalidStackAccess of int * stew_3000
 
 exception EmulatorError of emu_err
 
@@ -94,6 +95,9 @@ let string_of_emu_err (err : emu_err) =
   | InvalidTarget label -> sprintf "invalid target: %s" label
   | InvalidImm imm -> sprintf "invalid immediate value: %s" (string_of_imm imm)
   | InvalidInstr ins -> sprintf "invalid instruction: %s" (string_of_instr ins)
+  | InvalidStackAccess (loc, machine) ->
+      sprintf "invalid stack access: location %d\n%s\n" loc
+        (string_of_stew_3000 machine)
 
 (* [emulate_instr] emulates the effect of the given instruction
   on the machine, by mutating the machine in-place *)
@@ -117,16 +121,17 @@ let emulate_instr (ins : instr) (machine : stew_3000) (label_map : int env) =
   (* [load_stack] retrieves the value on the machine's stack at
      the given location, or errors out as appropriate *)
   let load_stack (loc : int) : int =
-    assert (loc >= 0 && loc <= 255);
-    Array.get machine.stack loc
+    try Array.get machine.stack loc
+    with Invalid_argument _ ->
+      raise (EmulatorError (InvalidStackAccess (loc, machine)))
   in
   (* [store_stack] writes a given value to the stack at a given
      location, or errors if the access is bad *)
   let store_stack (loc : int) (value : int) =
-    assert (loc >= 0 && loc <= 255);
-    Array.set machine.stack loc value
+    try Array.set machine.stack loc value
+    with Invalid_argument _ ->
+      raise (EmulatorError (InvalidStackAccess (loc, machine)))
   in
-
   (* [label_to_index] converts a string label to its corresponding index,
      erroring if there is no index for the label *)
   let label_to_index (label : string) =
