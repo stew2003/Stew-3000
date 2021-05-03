@@ -30,10 +30,10 @@ let command =
           Out_channel.close out;
 
           (* print message and display assembled bytes *)
-          Printf.printf
-            "%s program `%s` assembled to %d bytes! (written to `%s`)\n"
+          Printf.printf "%s `%s` (%d lines) ==> `%s` (%d bytes)\n"
             (Colors.success "Success!")
-            asm_filename (Bytes.length assembled) binary_filename;
+            asm_filename (List.length instrs) binary_filename
+            (Bytes.length assembled);
           printf_bytes assembled;
           Printf.printf "\n"
         with

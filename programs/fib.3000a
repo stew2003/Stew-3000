@@ -1,8 +1,7 @@
 entry:
     mvi 1, b
     out b
-    jmp loop
-    
+
 loop:
     add b, a
     cmpi a, 127

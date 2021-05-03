@@ -2,7 +2,7 @@
 Hardware
   [] implement sign flag and signed overflow flag (Stewart)
   [x] implement dream instruction set in microcode (Stewart)
-  [] get the RAM loader working (Stewart)
+  [x] get the RAM loader working (Stewart)
 
 Assembler
   [x] model our instr set with OCaml datatypes. will be used by assembler,
@@ -10,7 +10,7 @@ Assembler
   [x] think about how to implement labels
   [x] implement assembler
   [x] maybe switch from hashtable to different map
-  [] reconsider how we validate immediates: currently prevents you
+  [x] reconsider how we validate immediates: currently prevents you
     from writing an immediate that is a mem loc >127
 
 Compiler
