@@ -9,6 +9,7 @@ type asm_err =
   | InvalidInstr of instr
   | InvalidImm of immediate
   | InvalidTarget of string
+  | OutOfBoundsLabel of string * int
 
 exception AssembleError of asm_err
 
@@ -20,6 +21,8 @@ let string_of_asm_err = function
   | InvalidInstr ins -> sprintf "invalid instruction: %s" (string_of_instr ins)
   | InvalidImm imm -> sprintf "invalid immediate value: %s" (string_of_imm imm)
   | InvalidTarget label -> sprintf "invalid target: %s" label
+  | OutOfBoundsLabel (label, addr) ->
+      sprintf "out of bounds label `%s` (at byte 0x%x)" label addr
 
 (* [assemble_instr] generates bytes for a given instruction. Raises 
   AssembleError InvalidInstr if given an un-assemblable instruction *)
@@ -216,6 +219,9 @@ let size_of (ins : instr) : int =
     ->
       2
 
+(* 256 bytes is the size of our program memory *)
+let max_pgrm_size = 256
+
 (* [map_labels] constructs an environment mapping label names to memory addresses *)
 let map_labels (instrs : instr list) =
   (* accumulate an environment of labels->addresses *)
@@ -226,6 +232,8 @@ let map_labels (instrs : instr list) =
         | Label name ->
             (* if label already mapped, this is an error *)
             if Env.mem name env then raise (AssembleError (DuplicateLabel name))
+            else if addr >= max_pgrm_size then
+              raise (AssembleError (OutOfBoundsLabel (name, addr)))
             else (Env.add name addr env, addr)
         | _ -> (env, addr + size_of ins))
       (Env.empty, 0) instrs
@@ -238,9 +246,6 @@ let bytes_from_list (l : int list) : bytes =
   let buf = Bytes.create (List.length l) in
   List.mapi (fun i b -> Bytes.set_int8 buf i b) l |> ignore;
   buf
-
-(* 256 bytes is the size of our program memory *)
-let max_pgrm_size = 256
 
 (* [assemble] processes a list of asm instructions and 
   produces a byte sequence representing the program in binary form *)

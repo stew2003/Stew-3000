@@ -51,12 +51,21 @@ let test_invalid_target _ =
   assert_raises (AssembleError (InvalidTarget "nonexistent")) (fun _ ->
       assemble [ Jle "nonexistent" ])
 
+(* [pgrm] builds a program of size nops *)
+let rec pgrm (size : int) = if size = 0 then [] else Nop :: pgrm (size - 1)
+
 let test_pgrm_too_large _ =
   let big = 257 in
-  (* [pgrm] builds a program of size nops *)
-  let rec pgrm (size : int) = if size = 0 then [] else Nop :: pgrm (size - 1) in
   assert_raises (AssembleError (ProgramTooLarge big)) (fun _ ->
       assemble (pgrm big))
+
+let test_out_of_bounds _ =
+  let program =
+    [ Jmp "out_of_bounds" ] @ pgrm 254 @ [ Label "out_of_bounds" ]
+  in
+  assert_raises
+    (AssembleError (OutOfBoundsLabel ("out_of_bounds", 256)))
+    (fun _ -> assemble program)
 
 let test_overflow_immediates _ =
   assert_equal (assemble [ Lds (255, A) ]) (assemble [ Lds (-1, A) ]);
@@ -73,6 +82,7 @@ let suite =
          "test_invalid_target" >:: test_invalid_target;
          "test_pgrm_too_large" >:: test_pgrm_too_large;
          "test_overflow_immediates" >:: test_overflow_immediates;
+         "test_out_of_bounds" >:: test_out_of_bounds;
        ]
 
 let () = run_test_tt_main suite

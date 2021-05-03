@@ -20,3 +20,10 @@ Compiler
 
 Virtual Machine
   [x] software simulation of the stew3000, for compiler testing
+  [] add flag for levels of verbose output:
+    default: no output, final state printed
+    1) out instructions print their output
+    2) current instruction is printed
+    3) full state is printed at each instruction
+
+[] document everything
