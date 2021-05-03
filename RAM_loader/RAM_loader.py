@@ -3,7 +3,7 @@ import time
 import sys
 
 # set up the serial connection to the arduino board
-serial_port = "/dev/ttyACM0"
+serial_port = "/dev/cu.usbserial-AR0KL0FJ"
 baud_rate = "9600"
 
 connection = serial.Serial(serial_port, baud_rate, timeout=5)
@@ -16,13 +16,13 @@ with open(sys.argv[1], "rb") as file:
     while byte:
         connection.flush()
 
-        print("Python sent: " + bytes(byte))
+        print("Python sent: " + str(bytes(byte)))
         connection.write(bytes(byte))
         
         time.sleep(1)
 
         response = connection.read(connection.inWaiting()) # read all characters in buffer
-        print ("Message from arduino: " + response)
+        print ("Message from arduino: " + str(response))
 
         byte = file.read(1)
 
