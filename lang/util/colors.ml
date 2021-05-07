@@ -15,6 +15,10 @@ let br_cyan (s : string) : string = effect "36;1" s
 
 let br_green (s : string) : string = effect "32;1" s
 
+let br_blue (s : string) : string = effect "94" s
+
 let error (s : string) : string = bold (br_red s)
 
 let success (s : string) : string = bold (br_green s)
+
+let log (s : string) : string = bold (br_blue s)

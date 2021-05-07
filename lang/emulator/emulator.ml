@@ -2,6 +2,7 @@ open Asm.Isa
 open Asm.Validate
 open Printf
 open Util.Env
+open Util
 
 (*  stew_3000 models the programmer-visible state of the machine
     NOTE: dec_disp_history is a record of every byte that has 
@@ -51,7 +52,8 @@ let string_of_stew_3000 (machine : stew_3000) : string =
      halted? %s\n\n\
      == Decimal Display History == (most recent first)\n\
      %s\n\n\
-     == Stack ==%s" machine.a machine.b machine.c machine.sp machine.pc
+     == Stack ==%s\n"
+    machine.a machine.b machine.c machine.sp machine.pc
     (bool_to_int machine.zflag)
     (bool_to_int machine.sflag)
     (bool_to_int machine.oflag)
@@ -102,7 +104,8 @@ let string_of_emu_err (err : emu_err) =
 
 (* [emulate_instr] emulates the effect of the given instruction
   on the machine, by mutating the machine in-place *)
-let emulate_instr (ins : instr) (machine : stew_3000) (label_map : int env) =
+let emulate_instr (ins : instr) (machine : stew_3000) (label_map : int env)
+    (verbosity : int) =
   (* [load_reg] retrieves the value currently stored in a register *)
   let load_reg (reg : register) : int =
     match reg with
@@ -282,6 +285,9 @@ let emulate_instr (ins : instr) (machine : stew_3000) (label_map : int env) =
       (* add value to decimal display history *)
       let src_value = load_reg src in
       machine.dec_disp_history <- src_value :: machine.dec_disp_history;
+      (* at verbosity level 1, out instrs print their output *)
+      if verbosity >= 1 then printf "%s %d\n" (Colors.log "[output]") src_value
+      else ();
       inc_pc ()
   | Label _ | Nop -> inc_pc ()
   (* XXX: Dic and Did not currently supported *)
@@ -313,15 +319,28 @@ let get_current_ins (pgrm : instr list) (machine : stew_3000) : instr =
     raise (EmulatorError (InvalidProgramCounter machine))
 
 (* [emulate_program] emulates running the given assembly program 
-  on the Stew 3000, and returns the final machine state after the run *)
-let emulate_program (pgrm : instr list) : stew_3000 =
+  on the Stew 3000, and returns the final machine state after the run.
+  verbosity indicates how much logging should happen during the run. *)
+let emulate_program (pgrm : instr list) (verbosity : int) : stew_3000 =
   let machine = new_stew_3000 () in
   let label_map = map_labels pgrm in
   let rec run _ =
     if machine.halted then ()
     else
       let ins = get_current_ins pgrm machine in
-      emulate_instr ins machine label_map;
+      (* verbosity level 2, current instruction is logged *)
+      if verbosity >= 2 then
+        printf "%s %s\n"
+          (Colors.log "[current instruction]")
+          (string_of_instr ins)
+      else ();
+      emulate_instr ins machine label_map verbosity;
+      (* verbosity level 3, entire machine state is logged *)
+      if verbosity >= 3 then
+        printf "%s\n%s"
+          (Colors.log "[state after executing]")
+          (string_of_stew_3000 machine)
+      else ();
       run ()
   in
   run ();
