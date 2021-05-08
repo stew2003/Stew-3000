@@ -2,7 +2,8 @@ open OUnit2
 open Asm.Isa
 open Emulator
 
-let emulate (pgrm : instr list) = emulate_program pgrm 0
+(* wrapper around emulate, with no logging *)
+let run_emulator (pgrm : instr list) = emulate pgrm 0
 
 let assert_int_eq (exp : int) (act : int) =
   assert_equal exp act ~printer:string_of_int
@@ -14,12 +15,12 @@ let assert_int_list_eq (exp : int list) (act : int list) =
   assert_equal exp act ~printer:string_of_int_list
 
 let test_simple_pgrm _ =
-  let machine = emulate [ Mvi (10, A); Addi (-6, A); Hlt ] in
+  let machine = run_emulator [ Mvi (10, A); Addi (-6, A); Hlt ] in
   assert_int_eq machine.a 4
 
 let test_emulates_outs _ =
   let machine =
-    emulate
+    run_emulator
       [
         Mvi (2, A);
         Mov (A, B);
@@ -39,7 +40,7 @@ let test_emulates_outs _ =
 
 let test_loads_stores _ =
   let machine =
-    emulate
+    run_emulator
       [
         Mvi (5, A);
         Mvi (11, B);
@@ -53,12 +54,12 @@ let test_loads_stores _ =
   assert_int_eq 11 machine.c
 
 let test_stack_offset_access _ =
-  let machine = emulate [ Mvi (25, B); Sts (B, 15); Lds (15, A); Hlt ] in
+  let machine = run_emulator [ Mvi (25, B); Sts (B, 15); Lds (15, A); Hlt ] in
   assert_int_eq 25 machine.a
 
 let test_jmps _ =
   let machine =
-    emulate
+    run_emulator
       [
         Label "entry";
         Mvi (2, A);
@@ -71,7 +72,7 @@ let test_jmps _ =
   in
   assert_int_eq 2 machine.a;
   let machine =
-    emulate
+    run_emulator
       [
         Mvi (0, A);
         Label "loop";
@@ -85,7 +86,7 @@ let test_jmps _ =
   assert_int_list_eq [ 4; 3; 2; 1; 0 ] machine.dec_disp_history;
   assert_int_eq 5 machine.a;
   let machine =
-    emulate
+    run_emulator
       [
         Mvi (10, A);
         Mvi (9, B);
@@ -100,7 +101,7 @@ let test_jmps _ =
   in
   assert_int_eq 1 machine.c;
   let machine =
-    emulate
+    run_emulator
       [
         Mvi (87, B);
         Mov (B, A);
@@ -116,39 +117,41 @@ let test_jmps _ =
   assert_int_eq 1 machine.c
 
 let test_hlt _ =
-  let machine = emulate [ Hlt; Mvi (1, C); Mvi (2, A); Add (C, A); Out A ] in
+  let machine =
+    run_emulator [ Hlt; Mvi (1, C); Mvi (2, A); Add (C, A); Out A ]
+  in
   assert_int_eq 0 machine.a;
   assert_int_eq 0 machine.c
 
 let test_zero_flag _ =
-  let machine = emulate [ Mvi (5, A); Mov (A, B); Sub (A, B); Hlt ] in
+  let machine = run_emulator [ Mvi (5, A); Mov (A, B); Sub (A, B); Hlt ] in
   assert_bool "zero flag should be set" machine.zflag;
-  let machine = emulate [ Mvi (1, A); Mvi (-1, B); Cmp (B, A); Hlt ] in
+  let machine = run_emulator [ Mvi (1, A); Mvi (-1, B); Cmp (B, A); Hlt ] in
   assert_bool "zero flag should not be set" (not machine.zflag);
-  let machine = emulate [ Mvi (127, A); Cmpi (Reg A, Imm 127); Hlt ] in
+  let machine = run_emulator [ Mvi (127, A); Cmpi (Reg A, Imm 127); Hlt ] in
   assert_bool "zero flag set after comparing 127 with itself" machine.zflag
 
 let test_sign_flag _ =
-  let machine = emulate [ Mvi (35, A); Mvi (50, B); Sub (B, A); Hlt ] in
+  let machine = run_emulator [ Mvi (35, A); Mvi (50, B); Sub (B, A); Hlt ] in
   assert_bool "sign flag should be set" machine.sflag;
-  let machine = emulate [ Mvi (20, A); Mvi (10, B); Sub (B, A); Hlt ] in
+  let machine = run_emulator [ Mvi (20, A); Mvi (10, B); Sub (B, A); Hlt ] in
   assert_bool "sign flag should not be set" (not machine.sflag);
-  let machine = emulate [ Mvi (0, A); Dcr A; Hlt ] in
+  let machine = run_emulator [ Mvi (0, A); Dcr A; Hlt ] in
   assert_bool "sign flag set after 0--" machine.sflag
 
 let test_overflow_flag _ =
-  let machine = emulate [ Mvi (127, A); Inr A; Hlt ] in
+  let machine = run_emulator [ Mvi (127, A); Inr A; Hlt ] in
   assert_bool "overflow flag set after increment 127" machine.oflag;
-  let machine = emulate [ Mvi (-128, B); Subi (1, B); Hlt ] in
+  let machine = run_emulator [ Mvi (-128, B); Subi (1, B); Hlt ] in
   assert_bool "overflow flag set after -128 - 1" machine.oflag;
-  let machine = emulate [ Mvi (-120, A); Mvi (100, B); Cmp (A, B); Hlt ] in
+  let machine = run_emulator [ Mvi (-120, A); Mvi (100, B); Cmp (A, B); Hlt ] in
   assert_bool "overflow flag set after -120 - 100" machine.oflag;
-  let machine = emulate [ Mvi (-1, A); Subi (127, A); Hlt ] in
+  let machine = run_emulator [ Mvi (-1, A); Subi (127, A); Hlt ] in
   assert_bool "overflow flag not set after -1-127" (not machine.oflag)
 
 let test_call_ret _ =
   let machine =
-    emulate
+    run_emulator
       [
         Mvi (4, C);
         Sts (C, 2);
@@ -168,45 +171,45 @@ let test_call_ret _ =
 
 let test_dup_label _ =
   assert_raises (EmulatorError (DuplicateLabel "dup")) (fun _ ->
-      emulate [ Label "dup"; Label "dup"; Label "dup" ])
+      run_emulator [ Label "dup"; Label "dup"; Label "dup" ])
 
 let test_invalid_pc _ =
   let machine = new_stew_3000 () in
   (* pc runs right off the end *)
   machine.pc <- 3;
   assert_raises (EmulatorError (InvalidProgramCounter machine)) (fun _ ->
-      emulate [ Nop; Nop; Nop ])
+      run_emulator [ Nop; Nop; Nop ])
 
 let test_invalid_target _ =
   assert_raises (EmulatorError (InvalidTarget "not_here")) (fun _ ->
-      emulate [ Jmp "not_here" ]);
+      run_emulator [ Jmp "not_here" ]);
   assert_raises (EmulatorError (InvalidTarget "not_a_fun")) (fun _ ->
-      emulate [ Call "not_a_fun" ])
+      run_emulator [ Call "not_a_fun" ])
 
 let test_invalid_imm _ =
   assert_raises (EmulatorError (InvalidImm (-129))) (fun _ ->
-      emulate [ Addi (-129, B) ]);
+      run_emulator [ Addi (-129, B) ]);
   assert_raises (EmulatorError (InvalidImm (-129))) (fun _ ->
-      emulate [ Lds (-129, A) ]);
+      run_emulator [ Lds (-129, A) ]);
   assert_raises (EmulatorError (InvalidImm 256)) (fun _ ->
-      emulate [ Sts (C, 256) ])
+      run_emulator [ Sts (C, 256) ])
 
 let test_invalid_instr _ =
   assert_raises
     (EmulatorError (InvalidInstr (Sub (B, B))))
-    (fun _ -> emulate [ Sub (B, B) ]);
+    (fun _ -> run_emulator [ Sub (B, B) ]);
   assert_raises
     (EmulatorError (InvalidInstr (Cmpi (Imm 1, Imm 2))))
-    (fun _ -> emulate [ Cmpi (Imm 1, Imm 2) ])
+    (fun _ -> run_emulator [ Cmpi (Imm 1, Imm 2) ])
 
 let test_overflow_immediates _ =
   let machine =
-    emulate [ Mvi (-1, A); Mvi (101, B); St (B, A); Ld (A, C); Hlt ]
+    run_emulator [ Mvi (-1, A); Mvi (101, B); St (B, A); Ld (A, C); Hlt ]
   in
   assert_equal 101 machine.c;
   assert_equal 101 machine.stack.(255);
   let machine =
-    emulate [ Mvi (255, A); Mvi (101, B); St (B, A); Ld (A, C); Hlt ]
+    run_emulator [ Mvi (255, A); Mvi (101, B); St (B, A); Ld (A, C); Hlt ]
   in
   assert_equal 101 machine.c;
   assert_equal 101 machine.stack.(255)
@@ -232,5 +235,3 @@ let suite =
        ]
 
 let () = run_test_tt_main suite
-
-(* TODO: test error conditions *)

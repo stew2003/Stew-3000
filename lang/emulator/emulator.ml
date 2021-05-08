@@ -318,10 +318,10 @@ let get_current_ins (pgrm : instr list) (machine : stew_3000) : instr =
   with Failure _ | Invalid_argument _ ->
     raise (EmulatorError (InvalidProgramCounter machine))
 
-(* [emulate_program] emulates running the given assembly program 
+(* [emulate] emulates running the given assembly program 
   on the Stew 3000, and returns the final machine state after the run.
   verbosity indicates how much logging should happen during the run. *)
-let emulate_program (pgrm : instr list) (verbosity : int) : stew_3000 =
+let emulate (pgrm : instr list) (verbosity : int) : stew_3000 =
   let machine = new_stew_3000 () in
   let label_map = map_labels pgrm in
   let rec run _ =

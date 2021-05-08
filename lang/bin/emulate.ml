@@ -20,7 +20,7 @@ let command =
           (* parse input program *)
           let instrs = Parser.parse text in
           (* emulate and print final state *)
-          let final_state = emulate_program instrs verbosity in
+          let final_state = emulate instrs verbosity in
           printf "%s\n" (Colors.bold "Halted via hlt!");
           printf "%s\n" (string_of_stew_3000 final_state)
         with
