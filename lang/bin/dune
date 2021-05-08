@@ -1,9 +1,4 @@
 (executable
-  (name main)
-  (modules main)
-  (libraries asm))
-
-(executable
   (name assemble)
   (modules assemble)
   (preprocess
