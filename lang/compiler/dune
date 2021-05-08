@@ -1,0 +1,13 @@
+(ocamllex
+ (modules lex))
+
+(menhir
+ (modules parse))
+
+(library
+  (name compiler)
+  (libraries util asm))
+
+(env
+  (dev
+    (flags (:standard -warn-error -A))))

@@ -6,3 +6,6 @@ _build/
 
 # vscode things
 .vscode/
+
+# binary things
+*.3000.b
