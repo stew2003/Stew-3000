@@ -35,9 +35,9 @@ EEPROM_programmer programmer(2, 3, 4, 5, 12, 13, 8192);
 #define TS  0b00000000000000000000000100000000
 #define CAR 0b00000000000000000000000010000000
 #define SUB 0b00000000000000000000000001000000
-#define PGM 0b00000000000000000000000000100000
-#define SO  0b00000000000000000000000000010000
-#define SI  0b00000000000000000000000000001000  
+#define SO  0b00000000000000000000000000100000
+#define SI  0b00000000000000000000000000010000
+#define PGM 0b00000000000000000000000000001000  
 
 const int INSTRUCTION_STEPS = 8;
 const int FETCH_STEPS = 2;
@@ -179,7 +179,7 @@ const uint32_t PROGMEM microcode[NUM_INSTRUCTIONS][INSTRUCTION_ARR_LENGTH] = {
   { 0x5a, CO|MI, PGM|BO|RI, RST, 0, 0, 0 }, //ST B, C
   { 0x5b, AO|MI, PGM|CO|RI, RST, 0, 0, 0 }, //ST C, A
   { 0x5c, BO|MI, PGM|CO|RI, RST, 0, 0, 0 }, //ST C, B
-  { 0x5d, CO|MI, PGMCO|RI, RST, 0, 0, 0 }, //ST C, C
+  { 0x5d, CO|MI, PGM|CO|RI, RST, 0, 0, 0 }, //ST C, C
 
   // LDS byte, $r1: $r1 = RAM[SP + byte]
   { 0x5e, PCO|MI, SO|TI, RO|TS|SUM|EI, EO|MI, PGM|RO|AI|PCE, RST }, // LDS byte, A
@@ -351,7 +351,7 @@ void program_EEPROM(int num) {
 
 void setup() {
   Serial.begin(57600);
-  program_EEPROM(4);
+  program_EEPROM(1);
   programmer.print_contents();
 }
 

@@ -19,7 +19,7 @@ with open(sys.argv[1], "rb") as file:
         print("Python sent: " + str(bytes(byte)))
         connection.write(bytes(byte))
         
-        time.sleep(1)
+        time.sleep(0.2)
 
         response = connection.read(connection.inWaiting()) # read all characters in buffer
         print ("Message from arduino: " + str(response))
