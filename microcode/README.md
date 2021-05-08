@@ -1,236 +1,198 @@
-# Microcode Documentation:
+# Microcode
 
-- **HLT**: Halt (when active this line stops the clock)
-- **RST**: Reset (reset the step counter of the instruction)
-- **PCE**: Program Counter Enable (program counter will increment on next clock pulse)
-- **PCO**: Program Counter Out
-- **PCI**: Program Counter In
-- **MI**: Memory Address Register In
-- **RO**: RAM Out
-- **RI**: RAM In (write to RAM)
-- **IO**: Instruction Register Out (never used)
-- **II**: Instruction Register In
-- **AO**: A-register Out
-- **AI**: A-register In
-- **BO**: B-register Out
-- **BI**: B-register In
-- **CO**: C-register Out
-- **CI**: C-register In
-- **TO**: Temp-register Out
-- **TI**: Temp-register In
-- **OI**: Output-register In (Decimal display)
-- **LCS**: LCD Select (Data vs. Command)
-- **LCE**: LCD Enable (Actively listening to bus)
-- **EO**: ALU Out
-- **EI**: ALU In
-- **FI**: Flags-register In
-- **NOT**: NOT ALU Operation
-- **AND**: AND ALU Operation
-- **XOR**: XOR ALU Operation
-- **OR**: OR ALU Operation
-- **SUM**: ADD ALU Operation
-- **TS**: Select Temp-register as other operand or all 0s
-- **CAR**: Set Carry/Borrow for addition and subtraction
-- **SUB**: SUB ALU operation (add but with 1s compliment (2s compliment comes from setting CAR line))
-- **PGM**: TODO: Accessing program or instruction memory
-- **SO**: TODO: Stack pointer out
-- **SI**: TODO: Stack pointer in
+| Instruction | Description |
+| ------------- | ------------- |
+| `HLT` | Halt (when active this line stops the clock) |
+| `RST` | Reset (reset the step counter of the instruction) |
+| `PCE` | Program Counter Enable (program counter will increment on next clock pulse) |
+| `PCO` | Program Counter Out |
+| `PCI` | Program Counter In |
+| `MI` | Memory Address Register In |
+| `RO` | RAM Out |
+| `RI` | RAM In (write to RAM) |
+| `IO` | Instruction Register Out (never used) |
+| `II` | Instruction Register In |
+| `AO` | A-register Out |
+| `AI` | A-register In |
+| `BO` | B-register Out |
+| `BI` | B-register In |
+| `CO` | C-register Out |
+| `CI` | C-register In |
+| `TO` | Temp-register Out |
+| `TI` | Temp-register In |
+| `OI` | Output-register In (Decimal display) |
+| `LCS` | LCD Select (Data vs. Command) |
+| `LCE` | LCD Enable (Actively listening to bus) |
+| `EO` | ALU Out |
+| `EI` | ALU In |
+| `FI` | Flags-register In |
+| `NOT` | NOT ALU Operation |
+| `AND` | AND ALU Operation |
+| `XOR` | XOR ALU Operation |
+| `OR` | OR ALU Operation |
+| `SUM` | ADD ALU Operation |
+| `TS` | Select Temp-register as other operand or all 0s |
+| `CAR` | Set Carry/Borrow for addition and subtraction |
+| `SUB` | SUB ALU operation (add but with 1s compliment (2s compliment comes from setting CAR line)) |
+| `PGM` | Accessing program or instruction memory |
+| `SO` | Stack pointer out |
+| `SI` | Stack pointer in |
 
-# Instruction Documentation:
 
-- **ADD B**: Add the contents of B-register to contents of A-register, then save result in A-register
-- **ADD C**: Add the contents of C-register to contents of A-register, then save result in A-register
-- **ANA B**: AND the contents of B-register with contents of A-register, then save result in A-register
-- **ANA C**: AND the contents of C-register with contents of A-register, then save result in A-register
-- **ANI byte**: AND the byte operand with the A-register, then save the result in the A-register
-- **DCR A**: Decrement the A-register by 1
-- **DCR B**: Decrement the B-register by 1
-- **DCR C**: Decrement the C-register by 1
-- **HLT**: Halt the clock
-- **INR A**: Increment the A-register by 1
-- **INR B**: Increment the B-register by 1
-- **INR C**: Increment the C-register by 1
-- **JMP byte**: Jump to the location specified by the byte operand
-- **LDA byte**: Load the A-register with the value at the RAM location specified by the byte operand
-- **MOV A, B**: Move the contents of the A-register to the B-register
-- **MOV A, C**: Move the contents of the A-register to the C-register
-- **MOV B, A**: Move the contents of the B-register to the A-register
-- **MOV B, C**: Move the contents of the B-register to the C-register
-- **MOV C, A**: Move the contents of the C-register to the A-register
-- **MOV C, B**: Move the contents of the C-register to the B-register
-- **MVI A byte**: Move the byte operand into the A-register
-- **MVI B byte**: Move the byte operand into the B-register
-- **MVI C byte**: Move the byte operand into the C-register
-- **NOP**: No operation, waste 8 clock cycles
-- **ORA B**: OR the contents of B-register with contents of A-register, then save result in A-register
-- **ORA C**: OR the contents of C-register with contents of A-register, then save result in A-register
-- **ORI byte**: OR the contents of the A-register with the byte operand, then save the result in the A-register
-- **OUT**: Load the contents of the A-register into the decimal display
-- **STA byte**: Store the contents of the A-register into the location specified by the byte operand
-- **SUB B**: Subtract the B-register from the A-register, then save the result in the A-register
-- **SUB C**: Subtract the C-register from the A-register, then save the result in the A-register
-- **XRA B**: XOR the contents of the A-register with the contents of the B-register, then save the result in the A-register
-- **XRA C**: XOR the contents of the A-register with the contents of the C-register, then save the result in the A-register
-- **XRI byte**: XOR the contents of the A-register with the byte operand, then save the result in the A-register
-- **NOT A**: Save the compliment of the A-register in the A-register
-- **NOT B**: Save the compliment of the B-register in the B-register
-- **NOT C**: Save the compliment of the C-register in teh C-register
-- **DIC byte**: Send the byte operand as a command to the LCD display
-- **DID byte**: Send the byte operand as data to the LCD display
-- **JC byte**: Jump to the address of the byte operand if the carry flag is set
-- **JNC byte**: Jump to the address of the byte operand if the carry flag is not set
-- **JZ byte**: Jump to the address of the byte operand if the zero flag is set
-- **JNZ byte**: Jump to the address of the byte operand if the zero flag is not set
+# Instruction Set
 
-# Dream Instruction Set:
+Note: instructions listed with opcode N/A describe the behavior of a whole class of instructions, which have specific opcodes that correspond to the use of specific registers.
 
-- **ADD $r1, $r2**: $r2 = $r2 + $r1
-  - **ADD A, A**: 00
-  - **ADD A, B**: 01
-  - **ADD A, C**: 02
-  - **ADD A, SP**: 03
-  - **ADD B, A**: 04
-  - **ADD B, B**: 05
-  - **ADD B, C**: 06
-  - **ADD B, SP**: 07
-  - **ADD C, A**: 08
-  - **ADD C, B**: 09
-  - **ADD C, C**: 0a
-  - **ADD C, SP**: 0b
-- **ADDI byte, $r1**: $r1 = $r1 + byte
-  - **ADDI byte, A**: 0c
-  - **ADDI byte, B**: 0d
-  - **ADDI byte, C**: 0e
-  - **ADDI byte, SP**: 0f
-- **SUB $r1, $r2**: $r2 = $r2 - $r1
-  - **SUB B, A**: 10
-  - **SUB C, A**: 11
-  - **SUB A, B**: 12
-  - **SUB C, B**: 13
-  - **SUB A, C**: 14
-  - **SUB B, C**: 15
-  - **SUB A, SP**: 16
-  - **SUB B, SP**: 17
-  - **SUB C, SP**: 18
-- **SUBI byte, $r1**: $r1 = $r1 - byte
-  - **SUBI byte, A**: 19
-  - **SUBI byte, B**: 1a
-  - **SUBI byte, C**: 1b
-  - **SUBI byte, SP**: 1c
-- **AND $r1, $r2**: $r2 = $r2 & $r1
-  - **AND B, A**: 1d
-  - **AND C, A**: 1e
-  - **AND A, B**: 1f
-  - **AND C, B**: 20
-  - **AND A, C**: 21
-  - **AND B, C**: 22
-- **ANI byte, $r1**: $r1 = $r1 & byte
-  - **ANI byte, A**: 23
-  - **ANI byte, B**: 24
-  - **ANI byte, C**: 25
-- **OR $r1, $r2**: $r2 = $r2 | $r1
-  - **OR B, A**: 26
-  - **OR C, A**: 27
-  - **OR A, B**: 28
-  - **OR C, B**: 29
-  - **OR A, C**: 2a
-  - **OR B, C**: 2b
-- **ORI byte, $r1**: $r1 = $r1 | byte
-  - **ORI byte, A**: 2c
-  - **ORI byte, B**: 2d
-  - **ORI byte, C**: 2e
-- **XOR $r1, $r2**: $r2 = $r2 ^ $r1
-  - **XOR B, A**: 2f
-  - **XOR C, A**: 30
-  - **XOR A, B**: 31
-  - **XOR C, B**: 32
-  - **XOR A, C**: 33
-  - **XOR B, C**: 34
-- **XRI byte, $r1**: $r1 = $r1 ^ byte
-  - **XRI byte, A**: 35
-  - **XRI byte, B**: 36
-  - **XRI byte, C**: 37
-- **NOT $r1**: $r1 = ~$r1
-  - **NOT A**: 38
-  - **NOT B**: 39
-  - **NOT C**: 3a
-- **INR $r1**: $r1 = $r1 + 1
-  - **INR A**: 3b
-  - **INR B**: 3c
-  - **INR C**: 3d
-  - **INR SP**: 3e
-- **DCR $r1**: $r1 = $r1 - 1
-  - **DCR A**: 3f
-  - **DCR B**: 40
-  - **DCR C**: 41
-  - **DCR SP**: 42
-- **MOV $r1, $r2**: $r2 = $r1
-  - **MOV A, B**: 43
-  - **MOV A, C**: 44
-  - **MOV B, A**: 45
-  - **MOV B, C**: 46
-  - **MOV C, A**: 47
-  - **MOV C, B**: 48
-- **MVI byte, $r1**: $r1 = byte
-  - **MVI byte, A**: 49
-  - **MVI byte, B**: 4a
-  - **MVI byte, C**: 4b
-- **LD $r1, $r2**: $r2 = RAM[$r1]
-  - **LD A, A**: 4c
-  - **LD B, A**: 4d
-  - **LD C, A**: 4e
-  - **LD A, B**: 4f
-  - **LD B, B**: 50
-  - **LD C, B**: 51
-  - **LD A, C**: 52
-  - **LD B, C**: 53
-  - **LD C, C**: 54
-- **ST $r1, $r2**: RAM[$r2] = $r1
-  - **ST A, A**: 55
-  - **ST A, B**: 56
-  - **ST A, C**: 57
-  - **ST B, A**: 58
-  - **ST B, B**: 59
-  - **ST B, C**: 5a
-  - **ST C, A**: 5b
-  - **ST C, B**: 5c
-  - **ST C, C**: 5d
-- **LDS byte, $r1**: $r1 = RAM[SP + byte]
-  - **LDS byte, A**: 5e
-  - **LDS byte, B**: 5f
-  - **LDS byte, C**: 60
-- **STS $r1, byte**: RAM[SP + byte] = $r1
-  - **STS A, byte**: 61
-  - **STS B, byte**: 62
-  - **STS C, byte**: 63
-- **CMP $r1, $r2**: $r1 - $r2 and set flags
-  - **CMP A, B**: 64
-  - **CMP A, C**: 65
-  - **CMP B, A**: 66
-  - **CMP B, C**: 67
-  - **CMP C, A**: 68
-  - **CMP C, B**: 69
-- **CMPI byte/$r1, $r1/byte**: byte/$r1 - $r1/byte and set flags
-  - **CMPI A, byte**: 6a
-  - **CMPI byte, A**: 6b
-  - **CMPI B, byte**: 6c
-  - **CMPI byte, B**: 6d
-  - **CMPI C, byte**: 6e
-  - **CMPI byte, C**: 6f
-- **JMP byte**: PC = byte: 70
-- **JE/JZ byte**: ZF ? PC = byte: 71
-- **JNE/JNZ byte**: ~ZF ? PC = byte: 72
-- **JG/JNLE byte**: ~(SF ^ OF) & ~ZF ? PC = byte: 73
-- **JGE/JNL byte**: ~(SF ^ OF) ? PC = byte: 74
-- **JL/JNGE byte**: SF ^ OF ? PC = byte: 75
-- **JLE/JNG byte**: (SF ^ OF) | ZF ? PC = byte: 76
-- **CALL byte**: SP += 1, PC + 1, Stack[SP] = PC, PC = byte: 77
-- **RET**: PC = Stack[SP], SP -= 1: 78
-- **OUT $r1**: Display = $r1
-  - **OUT A**: 79
-  - **OUT B**: 7a
-  - **OUT C**: 7b
-- **DIC byte**: LCD command byte: 7c
-- **DID byte**: LCD data byte: 7d
-- **HLT**: Halt: 7e
-- **NOP**: No operation: 7f
+
+| Instruction | Opcode | Description |
+| ------------- | ------------- | ------------- |
+| `add $r1, $r2` | N/A | $r2 = $r2 + $r1 |
+|  `add a, a` | `0x00` |
+|  `add a, b` | `0x01` |
+|  `add a, c` | `0x02` |
+|  `add a, sp` | `0x03` |
+|  `add b, a` | `0x04` |
+|  `add b, b` | `0x05` |
+|  `add b, c` | `0x06` |
+|  `add b, sp` | `0x07` |
+|  `add c, a` | `0x08` |
+|  `add c, b` | `0x09` |
+|  `add c, c` | `0x0a` |
+|  `add c, sp` | `0x0b` |
+| `addi byte, $r1` | N/A | $r1 = $r1 + byte |
+|  `addi byte, a` | `0x0c` |
+|  `addi byte, b` | `0x0d` |
+|  `addi byte, c` | `0x0e` |
+|  `addi byte, sp` | `0x0f` |
+| `sub $r1, $r2` | N/A | $r2 = $r2 - $r1 |
+|  `sub b, a` | `0x10` |
+|  `sub c, a` | `0x11` |
+|  `sub a, b` | `0x12` |
+|  `sub c, b` | `0x13` |
+|  `sub a, c` | `0x14` |
+|  `sub b, c` | `0x15` |
+|  `sub a, sp` | `0x16` |
+|  `sub b, sp` | `0x17` |
+|  `sub c, sp` | `0x18` |
+| `subi byte, $r1` | N/A | $r1 = $r1 - byte |
+|  `subi byte, a` | `0x19` |
+|  `subi byte, b` | `0x1a` |
+|  `subi byte, c` | `0x1b` |
+|  `subi byte, sp` | `0x1c` |
+| `and $r1, $r2` | N/A | $r2 = $r2 & $r1 |
+|  `and b, a` | `0x1d` |
+|  `and c, a` | `0x1e` |
+|  `and a, b` | `0x1f` |
+|  `and c, b` | `0x20` |
+|  `and a, c` | `0x21` |
+|  `and b, c` | `0x22` |
+| `ani byte, $r1` | N/A | $r1 = $r1 & byte |
+|  `ani byte, a` | `0x23` |
+|  `ani byte, b` | `0x24` |
+|  `ani byte, c` | `0x25` |
+| `or $r1, $r2` | N/A | $r2 = $r2 | $r1 |
+|  `or b, a` | `0x26` |
+|  `or c, a` | `0x27` |
+|  `or a, b` | `0x28` |
+|  `or c, b` | `0x29` |
+|  `or a, c` | `0x2a` |
+|  `or b, c` | `0x2b` |
+| `ori byte, $r1` | N/A | $r1 = $r1 | byte |
+|  `ori byte, a` | `0x2c` |
+|  `ori byte, b` | `0x2d` |
+|  `ori byte, c` | `0x2e` |
+| `xor $r1, $r2` | N/A | $r2 = $r2 ^ $r1 |
+|  `xor b, a` | `0x2f` |
+|  `xor c, a` | `0x30` |
+|  `xor a, b` | `0x31` |
+|  `xor c, b` | `0x32` |
+|  `xor a, c` | `0x33` |
+|  `xor b, c` | `0x34` |
+| `xri byte, $r1` | N/A | $r1 = $r1 ^ byte |
+|  `xri byte, a` | `0x35` |
+|  `xri byte, b` | `0x36` |
+|  `xri byte, c` | `0x37` |
+| `not $r1` | N/A | $r1 = ~$r1 |
+|  `not a` | `0x38` |
+|  `not b` | `0x39` |
+|  `not c` | `0x3a` |
+| `inr $r1` | N/A | $r1 = $r1 + 1 |
+|  `inr a` | `0x3b` |
+|  `inr b` | `0x3c` |
+|  `inr c` | `0x3d` |
+|  `inr sp` | `0x3e` |
+| `dcr $r1` | N/A | $r1 = $r1 - 1 |
+|  `dcr a` | `0x3f` |
+|  `dcr b` | `0x40` |
+|  `dcr c` | `0x41` |
+|  `dcr sp` | `0x42` |
+| `mov $r1, $r2` | N/A | $r2 = $r1 |
+|  `mov a, b` | `0x43` |
+|  `mov a, c` | `0x44` |
+|  `mov b, a` | `0x45` |
+|  `mov b, c` | `0x46` |
+|  `mov c, a` | `0x47` |
+|  `mov c, b` | `0x48` |
+| `mvi byte, $r1` | N/A | $r1 = byte |
+|  `mvi byte, a` | `0x49` |
+|  `mvi byte, b` | `0x4a` |
+|  `mvi byte, c` | `0x4b` |
+| `ld $r1, $r2` | N/A | $r2 = RAM[$r1] |
+|  `ld a, a` | `0x4c` |
+|  `ld b, a` | `0x4d` |
+|  `ld c, a` | `0x4e` |
+|  `ld a, b` | `0x4f` |
+|  `ld b, b` | `0x50` |
+|  `ld c, b` | `0x51` |
+|  `ld a, c` | `0x52` |
+|  `ld b, c` | `0x53` |
+|  `ld c, c` | `0x54` |
+| `st $r1, $r2` | N/A | RAM[$r2] = $r1 |
+|  `st a, a` | `0x55` |
+|  `st a, b` | `0x56` |
+|  `st a, c` | `0x57` |
+|  `st b, a` | `0x58` |
+|  `st b, b` | `0x59` |
+|  `st b, c` | `0x5a` |
+|  `st c, a` | `0x5b` |
+|  `st c, b` | `0x5c` |
+|  `st c, c` | `0x5d` |
+| `lds byte, $r1` | N/A | $r1 = RAM[sp + byte] |
+|  `lds byte, a` | `0x5e` |
+|  `lds byte, b` | `0x5f` |
+|  `lds byte, c` | `0x60` |
+| `sts $r1, byte` | N/A | RAM[sp + byte] = $r1 |
+|  `sts a, byte` | `0x61` |
+|  `sts b, byte` | `0x62` |
+|  `sts c, byte` | `0x63` |
+| `cmp $r1, $r2` | N/A | Perform $r1 - $r2 and set flags |
+|  `cmp a, b` | `0x64` |
+|  `cmp a, c` | `0x65` |
+|  `cmp b, a` | `0x66` |
+|  `cmp b, c` | `0x67` |
+|  `cmp c, a` | `0x68` |
+|  `cmp c, b` | `0x69` |
+| `cmpi byte/$r1, $r1/byte` | N/A | Perform byte/$r1 - $r1/byte and set flags |
+|  `cmpi a, byte` | `0x6a` |
+|  `cmpi byte, a` | `0x6b` |
+|  `cmpi b, byte` | `0x6c` |
+|  `cmpi byte, b` | `0x6d` |
+|  `cmpi c, byte` | `0x6e` |
+|  `cmpi byte, c` | `0x6f` |
+| `jmp byte` | `0x70` | PC = byte |
+| `je/jz byte` | `0x71` | if ZF, PC = byte |
+| `jne/jnz byte` | `0x72` | if ~ZF, PC = byte |
+| `jg/jnle byte` | `0x73` | if ~(SF ^ OF) & ~ZF, PC = byte |
+| `jge/jnl byte` | `0x74` | if ~(SF ^ OF), PC = byte |
+| `jl/jnge byte` | `0x75` | if SF ^ OF, PC = byte |
+| `jle/jng byte` | `0x76` | if (SF ^ OF) \| ZF, PC = byte |
+| `call byte` |`0x77` | sp += 1, PC += 1, Stack[sp] = PC, PC = byte |
+| `ret` | `0x78` | PC = Stack[sp], sp -= 1 |
+| `out $r1` | N/A | Send $r1 to decimal display |
+|  `out a` | `0x79` |
+|  `out b` | `0x7a` |
+|  `out c` | `0x7b` |
+| `dic byte` | `0x7c` | Send command byte to LCD |
+| `did byte` | `0x7d` | Send data byte to LCD |
+| `hlt` | `0x7e` | Halt |
+| `nop` | `0x7f` | No operation |
