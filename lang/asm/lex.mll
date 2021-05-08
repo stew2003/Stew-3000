@@ -19,7 +19,11 @@ rule token = parse
 | ':' { COLON }
 | ',' { COMMA }
 | '-'?['0'-'9']+ as i
-    { IMM (int_of_string i) }
+  { IMM (int_of_string i) }
+| '-'?"0x"['0'-'9''a'-'f''A'-'F']+ as hex
+  { IMM (int_of_string hex) }
+| '-'?"0b"['0' '1']+ as binary
+  { IMM (int_of_string binary) }
 | "a" 
   { REG_A }
 | "b"

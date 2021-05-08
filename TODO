@@ -17,6 +17,8 @@ Compiler
   [] decide on language constructs
   [] implement compiler
   [] implement optimizations for smol code
+    [] "compile to" given register (reduce movs)
+    [] eliminate redundant instrs
   [] preprocessor?
 
 Virtual Machine
