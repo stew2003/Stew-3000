@@ -14,8 +14,9 @@ Assembler
     from writing an immediate that is a mem loc >127
 
 Compiler
-  [] decide on language constructs
+  [x] decide on language constructs
   [] implement compiler
+    [] tricky: implicit returns from functions?
   [] implement optimizations for smol code
     [] "compile to" given register (reduce movs)
     [] eliminate redundant instrs
@@ -24,10 +25,6 @@ Compiler
 Virtual Machine
   [x] software simulation of the stew3000, for compiler testing
   [x] add flag for levels of verbose output:
-    default: no output, final state printed
-    1) out instructions print their output
-    2) current instruction is printed
-    3) full state is printed at each instruction
   [] *future*: "step" mode for emulator for debugging?
 
 [] document everything

@@ -27,8 +27,8 @@ fun main() {
   !1;  // logical not
 
   let a = 1;
-  ++a; // increment
-  --a; // decrement
+  a++; // increment
+  a--; // decrement
 
   // Function call
   fact(5);

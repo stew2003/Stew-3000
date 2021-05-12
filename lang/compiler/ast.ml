@@ -14,7 +14,7 @@ type bin_op =
   | Lte
   | Eq
 
-type un_op = BNot | LNot | Inr | Dcr
+type un_op = BNot | LNot
 
 type expr =
   | Num of int
@@ -34,6 +34,8 @@ type stmt =
   | While of expr * stmt list
   (* sends to decimal display *)
   | Print of expr
+  | Inr of string
+  | Dcr of string
 
 type func_defn = { name : string; params : string list; body : stmt list }
 
