@@ -40,7 +40,8 @@ let command =
             Printf.eprintf "%s: %s\n%s\n"
               (Colors.error "Assembler Error")
               (Assemble.string_of_asm_err err)
-              (Srcloc.string_of_maybe_loc maybe_loc)
+              (Srcloc.string_of_maybe_loc maybe_loc
+                 (In_channel.read_all asm_filename))
         | Parser.AsmParseError msg ->
             Printf.eprintf "%s: %s\n" (Colors.error "Error Parsing Asm") msg
         | err ->

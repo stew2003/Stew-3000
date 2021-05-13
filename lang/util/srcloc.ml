@@ -18,7 +18,12 @@ let loc (startl : int) (endl : int) = { startl; endl }
 let loc_from_lexbuf (buf : lexbuf) =
   loc buf.lex_curr_p.pos_lnum buf.lex_curr_p.pos_lnum
 
-let string_of_src_loc (loc : src_loc) : string = ""
+(* [string_of_src_loc] converts a source location and a source file 
+  contents into a message indicating the position in the source file *)
+let string_of_src_loc (loc : src_loc) (source : string) : string =
+  "TODO: SOURCE LOC"
 
-let string_of_maybe_loc (loc : src_loc option) : string =
-  match loc with None -> "" | Some loc -> string_of_src_loc loc
+(* [string_of_maybe_loc] is a wrapper for string of src loc that handles 
+  optional locations *)
+let string_of_maybe_loc (loc : src_loc option) (source : string) : string =
+  match loc with None -> "" | Some loc -> string_of_src_loc loc source

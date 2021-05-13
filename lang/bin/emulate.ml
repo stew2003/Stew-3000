@@ -26,10 +26,12 @@ let command =
         with
         | Parser.AsmParseError msg ->
             eprintf "%s: %s\n" (Colors.error "Error Parsing Asm") msg
-        | EmulatorError err ->
-            eprintf "%s: %s\n"
+        | EmulatorError (err, maybe_loc) ->
+            eprintf "%s: %s\n%s\n"
               (Colors.error "Emulator Error")
               (string_of_emu_err err)
+              (Srcloc.string_of_maybe_loc maybe_loc
+                 (In_channel.read_all filename))
         | err -> eprintf "%s: %s\n" (Colors.error "Error") (Exn.to_string err))
 
 let () = Command.run ~version:"1.0" command
