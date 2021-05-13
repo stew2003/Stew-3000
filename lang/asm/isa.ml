@@ -1,4 +1,5 @@
 open Printf
+open Util.Srcloc
 
 (* Programmer-facing registers: A, B, C, and stack pointer *)
 type register = A | B | C | SP

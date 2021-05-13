@@ -1,5 +1,6 @@
 {
   open Parse
+  open Util.Srcloc
   exception Error of string
 }
 
@@ -33,77 +34,77 @@ rule token = parse
 | "sp"
   { REG_SP }
 | "add"
-  { ADD }
+  { ADD (loc_from_lexbuf lexbuf) }
 | "addi"
-  { ADDI }
+  { ADDI (loc_from_lexbuf lexbuf) }
 | "sub"
-  { SUB }
+  { SUB (loc_from_lexbuf lexbuf) }
 | "subi"
-  { SUBI }
+  { SUBI (loc_from_lexbuf lexbuf) }
 | "and"
-  { AND }
+  { AND (loc_from_lexbuf lexbuf) }
 | "ani"
-  { ANI }
+  { ANI (loc_from_lexbuf lexbuf) }
 | "or"
-  { OR }
+  { OR (loc_from_lexbuf lexbuf) }
 | "ori"
-  { ORI }
+  { ORI (loc_from_lexbuf lexbuf) }
 | "xor"
-  { XOR }
+  { XOR (loc_from_lexbuf lexbuf) }
 | "xri"
-  { XRI }
+  { XRI (loc_from_lexbuf lexbuf) }
 | "not"
-  { NOT }
+  { NOT (loc_from_lexbuf lexbuf) }
 | "inr"
-  { INR }
+  { INR (loc_from_lexbuf lexbuf) }
 | "dcr"
-  { DCR }
+  { DCR (loc_from_lexbuf lexbuf) }
 | "mov"
-  { MOV }
+  { MOV (loc_from_lexbuf lexbuf) }
 | "mvi"
-  { MVI }
+  { MVI (loc_from_lexbuf lexbuf) }
 | "ld"
-  { LD }
+  { LD (loc_from_lexbuf lexbuf) }
 | "st"
-  { ST }
+  { ST (loc_from_lexbuf lexbuf) }
 | "lds"
-  { LDS }
+  { LDS (loc_from_lexbuf lexbuf) }
 | "sts"
-  { STS }
+  { STS (loc_from_lexbuf lexbuf) }
 | "cmp"
-  { CMP }
+  { CMP (loc_from_lexbuf lexbuf) }
 | "cmpi"
-  { CMPI }
+  { CMPI (loc_from_lexbuf lexbuf) }
 | "jmp"
-  { JMP }
+  { JMP (loc_from_lexbuf lexbuf) }
 | "je"
-  { JE }
+  { JE (loc_from_lexbuf lexbuf) }
 | "jne"
-  { JNE }
+  { JNE (loc_from_lexbuf lexbuf) }
 | "jg"
-  { JG }
+  { JG (loc_from_lexbuf lexbuf) }
 | "jge"
-  { JGE }
+  { JGE (loc_from_lexbuf lexbuf) }
 | "jl"
-  { JL }
+  { JL (loc_from_lexbuf lexbuf) }
 | "jle"
-  { JLE }
+  { JLE (loc_from_lexbuf lexbuf) }
 | "call"
-  { CALL }
+  { CALL (loc_from_lexbuf lexbuf) }
 | "ret"
-  { RET }
+  { RET (loc_from_lexbuf lexbuf) }
 | "dic"
-  { DIC }
+  { DIC (loc_from_lexbuf lexbuf) }
 | "did"
-  { DID }
+  { DID (loc_from_lexbuf lexbuf) }
 | "hlt"
-  { HLT }
+  { HLT (loc_from_lexbuf lexbuf) }
 | "nop"
-  { NOP }
+  { NOP (loc_from_lexbuf lexbuf) }
 | "out"
-  { OUT }
+  { OUT (loc_from_lexbuf lexbuf) }
 | ['a'-'z''A'-'Z']['a'-'z''A'-'Z''_''0'-'9']* as name
-    { LABEL name }
+    { LABEL (name, (loc_from_lexbuf lexbuf)) }
 | eof
     { EOF }
 | _

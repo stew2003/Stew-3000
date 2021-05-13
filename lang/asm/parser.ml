@@ -1,9 +1,11 @@
 open Stdlib
 open Printf
+open Isa
+open Util.Srcloc
 
 exception AsmParseError of string
 
-let parse (s : string) =
+let parse (s : string) : instr with_loc list =
   let buf = Lexing.from_string s in
   match Parse.main Lex.token buf with
   | instrs -> instrs
