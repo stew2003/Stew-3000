@@ -1,4 +1,6 @@
 open Lexing
+open Printf
+open Colors
 
 (* src_loc describes a range of line numbers in a source file *)
 type src_loc = { startl : int; endl : int }
@@ -18,10 +20,40 @@ let loc (startl : int) (endl : int) = { startl; endl }
 let loc_from_lexbuf (buf : lexbuf) =
   loc buf.lex_curr_p.pos_lnum buf.lex_curr_p.pos_lnum
 
+(* the periphery is how many lines above and below the source 
+  location are printed when the location is printed *)
+let periphery = 2
+
 (* [string_of_src_loc] converts a source location and a source file 
   contents into a message indicating the position in the source file *)
 let string_of_src_loc (loc : src_loc) (source : string) : string =
-  "TODO: SOURCE LOC"
+  let lines_with_color lines colorize =
+    List.map
+      (fun (i, line) ->
+        let lineno = Colors.br_black (sprintf "%3d | " i) in
+        sprintf "%s%s" lineno (colorize line))
+      lines
+  in
+  (* get lines of file, with their line numbers *)
+  let lines =
+    String.split_on_char '\n' source |> List.mapi (fun i line -> (i + 1, line))
+  in
+  let lines_by_idx (pred : int -> bool) =
+    List.filter (fun (i, _) -> pred i) lines
+  in
+  let at_loc = lines_by_idx (fun i -> i >= loc.startl && i <= loc.endl) in
+  let before_loc =
+    lines_by_idx (fun i -> loc.startl - i <= periphery && loc.startl - i > 0)
+  in
+  let after_loc =
+    lines_by_idx (fun i -> i - loc.endl <= periphery && i - loc.endl > 0)
+  in
+  (* get lines at & around src loc, colorized appropriately *)
+  [ "At location:" ]
+  @ lines_with_color before_loc (fun line -> Colors.br_black line)
+  @ lines_with_color at_loc (fun line -> line)
+  @ lines_with_color after_loc (fun line -> Colors.br_black line)
+  |> String.concat "\n"
 
 (* [string_of_maybe_loc] is a wrapper for string of src loc that handles 
   optional locations *)
