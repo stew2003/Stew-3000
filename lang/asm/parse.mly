@@ -1,5 +1,6 @@
 %{ 
   open Isa
+  open Util.Srcloc
 %}
 
 %token <int> IMM
@@ -7,49 +8,49 @@
 %token REG_B
 %token REG_C
 %token REG_SP
-%token ADD
-%token ADDI
-%token SUB
-%token SUBI
-%token AND
-%token ANI
-%token OR
-%token ORI
-%token XOR
-%token XRI
-%token NOT
-%token INR
-%token DCR
-%token MOV
-%token MVI
-%token LD
-%token ST
-%token LDS
-%token STS
-%token CMP
-%token CMPI
-%token JMP
-%token JE
-%token JNE
-%token JG
-%token JGE
-%token JL
-%token JLE
-%token CALL
-%token RET
-%token DIC
-%token DID
-%token HLT
-%token NOP
-%token OUT
-%token <string> LABEL
+%token <Util.Srcloc.src_loc> ADD
+%token <Util.Srcloc.src_loc> ADDI
+%token <Util.Srcloc.src_loc> SUB
+%token <Util.Srcloc.src_loc> SUBI
+%token <Util.Srcloc.src_loc> AND
+%token <Util.Srcloc.src_loc> ANI
+%token <Util.Srcloc.src_loc> OR
+%token <Util.Srcloc.src_loc> ORI
+%token <Util.Srcloc.src_loc> XOR
+%token <Util.Srcloc.src_loc> XRI
+%token <Util.Srcloc.src_loc> NOT
+%token <Util.Srcloc.src_loc> INR
+%token <Util.Srcloc.src_loc> DCR
+%token <Util.Srcloc.src_loc> MOV
+%token <Util.Srcloc.src_loc> MVI
+%token <Util.Srcloc.src_loc> LD
+%token <Util.Srcloc.src_loc> ST
+%token <Util.Srcloc.src_loc> LDS
+%token <Util.Srcloc.src_loc> STS
+%token <Util.Srcloc.src_loc> CMP
+%token <Util.Srcloc.src_loc> CMPI
+%token <Util.Srcloc.src_loc> JMP
+%token <Util.Srcloc.src_loc> JE
+%token <Util.Srcloc.src_loc> JNE
+%token <Util.Srcloc.src_loc> JG
+%token <Util.Srcloc.src_loc> JGE
+%token <Util.Srcloc.src_loc> JL
+%token <Util.Srcloc.src_loc> JLE
+%token <Util.Srcloc.src_loc> CALL
+%token <Util.Srcloc.src_loc> RET
+%token <Util.Srcloc.src_loc> DIC
+%token <Util.Srcloc.src_loc> DID
+%token <Util.Srcloc.src_loc> HLT
+%token <Util.Srcloc.src_loc> NOP
+%token <Util.Srcloc.src_loc> OUT
+%token <string * Util.Srcloc.src_loc> LABEL
 
 %token COLON
 %token COMMA
 %token NEWLINE
 %token EOF
 
-%start <instr list> main
+%start <instr with_loc list> main
 
 %%
 
@@ -76,77 +77,86 @@ reg:
   { SP }
 
 instr:
-| ADD src = reg COMMA dest = reg
-  { Add(src, dest) }
-| ADDI src = IMM COMMA dest = reg
-  { Addi(src, dest) }
-| SUB src = reg COMMA dest = reg
-  { Sub(src, dest) }
-| SUBI src = IMM COMMA dest = reg
-  { Subi(src, dest) }
-| AND src = reg COMMA dest = reg
-  { And(src, dest) }
-| ANI src = IMM COMMA dest = reg
-  { Ani(src, dest) }
-| OR src = reg COMMA dest = reg
-  { Or(src, dest) }
-| ORI src = IMM COMMA dest = reg
-  { Ori(src, dest) }
-| XOR src = reg COMMA dest = reg
-  { Xor(src, dest) }
-| XRI src = IMM COMMA dest = reg
-  { Xri(src, dest) }
-| NOT r = reg
-  { Not r }
-| INR r = reg
-  { Inr r }
-| DCR r = reg
-  { Dcr r }
-| MOV src = reg COMMA dest = reg
-  { Mov(src, dest) }
-| MVI src = IMM COMMA dest = reg
-  { Mvi(src, dest) }
-| LD src = reg COMMA dest = reg
-  { Ld(src, dest) }
-| ST src = reg COMMA dest = reg
-  { St(src, dest) }
-| LDS src = IMM COMMA dest = reg
-  { Lds(src, dest) }
-| STS src = reg COMMA dest = IMM
-  { Sts(src, dest) }
-| CMP left = reg COMMA right = reg
-  { Cmp(left, right) }
-| CMPI left = IMM COMMA right = reg
-  { Cmpi(Imm left, Reg right) }
-| CMPI left = reg COMMA right = IMM
-  { Cmpi(Reg left, Imm right) }
-| lb = LABEL COLON
-  { Label lb }
-| JMP target = LABEL
-  { Jmp target }
-| JE target = LABEL
-  { Je target }
-| JNE target = LABEL
-  { Jne target }
-| JG target = LABEL
-  { Jg target }
-| JGE target = LABEL
-  { Jge target }
-| JL target = LABEL
-  { Jl target }
-| JLE target = LABEL
-  { Jle target }
-| CALL target = LABEL
-  { Call target }
-| RET
-  { Ret }
-| DIC imm = IMM
-  { Dic imm }
-| DID imm = IMM
-  { Did imm }
-| HLT
-  { Hlt }
-| NOP
-  { Nop }
-| OUT r = reg
-  { Out r }
+| loc = ADD src = reg COMMA dest = reg
+  { (Add(src, dest), loc) }
+| loc = ADDI src = IMM COMMA dest = reg
+  { (Addi(src, dest), loc) }
+| loc = SUB src = reg COMMA dest = reg
+  { (Sub(src, dest), loc) }
+| loc = SUBI src = IMM COMMA dest = reg
+  { (Subi(src, dest), loc) }
+| loc = AND src = reg COMMA dest = reg
+  { (And(src, dest), loc) }
+| loc = ANI src = IMM COMMA dest = reg
+  { (Ani(src, dest), loc) }
+| loc = OR src = reg COMMA dest = reg
+  { (Or(src, dest), loc) }
+| loc = ORI src = IMM COMMA dest = reg
+  { (Ori(src, dest), loc) }
+| loc = XOR src = reg COMMA dest = reg
+  { (Xor(src, dest), loc) }
+| loc = XRI src = IMM COMMA dest = reg
+  { (Xri(src, dest), loc) }
+| loc = NOT r = reg
+  { (Not r, loc) }
+| loc = INR r = reg
+  { (Inr r, loc) }
+| loc = DCR r = reg
+  { (Dcr r, loc) }
+| loc = MOV src = reg COMMA dest = reg
+  { (Mov(src, dest), loc) }
+| loc = MVI src = IMM COMMA dest = reg
+  { (Mvi(src, dest), loc) }
+| loc = LD src = reg COMMA dest = reg
+  { (Ld(src, dest), loc) }
+| loc = ST src = reg COMMA dest = reg
+  { (St(src, dest), loc) }
+| loc = LDS src = IMM COMMA dest = reg
+  { (Lds(src, dest), loc) }
+| loc = STS src = reg COMMA dest = IMM
+  { (Sts(src, dest), loc) }
+| loc = CMP left = reg COMMA right = reg
+  { (Cmp(left, right), loc) }
+| loc = CMPI left = IMM COMMA right = reg
+  { (Cmpi(Imm left, Reg right), loc) }
+| loc = CMPI left = reg COMMA right = IMM
+  { (Cmpi(Reg left, Imm right), loc) }
+| label = LABEL COLON
+  { let (label, loc) = label in 
+    (Label label, loc) }
+| loc = JMP target = LABEL
+  { let (target, _) = target in 
+    (Jmp target, loc) }
+| loc = JE target = LABEL
+  { let (target, _) = target in 
+    (Je target, loc) }
+| loc = JNE target = LABEL
+  { let (target, _) = target in 
+    (Jne target, loc) }
+| loc = JG target = LABEL
+  { let (target, _) = target in 
+    (Jg target, loc) }
+| loc = JGE target = LABEL
+  { let (target, _) = target in 
+    (Jge target, loc) }
+| loc = JL target = LABEL
+  { let (target, _) = target in 
+    (Jl target, loc) }
+| loc = JLE target = LABEL
+  { let (target, _) = target in 
+    (Jle target, loc) }
+| loc = CALL target = LABEL
+  { let (target, _) = target in 
+    (Call target, loc) }
+| loc = RET
+  { (Ret, loc) }
+| loc = DIC imm = IMM
+  { (Dic imm, loc) }
+| loc = DID imm = IMM
+  { (Did imm, loc) }
+| loc = HLT
+  { (Hlt, loc) }
+| loc = NOP
+  { (Nop, loc) }
+| loc = OUT r = reg
+  { (Out r, loc) }

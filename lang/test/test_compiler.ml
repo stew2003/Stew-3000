@@ -3,10 +3,13 @@ open Compiler.Compile
 open Compiler.Ast
 open Asm.Isa
 open Emulator
+open Util.Srcloc
+
+let dummy_src_loc = loc 0 0
 
 let compile_and_run (pgrm : prog) : stew_3000 =
   let instrs = compile pgrm in
-  emulate instrs 0
+  emulate (List.map (fun ins -> (ins, dummy_src_loc)) instrs) 0
 
 let test_simple_pgrm _ =
   let machine = compile_and_run { funcs = []; main = [ ExprStmt (Num 7) ] } in

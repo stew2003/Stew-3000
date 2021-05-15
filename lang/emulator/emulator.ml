@@ -2,6 +2,7 @@ open Asm.Isa
 open Asm.Validate
 open Printf
 open Util.Env
+open Util.Srcloc
 open Util
 
 (*  stew_3000 models the programmer-visible state of the machine
@@ -87,15 +88,15 @@ type emu_err =
   | InvalidInstr of instr
   | InvalidStackAccess of int * stew_3000
 
-exception EmulatorError of emu_err
+exception EmulatorError of emu_err with_loc_opt
 
 let string_of_emu_err (err : emu_err) =
   match err with
-  | DuplicateLabel label -> sprintf "duplicate label: %s" label
+  | DuplicateLabel label -> sprintf "label `%s` appears more than once" label
   | InvalidProgramCounter machine ->
       sprintf "invalid program counter: %d\n%s" machine.pc
         (string_of_stew_3000 machine)
-  | InvalidTarget label -> sprintf "invalid target: %s" label
+  | InvalidTarget label -> sprintf "invalid target: `%s`" label
   | InvalidImm imm -> sprintf "invalid immediate value: %s" (string_of_imm imm)
   | InvalidInstr ins -> sprintf "invalid instruction: %s" (string_of_instr ins)
   | InvalidStackAccess (loc, machine) ->
@@ -104,8 +105,9 @@ let string_of_emu_err (err : emu_err) =
 
 (* [emulate_instr] emulates the effect of the given instruction
   on the machine, by mutating the machine in-place *)
-let emulate_instr (ins : instr) (machine : stew_3000) (label_map : int env)
-    (verbosity : int) =
+let emulate_instr (ins : instr with_loc) (machine : stew_3000)
+    (label_map : int env) (verbosity : int) =
+  let ins, srcloc = ins in
   (* [load_reg] retrieves the value currently stored in a register *)
   let load_reg (reg : register) : int =
     match reg with
@@ -127,21 +129,21 @@ let emulate_instr (ins : instr) (machine : stew_3000) (label_map : int env)
   let load_stack (loc : int) : int =
     try Array.get machine.stack loc
     with Invalid_argument _ ->
-      raise (EmulatorError (InvalidStackAccess (loc, machine)))
+      raise (EmulatorError (InvalidStackAccess (loc, machine), Some srcloc))
   in
   (* [store_stack] writes a given value to the stack at a given
      location, or errors if the access is bad *)
   let store_stack (loc : int) (value : int) =
     try Array.set machine.stack loc value
     with Invalid_argument _ ->
-      raise (EmulatorError (InvalidStackAccess (loc, machine)))
+      raise (EmulatorError (InvalidStackAccess (loc, machine), Some srcloc))
   in
   (* [label_to_index] converts a string label to its corresponding index,
      erroring if there is no index for the label *)
   let label_to_index (label : string) =
     match Env.find_opt label label_map with
     | Some index -> index
-    | None -> raise (EmulatorError (InvalidTarget label))
+    | None -> raise (EmulatorError (InvalidTarget label, Some srcloc))
   in
   (* [as_8bit_signed] checks if a value has 8-bit signed overflow,
      and keeps it within the representable range [-128, 128),
@@ -215,9 +217,11 @@ let emulate_instr (ins : instr) (machine : stew_3000) (label_map : int env)
   in
 
   (* first, ensure that the instruction is valid *)
-  (try validate_instr ins with
-  | ValidityError (InvalidImm imm) -> raise (EmulatorError (InvalidImm imm))
-  | ValidityError (InvalidInstr ins) -> raise (EmulatorError (InvalidInstr ins)));
+  (try validate_instr (ins, srcloc) with
+  | ValidityError (InvalidImm imm, maybe_loc) ->
+      raise (EmulatorError (InvalidImm imm, maybe_loc))
+  | ValidityError (InvalidInstr ins, maybe_loc) ->
+      raise (EmulatorError (InvalidInstr ins, maybe_loc)));
 
   (* simulate the effects of the instruction*)
   match ins with
@@ -292,49 +296,50 @@ let emulate_instr (ins : instr) (machine : stew_3000) (label_map : int env)
   | Label _ | Nop -> inc_pc ()
   (* XXX: Dic and Did not currently supported *)
   | Dic _ | Did _ -> inc_pc ()
-  | _ -> raise (EmulatorError (InvalidInstr ins))
+  | _ -> raise (EmulatorError (InvalidInstr ins, Some srcloc))
 
 (* [map_labels] constructs an environment that maps label names to indices in
   the program's list of instructions *)
-let map_labels (instrs : instr list) =
+let map_labels (instrs : instr with_loc list) =
   (* pair instructions with their indices in the program *)
   List.mapi (fun i ins -> (i, ins)) instrs
   (* accumulate an environment of labels->indices *)
   |> List.fold_left
-       (fun env (i, ins) ->
+       (fun env (i, (ins, loc)) ->
          match ins with
          | Label name ->
              (* map each label to the index following it *)
              if Env.mem name env then
-               raise (EmulatorError (DuplicateLabel name))
+               raise (EmulatorError (DuplicateLabel name, Some loc))
              else Env.add name (i + 1) env
          | _ -> env)
        Env.empty
 
 (* [get_current_ins] retrieves the current instruction to execute 
   by indexing into the program using the machine's program counter *)
-let get_current_ins (pgrm : instr list) (machine : stew_3000) : instr =
+let get_current_ins (pgrm : instr with_loc list) (machine : stew_3000) :
+    instr with_loc =
   try List.nth pgrm machine.pc
   with Failure _ | Invalid_argument _ ->
-    raise (EmulatorError (InvalidProgramCounter machine))
+    raise (EmulatorError (InvalidProgramCounter machine, None))
 
 (* [emulate] emulates running the given assembly program 
   on the Stew 3000, and returns the final machine state after the run.
   verbosity indicates how much logging should happen during the run. *)
-let emulate (pgrm : instr list) (verbosity : int) : stew_3000 =
+let emulate (pgrm : instr with_loc list) (verbosity : int) : stew_3000 =
   let machine = new_stew_3000 () in
   let label_map = map_labels pgrm in
   let rec run _ =
     if machine.halted then ()
     else
-      let ins = get_current_ins pgrm machine in
+      let ins, loc = get_current_ins pgrm machine in
       (* verbosity level 2, current instruction is logged *)
       if verbosity >= 2 then
         printf "%s %s\n"
           (Colors.log "[current instruction]")
           (string_of_instr ins)
       else ();
-      emulate_instr ins machine label_map verbosity;
+      emulate_instr (ins, loc) machine label_map verbosity;
       (* verbosity level 3, entire machine state is logged *)
       if verbosity >= 3 then
         printf "%s\n%s"

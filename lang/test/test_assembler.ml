@@ -1,6 +1,13 @@
 open OUnit2
 open Asm.Assemble
 open Asm.Isa
+open Util.Srcloc
+
+let dummy_src_loc = loc 0 0
+
+(* shadow assembler with something that adds dummy source locations *)
+let assemble instrs =
+  assemble (List.map (fun ins -> (ins, dummy_src_loc)) instrs)
 
 (* [assert_assembles_to] asserts that the given program assembles
   to the given list of bytes *)
@@ -27,44 +34,51 @@ let test_longer_pgrm _ =
 
 let test_invalid_instr _ =
   assert_raises
-    (AssembleError (InvalidInstr (Mvi (5, SP))))
+    (AssembleError (InvalidInstr (Mvi (5, SP)), Some dummy_src_loc))
     (fun _ -> assemble [ Add (A, B); Subi (1, B); Mvi (5, SP) ]);
   assert_raises
-    (AssembleError (InvalidInstr (Cmpi (Reg B, Reg A))))
+    (AssembleError (InvalidInstr (Cmpi (Reg B, Reg A)), Some dummy_src_loc))
     (fun _ -> assemble [ Cmpi (Reg B, Reg A) ])
 
 let test_dup_label _ =
-  assert_raises (AssembleError (DuplicateLabel "dup")) (fun _ ->
-      assemble [ Label "dup"; Label "dup" ])
+  assert_raises
+    (AssembleError (DuplicateLabel "dup", Some dummy_src_loc))
+    (fun _ -> assemble [ Label "dup"; Label "dup" ])
 
 let test_invalid_imm _ =
-  assert_raises (AssembleError (InvalidImm 500)) (fun _ ->
-      assemble [ Mvi (500, A) ]);
-  assert_raises (AssembleError (InvalidImm (-129))) (fun _ ->
-      assemble [ Addi (-129, C) ]);
-  assert_raises (AssembleError (InvalidImm 256)) (fun _ ->
-      assemble [ Sts (A, 256) ]);
-  assert_raises (AssembleError (InvalidImm (-129))) (fun _ ->
-      assemble [ Lds (-129, C) ])
+  assert_raises
+    (AssembleError (InvalidImm 500, Some dummy_src_loc))
+    (fun _ -> assemble [ Mvi (500, A) ]);
+  assert_raises
+    (AssembleError (InvalidImm (-129), Some dummy_src_loc))
+    (fun _ -> assemble [ Addi (-129, C) ]);
+  assert_raises
+    (AssembleError (InvalidImm 256, Some dummy_src_loc))
+    (fun _ -> assemble [ Sts (A, 256) ]);
+  assert_raises
+    (AssembleError (InvalidImm (-129), Some dummy_src_loc))
+    (fun _ -> assemble [ Lds (-129, C) ])
 
 let test_invalid_target _ =
-  assert_raises (AssembleError (InvalidTarget "nonexistent")) (fun _ ->
-      assemble [ Jle "nonexistent" ])
+  assert_raises
+    (AssembleError (InvalidTarget "nonexistent", Some dummy_src_loc))
+    (fun _ -> assemble [ Jle "nonexistent" ])
 
 (* [pgrm] builds a program of size nops *)
 let rec pgrm (size : int) = if size = 0 then [] else Nop :: pgrm (size - 1)
 
 let test_pgrm_too_large _ =
   let big = 257 in
-  assert_raises (AssembleError (ProgramTooLarge big)) (fun _ ->
-      assemble (pgrm big))
+  assert_raises
+    (AssembleError (ProgramTooLarge big, None))
+    (fun _ -> assemble (pgrm big))
 
 let test_out_of_bounds _ =
   let program =
     [ Jmp "out_of_bounds" ] @ pgrm 254 @ [ Label "out_of_bounds" ]
   in
   assert_raises
-    (AssembleError (OutOfBoundsLabel ("out_of_bounds", 256)))
+    (AssembleError (OutOfBoundsLabel ("out_of_bounds", 256), Some dummy_src_loc))
     (fun _ -> assemble program)
 
 let test_overflow_immediates _ =

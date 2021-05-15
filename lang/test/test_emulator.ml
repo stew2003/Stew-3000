@@ -1,9 +1,13 @@
 open OUnit2
 open Asm.Isa
 open Emulator
+open Util.Srcloc
 
-(* wrapper around emulate, with no logging *)
-let run_emulator (pgrm : instr list) = emulate pgrm 0
+let dummy_src_loc = loc 0 0
+
+(* wrapper around emulate, with no logging and adding dummy src locations *)
+let run_emulator (pgrm : instr list) =
+  emulate (List.map (fun ins -> (ins, dummy_src_loc)) pgrm) 0
 
 let assert_int_eq (exp : int) (act : int) =
   assert_equal exp act ~printer:string_of_int
@@ -170,36 +174,43 @@ let test_call_ret _ =
   assert_int_list_eq [ 11 ] machine.dec_disp_history
 
 let test_dup_label _ =
-  assert_raises (EmulatorError (DuplicateLabel "dup")) (fun _ ->
-      run_emulator [ Label "dup"; Label "dup"; Label "dup" ])
+  assert_raises
+    (EmulatorError (DuplicateLabel "dup", Some dummy_src_loc))
+    (fun _ -> run_emulator [ Label "dup"; Label "dup"; Label "dup" ])
 
 let test_invalid_pc _ =
   let machine = new_stew_3000 () in
   (* pc runs right off the end *)
   machine.pc <- 3;
-  assert_raises (EmulatorError (InvalidProgramCounter machine)) (fun _ ->
-      run_emulator [ Nop; Nop; Nop ])
+  assert_raises
+    (EmulatorError (InvalidProgramCounter machine, None))
+    (fun _ -> run_emulator [ Nop; Nop; Nop ])
 
 let test_invalid_target _ =
-  assert_raises (EmulatorError (InvalidTarget "not_here")) (fun _ ->
-      run_emulator [ Jmp "not_here" ]);
-  assert_raises (EmulatorError (InvalidTarget "not_a_fun")) (fun _ ->
-      run_emulator [ Call "not_a_fun" ])
+  assert_raises
+    (EmulatorError (InvalidTarget "not_here", Some dummy_src_loc))
+    (fun _ -> run_emulator [ Jmp "not_here" ]);
+  assert_raises
+    (EmulatorError (InvalidTarget "not_a_fun", Some dummy_src_loc))
+    (fun _ -> run_emulator [ Call "not_a_fun" ])
 
 let test_invalid_imm _ =
-  assert_raises (EmulatorError (InvalidImm (-129))) (fun _ ->
-      run_emulator [ Addi (-129, B) ]);
-  assert_raises (EmulatorError (InvalidImm (-129))) (fun _ ->
-      run_emulator [ Lds (-129, A) ]);
-  assert_raises (EmulatorError (InvalidImm 256)) (fun _ ->
-      run_emulator [ Sts (C, 256) ])
+  assert_raises
+    (EmulatorError (InvalidImm (-129), Some dummy_src_loc))
+    (fun _ -> run_emulator [ Addi (-129, B) ]);
+  assert_raises
+    (EmulatorError (InvalidImm (-129), Some dummy_src_loc))
+    (fun _ -> run_emulator [ Lds (-129, A) ]);
+  assert_raises
+    (EmulatorError (InvalidImm 256, Some dummy_src_loc))
+    (fun _ -> run_emulator [ Sts (C, 256) ])
 
 let test_invalid_instr _ =
   assert_raises
-    (EmulatorError (InvalidInstr (Sub (B, B))))
+    (EmulatorError (InvalidInstr (Sub (B, B)), Some dummy_src_loc))
     (fun _ -> run_emulator [ Sub (B, B) ]);
   assert_raises
-    (EmulatorError (InvalidInstr (Cmpi (Imm 1, Imm 2))))
+    (EmulatorError (InvalidInstr (Cmpi (Imm 1, Imm 2)), Some dummy_src_loc))
     (fun _ -> run_emulator [ Cmpi (Imm 1, Imm 2) ])
 
 let test_overflow_immediates _ =
