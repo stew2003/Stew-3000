@@ -18,6 +18,10 @@ Compiler
   [x] decide on language constructs
   [] implement compiler
     [] tricky: implicit returns from functions?
+  [] type checking
+    NOTE: 
+    - non-void functions must return value in all branches
+    - void functions must not contain any return *with a value*
   [] implement optimizations for smol code
     [] "compile to" given register (reduce movs)
     [] eliminate redundant instrs
