@@ -1,6 +1,5 @@
 open Lexing
 open Printf
-open Colors
 
 (* src_loc describes a range of line numbers in a source file *)
 type src_loc = { startl : int; endl : int }
@@ -18,7 +17,8 @@ let loc (startl : int) (endl : int) = { startl; endl }
 (* [loc_from_lexbuf] constructs a src loc from
   the current line position of the lexing buffer *)
 let loc_from_lexbuf (buf : lexbuf) =
-  loc buf.lex_curr_p.pos_lnum buf.lex_curr_p.pos_lnum
+  let lno = (lexeme_start_p buf).pos_lnum in
+  loc lno lno
 
 (* the periphery is how many lines above and below the source 
   location are printed when the location is printed *)

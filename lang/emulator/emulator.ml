@@ -92,11 +92,11 @@ exception EmulatorError of emu_err with_loc_opt
 
 let string_of_emu_err (err : emu_err) =
   match err with
-  | DuplicateLabel label -> sprintf "duplicate label: %s" label
+  | DuplicateLabel label -> sprintf "label `%s` appears more than once" label
   | InvalidProgramCounter machine ->
       sprintf "invalid program counter: %d\n%s" machine.pc
         (string_of_stew_3000 machine)
-  | InvalidTarget label -> sprintf "invalid target: %s" label
+  | InvalidTarget label -> sprintf "invalid target: `%s`" label
   | InvalidImm imm -> sprintf "invalid immediate value: %s" (string_of_imm imm)
   | InvalidInstr ins -> sprintf "invalid instruction: %s" (string_of_instr ins)
   | InvalidStackAccess (loc, machine) ->

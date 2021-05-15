@@ -3,14 +3,19 @@
   (modules assemble)
   (preprocess
     (pps ppx_let))
-  (libraries core asm util))
+  (libraries core asm util errors))
 
 (executable
   (name emulate)
   (modules emulate)
   (preprocess
     (pps ppx_let))
-  (libraries core asm util emulator))
+  (libraries core asm util emulator errors))
+
+(library
+  (name errors)
+  (modules errors)
+  (libraries core util))
 
 (env
   (dev

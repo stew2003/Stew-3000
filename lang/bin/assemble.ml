@@ -1,6 +1,7 @@
 open Core
 open Asm
 open Util
+open Errors
 
 (* command-line interface for assembler *)
 let command =
@@ -20,31 +21,34 @@ let command =
       fun () ->
         try
           (* read input file into string *)
-          let text = In_channel.read_all asm_filename in
-          (* parse and assemble input program *)
-          let instrs = Parser.parse text in
-          let assembled = Assemble.assemble instrs in
-          (* write assembled binary to out file *)
-          let out = Out_channel.create binary_filename in
-          Out_channel.output_bytes out assembled;
-          Out_channel.close out;
+          let source_text = In_channel.read_all asm_filename in
+          try
+            (* parse and assemble input program *)
+            let instrs = Parser.parse source_text in
+            let assembled = Assemble.assemble instrs in
+            (* write assembled binary to out file *)
+            let out = Out_channel.create binary_filename in
+            Out_channel.output_bytes out assembled;
+            Out_channel.close out;
 
-          (* print message and display assembled bytes *)
-          Printf.printf "%s `%s` (%d instructions) ==> `%s` (%d bytes)\n"
-            (Colors.success "Success!")
-            asm_filename (List.length instrs) binary_filename
-            (Bytes.length assembled);
-          printf_bytes assembled
-        with
-        | Assemble.AssembleError (err, maybe_loc) ->
-            Printf.eprintf "%s: %s\n%s\n"
-              (Colors.error "Assembler Error")
-              (Assemble.string_of_asm_err err)
-              (Srcloc.string_of_maybe_loc maybe_loc
-                 (In_channel.read_all asm_filename))
-        | Parser.AsmParseError msg ->
-            Printf.eprintf "%s: %s\n" (Colors.error "Error Parsing Asm") msg
-        | err ->
-            Printf.eprintf "%s: %s\n" (Colors.error "Error") (Exn.to_string err))
+            (* print message and display assembled bytes *)
+            Printf.printf "%s `%s` (%d instructions) ==> `%s` (%d bytes)\n"
+              (Colors.success "Success!")
+              asm_filename (List.length instrs) binary_filename
+              (Bytes.length assembled);
+            printf_bytes assembled
+          with
+          | Assemble.AssembleError (err, maybe_loc) ->
+              print_err
+                (Colors.error "Assembler Error")
+                (Assemble.string_of_asm_err err)
+                (Srcloc.string_of_maybe_loc maybe_loc source_text)
+          | Parser.AsmParseError (msg, loc) ->
+              print_err
+                (Colors.error "Error Parsing Asm")
+                msg
+                (Srcloc.string_of_src_loc loc source_text)
+          | err -> print_arbitrary_err err
+        with err -> print_arbitrary_err err)
 
 let () = Command.run ~version:"1.0" command

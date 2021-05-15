@@ -12,6 +12,7 @@ Assembler
   [x] maybe switch from hashtable to different map
   [x] reconsider how we validate immediates: currently prevents you
     from writing an immediate that is a mem loc >127
+  [x] track source locations for error messages
 
 Compiler
   [x] decide on language constructs

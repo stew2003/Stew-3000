@@ -1,7 +1,7 @@
 {
   open Parse
   open Util.Srcloc
-  exception Error of string
+  exception Error of string * src_loc
 }
 
 rule token = parse
@@ -9,13 +9,8 @@ rule token = parse
   { token lexbuf }
 | ';'[^'\n']*?
   { token lexbuf }
-| '\n' { 
-  let pos = lexbuf.lex_curr_p in 
-  lexbuf.lex_curr_p <- 
-  {
-    pos with pos_bol = lexbuf.lex_curr_pos;
-    pos_lnum = pos.pos_lnum + 1
-  };
+| '\n' {
+  Lexing.new_line lexbuf; 
   NEWLINE }
 | ':' { COLON }
 | ',' { COMMA }
@@ -108,8 +103,10 @@ rule token = parse
 | eof
     { EOF }
 | _
-    { raise (Error (Printf.sprintf 
-      "unexpected character '%s' at position %d:%d" 
-      (Lexing.lexeme lexbuf)
-      (Lexing.lexeme_start_p lexbuf).pos_lnum
-      (Lexing.lexeme_start lexbuf))) }
+    { raise (Error 
+      ((Printf.sprintf 
+        "unexpected character '%s' at position %d:%d" 
+        (String.escaped (Lexing.lexeme lexbuf))
+        (Lexing.lexeme_start_p lexbuf).pos_lnum
+        (Lexing.lexeme_start lexbuf)), 
+      (loc_from_lexbuf lexbuf))) }
