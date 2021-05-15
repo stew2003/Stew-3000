@@ -1,8 +1,9 @@
 open Ast
 open Asm.Isa
 open Util.Env
+open Util.Srcloc
 
-type compile_err = UnboundVariable of string
+type compile_err = UnboundVariable of string * src_loc
 
 exception CompileError of compile_err
 
@@ -11,11 +12,11 @@ exception CompileError of compile_err
 let rec compile_expr (expression : expr) (bindings : int env) (si : int) :
     instr list =
   match expression with
-  | Num n -> [ Mvi (n, A) ]
-  | Var x -> (
+  | Num (n, _) -> [ Mvi (n, A) ]
+  | Var (x, loc) -> (
       match Env.find_opt x bindings with
       | Some x_si -> [ Lds (x_si, A) ]
-      | None -> raise (CompileError (UnboundVariable x)))
+      | None -> raise (CompileError (UnboundVariable (x, loc))))
   | _ -> failwith "not implemented"
 
 (* [compile_stmt] generates instructions for a single statement,  
@@ -23,7 +24,7 @@ let rec compile_expr (expression : expr) (bindings : int env) (si : int) :
 and compile_stmt (statement : stmt) (bindings : int env) (si : int) : instr list
     =
   match statement with
-  | Let (name, value, scope) ->
+  | Let (name, value, scope, _) ->
       let ext_env = Env.add name si bindings in
       compile_expr value bindings si
       @ [ Sts (A, si) ]
@@ -34,10 +35,11 @@ and compile_stmt (statement : stmt) (bindings : int env) (si : int) : instr list
   in an environment and stack index *)
 and compile_stmt_lst (statements : stmt list) (bindings : int env) (si : int) :
     instr list =
-  []
+  failwith "not implemented"
 
 (* [compile_func_defn] generates instructions for a function definition *)
-let compile_func_defn (function_definition : func_defn) : instr list = []
+let compile_func_defn (function_definition : func_defn) : instr list =
+  failwith "not implemented"
 
 (* [compile] generates instructions for a complete program *)
-let compile (program : prog) : instr list = []
+let compile (program : prog) : instr list = failwith "not implemented"

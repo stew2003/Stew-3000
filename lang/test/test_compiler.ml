@@ -7,12 +7,22 @@ open Util.Srcloc
 
 let dummy_src_loc = loc 0 0
 
+let main_from_body (body : stmt list) : func_defn =
+  { name = "main"; params = []; body; return_ty = Void; loc = dummy_src_loc }
+
 let compile_and_run (pgrm : prog) : stew_3000 =
   let instrs = compile pgrm in
   emulate (List.map (fun ins -> (ins, dummy_src_loc)) instrs) 0
 
 let test_simple_pgrm _ =
-  let machine = compile_and_run { funcs = []; main = [ ExprStmt (Num 7) ] } in
+  let machine =
+    compile_and_run
+      {
+        funcs = [];
+        main =
+          main_from_body [ ExprStmt (Num (7, dummy_src_loc), dummy_src_loc) ];
+      }
+  in
   assert_equal 7 machine.a
 
 let suite = "Compiler Tests" >::: [ "test_simple_pgrm" >:: test_simple_pgrm ]
