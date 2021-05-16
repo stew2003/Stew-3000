@@ -1,6 +1,6 @@
 entry:
-  mvi 3, a
-  mvi -17, b
+  mvi -4, a
+  mvi 16, b
   call mult
   out c
   hlt
@@ -26,6 +26,19 @@ norm_b:
 done_norm:
   ret
 
+; Sets the sign of c based on a value on the stack at index 1.
+; If value is 0, leaves c alone, otherwise negates c
+; NOTE: this expects to be jumped into, not called
+; Assumes b can be clobbered.
+set_result_sign:
+  lds 1, b
+  cmpi b, 0
+  je no_sign_change
+  not c
+  inr c
+no_sign_change:
+  ret
+
 ; mult computes the product of a and b, leaving the result in c
 ;
 ; :: Implementation :: 
@@ -35,15 +48,15 @@ done_norm:
 ;   counter -= 1
 ;   running_sum += a
 ; product is running_sum
+;
+; Note on register allocation:
+; a in a
+; counter in b
+; running_sum in c
 mult:
   ; make a and b positive, keep sign info on stack
   call normalize_signs
   sts c, 1
-
-  ; Note on register allocation:
-  ; a in a
-  ; counter in b
-  ; running_sum in c
   mvi 0, c
 loop:
   cmpi b, 0
@@ -52,11 +65,6 @@ loop:
   add a, c
   jmp loop
 done_loop:
-  ; check what sign of product should be
-  lds 1, a
-  cmpi a, 0
-  je mult_done
-  not c
-  inr c
-mult_done:
-  ret
+  ; set sign of product according to signs of a & b originally
+  ; NOTE: set_result_sign will ret out of the call to mult
+  jmp set_result_sign

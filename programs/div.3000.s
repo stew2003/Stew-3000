@@ -1,6 +1,6 @@
 entry:
-  mvi 87, a
-  mvi 4, b
+  mvi 100, a
+  mvi -25, b
   call divide
   hlt
 
@@ -23,6 +23,19 @@ norm_b:
   inr b
   not c
 done_norm:
+  ret
+
+; Sets the sign of c based on a value on the stack at index 1.
+; If value is 0, leaves c alone, otherwise negates c
+; NOTE: this expects to be jumped into, not called
+; Assumes b can be clobbered.
+set_result_sign:
+  lds 1, b
+  cmpi b, 0
+  je no_sign_change
+  not c
+  inr c
+no_sign_change:
   ret
 
 ; divide performs integer division of a / b, leaving the
@@ -57,11 +70,6 @@ loop_done:
   ; quotient in c
   ; remainder in a
 
-  ; load what the sign of quotient should be
-  lds 1, b
-  cmpi b, 0
-  je divide_done
-  not c
-  inr c
-divide_done:
-  ret
+  ; set sign of quotient based on signs of a and b
+  ; NOTE: set_result_sign will ret from the call to divide
+  jmp set_result_sign
