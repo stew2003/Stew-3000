@@ -4,6 +4,8 @@ open Printf
 (* src_loc describes a range of line numbers in a source file *)
 type src_loc = { startl : int; endl : int }
 
+type maybe_loc = src_loc option
+
 (* with_loc describes a type that has a src location attached to it *)
 type 'a with_loc = 'a * src_loc
 

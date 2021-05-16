@@ -16,9 +16,7 @@ let from_file (filename : string) : instr list =
   let path = Printf.sprintf "compiler/runtime/%s" filename in
   try
     let source = In_channel.read_all path in
-    try
-      let asm = Parser.parse source in
-      List.map asm ~f:(fun (ins, _) -> ins)
+    try Parser.parse source
     with Parser.AsmParseError (msg, loc) ->
       Printf.eprintf "%s: %s\n%s\n"
         (Colors.error "Error parsing runtime functions from `" ^ filename ^ "`")

@@ -50,7 +50,7 @@
 %token NEWLINE
 %token EOF
 
-%start <instr with_loc list> main
+%start <instr list> main
 
 %%
 
@@ -78,85 +78,85 @@ reg:
 
 instr:
 | loc = ADD src = reg COMMA dest = reg
-  { (Add(src, dest), loc) }
+  { Add(src, dest, Some loc) }
 | loc = ADDI src = IMM COMMA dest = reg
-  { (Addi(src, dest), loc) }
+  { Addi(src, dest, Some loc) }
 | loc = SUB src = reg COMMA dest = reg
-  { (Sub(src, dest), loc) }
+  { Sub(src, dest, Some loc) }
 | loc = SUBI src = IMM COMMA dest = reg
-  { (Subi(src, dest), loc) }
+  { Subi(src, dest, Some loc) }
 | loc = AND src = reg COMMA dest = reg
-  { (And(src, dest), loc) }
+  { And(src, dest, Some loc) }
 | loc = ANI src = IMM COMMA dest = reg
-  { (Ani(src, dest), loc) }
+  { Ani(src, dest, Some loc) }
 | loc = OR src = reg COMMA dest = reg
-  { (Or(src, dest), loc) }
+  { Or(src, dest, Some loc) }
 | loc = ORI src = IMM COMMA dest = reg
-  { (Ori(src, dest), loc) }
+  { Ori(src, dest, Some loc) }
 | loc = XOR src = reg COMMA dest = reg
-  { (Xor(src, dest), loc) }
+  { Xor(src, dest, Some loc) }
 | loc = XRI src = IMM COMMA dest = reg
-  { (Xri(src, dest), loc) }
+  { Xri(src, dest, Some loc) }
 | loc = NOT r = reg
-  { (Not r, loc) }
+  { Not(r, Some loc) }
 | loc = INR r = reg
-  { (Inr r, loc) }
+  { Inr(r, Some loc) }
 | loc = DCR r = reg
-  { (Dcr r, loc) }
+  { Dcr(r, Some loc) }
 | loc = MOV src = reg COMMA dest = reg
-  { (Mov(src, dest), loc) }
+  { Mov(src, dest, Some loc) }
 | loc = MVI src = IMM COMMA dest = reg
-  { (Mvi(src, dest), loc) }
+  { Mvi(src, dest, Some loc) }
 | loc = LD src = reg COMMA dest = reg
-  { (Ld(src, dest), loc) }
+  { Ld(src, dest, Some loc) }
 | loc = ST src = reg COMMA dest = reg
-  { (St(src, dest), loc) }
+  { St(src, dest, Some loc) }
 | loc = LDS src = IMM COMMA dest = reg
-  { (Lds(src, dest), loc) }
+  { Lds(src, dest, Some loc) }
 | loc = STS src = reg COMMA dest = IMM
-  { (Sts(src, dest), loc) }
+  { Sts(src, dest, Some loc) }
 | loc = CMP left = reg COMMA right = reg
-  { (Cmp(left, right), loc) }
+  { Cmp(left, right, Some loc) }
 | loc = CMPI left = IMM COMMA right = reg
-  { (Cmpi(Imm left, Reg right), loc) }
+  { Cmpi(Imm left, Reg right, Some loc) }
 | loc = CMPI left = reg COMMA right = IMM
-  { (Cmpi(Reg left, Imm right), loc) }
+  { Cmpi(Reg left, Imm right, Some loc) }
 | label = LABEL COLON
   { let (label, loc) = label in 
-    (Label label, loc) }
+    Label (label, Some loc) }
 | loc = JMP target = LABEL
   { let (target, _) = target in 
-    (Jmp target, loc) }
+    Jmp(target, Some loc) }
 | loc = JE target = LABEL
   { let (target, _) = target in 
-    (Je target, loc) }
+    Je(target, Some loc) }
 | loc = JNE target = LABEL
   { let (target, _) = target in 
-    (Jne target, loc) }
+    Jne(target, Some loc) }
 | loc = JG target = LABEL
   { let (target, _) = target in 
-    (Jg target, loc) }
+    Jg(target, Some loc) }
 | loc = JGE target = LABEL
   { let (target, _) = target in 
-    (Jge target, loc) }
+    Jge(target, Some loc) }
 | loc = JL target = LABEL
   { let (target, _) = target in 
-    (Jl target, loc) }
+    Jl(target, Some loc) }
 | loc = JLE target = LABEL
   { let (target, _) = target in 
-    (Jle target, loc) }
+    Jle(target, Some loc) }
 | loc = CALL target = LABEL
   { let (target, _) = target in 
-    (Call target, loc) }
+    Call(target, Some loc) }
 | loc = RET
-  { (Ret, loc) }
+  { Ret (Some loc) }
 | loc = DIC imm = IMM
-  { (Dic imm, loc) }
+  { Dic(imm, Some loc) }
 | loc = DID imm = IMM
-  { (Did imm, loc) }
+  { Did(imm, Some loc) }
 | loc = HLT
-  { (Hlt, loc) }
+  { Hlt (Some loc) }
 | loc = NOP
-  { (Nop, loc) }
+  { Nop (Some loc) }
 | loc = OUT r = reg
-  { (Out r, loc) }
+  { Out(r, Some loc) }

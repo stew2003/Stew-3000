@@ -1,7 +1,6 @@
 open OUnit2
 open Compiler.Compile
 open Compiler.Ast
-open Asm.Isa
 open Emulator
 open Util.Srcloc
 
@@ -12,7 +11,7 @@ let main_from_body (body : stmt list) : func_defn =
 
 let compile_and_run (pgrm : prog) : stew_3000 =
   let instrs = compile pgrm in
-  emulate (List.map (fun ins -> (ins, dummy_src_loc)) instrs) 0
+  emulate instrs 0
 
 let test_simple_pgrm _ =
   let machine =

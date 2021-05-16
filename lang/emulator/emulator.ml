@@ -105,9 +105,8 @@ let string_of_emu_err (err : emu_err) =
 
 (* [emulate_instr] emulates the effect of the given instruction
   on the machine, by mutating the machine in-place *)
-let emulate_instr (ins : instr with_loc) (machine : stew_3000)
-    (label_map : int env) (verbosity : int) =
-  let ins, srcloc = ins in
+let emulate_instr (ins : instr) (machine : stew_3000) (label_map : int env)
+    (verbosity : int) =
   (* [load_reg] retrieves the value currently stored in a register *)
   let load_reg (reg : register) : int =
     match reg with
@@ -126,24 +125,24 @@ let emulate_instr (ins : instr with_loc) (machine : stew_3000)
   in
   (* [load_stack] retrieves the value on the machine's stack at
      the given location, or errors out as appropriate *)
-  let load_stack (loc : int) : int =
+  let load_stack (loc : int) (srcloc : maybe_loc) : int =
     try Array.get machine.stack loc
     with Invalid_argument _ ->
-      raise (EmulatorError (InvalidStackAccess (loc, machine), Some srcloc))
+      raise (EmulatorError (InvalidStackAccess (loc, machine), srcloc))
   in
   (* [store_stack] writes a given value to the stack at a given
      location, or errors if the access is bad *)
-  let store_stack (loc : int) (value : int) =
+  let store_stack (loc : int) (value : int) (srcloc : maybe_loc) =
     try Array.set machine.stack loc value
     with Invalid_argument _ ->
-      raise (EmulatorError (InvalidStackAccess (loc, machine), Some srcloc))
+      raise (EmulatorError (InvalidStackAccess (loc, machine), srcloc))
   in
   (* [label_to_index] converts a string label to its corresponding index,
      erroring if there is no index for the label *)
-  let label_to_index (label : string) =
+  let label_to_index (label : string) (srcloc : maybe_loc) =
     match Env.find_opt label label_map with
     | Some index -> index
-    | None -> raise (EmulatorError (InvalidTarget label, Some srcloc))
+    | None -> raise (EmulatorError (InvalidTarget label, srcloc))
   in
   (* [as_8bit_signed] checks if a value has 8-bit signed overflow,
      and keeps it within the representable range [-128, 128),
@@ -199,25 +198,26 @@ let emulate_instr (ins : instr with_loc) (machine : stew_3000)
     inc_pc ()
   in
   (* [emulate_load] emulates a load from the stack into a destination register *)
-  let emulate_load (mem_loc : int) (dest : register) =
-    let from_mem = load_stack (as_unsigned mem_loc) in
+  let emulate_load (mem_loc : int) (dest : register) (srcloc : maybe_loc) =
+    let from_mem = load_stack (as_unsigned mem_loc) srcloc in
     store_reg dest from_mem;
     inc_pc ()
   in
   (* [emulate_store] emulates storing from a src register onto the stack *)
-  let emulate_store (src : register) (mem_loc : int) =
+  let emulate_store (src : register) (mem_loc : int) (srcloc : maybe_loc) =
     let to_mem = load_reg src in
-    store_stack (as_unsigned mem_loc) to_mem;
+    store_stack (as_unsigned mem_loc) to_mem srcloc;
     inc_pc ()
   in
   (* [emulate_jmp] emulates a conditional jump, by setting the pc to the
      index of a given label if a condition is true and incrementing otherwise *)
-  let emulate_jmp (condition : bool) (target : string) =
-    machine.pc <- (if condition then label_to_index target else machine.pc + 1)
+  let emulate_jmp (condition : bool) (target : string) (srcloc : maybe_loc) =
+    machine.pc <-
+      (if condition then label_to_index target srcloc else machine.pc + 1)
   in
 
   (* first, ensure that the instruction is valid *)
-  (try validate_instr (ins, srcloc) with
+  (try validate_instr ins with
   | ValidityError (InvalidImm imm, maybe_loc) ->
       raise (EmulatorError (InvalidImm imm, maybe_loc))
   | ValidityError (InvalidInstr ins, maybe_loc) ->
@@ -226,66 +226,66 @@ let emulate_instr (ins : instr with_loc) (machine : stew_3000)
   (* simulate the effects of the instruction*)
   match ins with
   (* arithmetic/logical operators *)
-  | Add (src, dest) -> emulate_arithmetic (load_reg src) dest ( + )
-  | Addi (imm, dest) -> emulate_arithmetic imm dest ( + )
-  | Sub (src, dest) -> emulate_arithmetic (load_reg src) dest ( - )
-  | Subi (imm, dest) -> emulate_arithmetic imm dest ( - )
-  | Inr dest -> emulate_arithmetic 1 dest ( + )
-  | Dcr dest -> emulate_arithmetic 1 dest ( - )
-  | And (src, dest) -> emulate_logic (load_reg src) dest ( land )
-  | Ani (imm, dest) -> emulate_logic imm dest ( land )
-  | Or (src, dest) -> emulate_logic (load_reg src) dest ( lor )
-  | Ori (imm, dest) -> emulate_logic imm dest ( lor )
-  | Xor (src, dest) -> emulate_logic (load_reg src) dest ( lxor )
-  | Xri (imm, dest) -> emulate_logic imm dest ( lxor )
-  | Not dest -> emulate_logic () dest (fun v _ -> lnot v)
+  | Add (src, dest, _) -> emulate_arithmetic (load_reg src) dest ( + )
+  | Addi (imm, dest, _) -> emulate_arithmetic imm dest ( + )
+  | Sub (src, dest, _) -> emulate_arithmetic (load_reg src) dest ( - )
+  | Subi (imm, dest, _) -> emulate_arithmetic imm dest ( - )
+  | Inr (dest, _) -> emulate_arithmetic 1 dest ( + )
+  | Dcr (dest, _) -> emulate_arithmetic 1 dest ( - )
+  | And (src, dest, _) -> emulate_logic (load_reg src) dest ( land )
+  | Ani (imm, dest, _) -> emulate_logic imm dest ( land )
+  | Or (src, dest, _) -> emulate_logic (load_reg src) dest ( lor )
+  | Ori (imm, dest, _) -> emulate_logic imm dest ( lor )
+  | Xor (src, dest, _) -> emulate_logic (load_reg src) dest ( lxor )
+  | Xri (imm, dest, _) -> emulate_logic imm dest ( lxor )
+  | Not (dest, _) -> emulate_logic () dest (fun v _ -> lnot v)
   (* moves *)
-  | Mov (src, dest) ->
+  | Mov (src, dest, _) ->
       store_reg dest (load_reg src);
       inc_pc ()
-  | Mvi (imm, dest) ->
+  | Mvi (imm, dest, _) ->
       store_reg dest imm;
       inc_pc ()
   (* memory operations *)
-  | Ld (src, dest) -> emulate_load (load_reg src) dest
-  | St (src, dest) -> emulate_store src (load_reg dest)
-  | Lds (imm, dest) -> emulate_load (machine.sp + imm) dest
-  | Sts (src, imm) -> emulate_store src (machine.sp + imm)
+  | Ld (src, dest, loc) -> emulate_load (load_reg src) dest loc
+  | St (src, dest, loc) -> emulate_store src (load_reg dest) loc
+  | Lds (imm, dest, loc) -> emulate_load (machine.sp + imm) dest loc
+  | Sts (src, imm, loc) -> emulate_store src (machine.sp + imm) loc
   (* comparisons *)
-  | Cmp (left, right) -> emulate_cmp (load_reg left) (load_reg right)
-  | Cmpi (Imm imm, Reg right) -> emulate_cmp imm (load_reg right)
-  | Cmpi (Reg left, Imm imm) -> emulate_cmp (load_reg left) imm
+  | Cmp (left, right, _) -> emulate_cmp (load_reg left) (load_reg right)
+  | Cmpi (Imm imm, Reg right, _) -> emulate_cmp imm (load_reg right)
+  | Cmpi (Reg left, Imm imm, _) -> emulate_cmp (load_reg left) imm
   (* jumps *)
-  | Jmp target -> emulate_jmp true target
-  | Je target -> emulate_jmp machine.zflag target
-  | Jne target -> emulate_jmp (not machine.zflag) target
-  | Jg target ->
+  | Jmp (target, loc) -> emulate_jmp true target loc
+  | Je (target, loc) -> emulate_jmp machine.zflag target loc
+  | Jne (target, loc) -> emulate_jmp (not machine.zflag) target loc
+  | Jg (target, loc) ->
       (* ~(SF ^ OF) & ~ZF *)
       emulate_jmp
         ((not (machine.sflag <> machine.oflag)) && not machine.zflag)
-        target
-  | Jge target ->
+        target loc
+  | Jge (target, loc) ->
       (* ~(SF ^ OF) *)
-      emulate_jmp (not (machine.sflag <> machine.oflag)) target
-  | Jl target ->
+      emulate_jmp (not (machine.sflag <> machine.oflag)) target loc
+  | Jl (target, loc) ->
       (* SF ^ OF *)
-      emulate_jmp (machine.sflag <> machine.oflag) target
-  | Jle target ->
+      emulate_jmp (machine.sflag <> machine.oflag) target loc
+  | Jle (target, loc) ->
       (* (SF ^ OF) | ZF *)
-      emulate_jmp (machine.sflag <> machine.oflag || machine.zflag) target
-  | Call target ->
-      let fun_pc = label_to_index target in
+      emulate_jmp (machine.sflag <> machine.oflag || machine.zflag) target loc
+  | Call (target, loc) ->
+      let fun_pc = label_to_index target loc in
       let ret_addr = machine.pc + 1 in
       machine.sp <- machine.sp + 1;
-      store_stack machine.sp ret_addr;
+      store_stack machine.sp ret_addr loc;
       machine.pc <- fun_pc
-  | Ret ->
-      let ret_addr = load_stack machine.sp in
+  | Ret loc ->
+      let ret_addr = load_stack machine.sp loc in
       machine.sp <- machine.sp - 1;
       machine.pc <- ret_addr
   (* miscellaneous *)
-  | Hlt -> machine.halted <- true
-  | Out src ->
+  | Hlt _ -> machine.halted <- true
+  | Out (src, _) ->
       (* add value to decimal display history *)
       let src_value = load_reg src in
       machine.dec_disp_history <- src_value :: machine.dec_disp_history;
@@ -293,32 +293,31 @@ let emulate_instr (ins : instr with_loc) (machine : stew_3000)
       if verbosity >= 1 then printf "%s %d\n" (Colors.log "[output]") src_value
       else ();
       inc_pc ()
-  | Label _ | Nop -> inc_pc ()
+  | Label _ | Nop _ -> inc_pc ()
   (* XXX: Dic and Did not currently supported *)
   | Dic _ | Did _ -> inc_pc ()
-  | _ -> raise (EmulatorError (InvalidInstr ins, Some srcloc))
+  | _ -> raise (EmulatorError (InvalidInstr ins, loc_from_instr ins))
 
 (* [map_labels] constructs an environment that maps label names to indices in
   the program's list of instructions *)
-let map_labels (instrs : instr with_loc list) =
+let map_labels (instrs : instr list) =
   (* pair instructions with their indices in the program *)
   List.mapi (fun i ins -> (i, ins)) instrs
   (* accumulate an environment of labels->indices *)
   |> List.fold_left
-       (fun env (i, (ins, loc)) ->
+       (fun env (i, ins) ->
          match ins with
-         | Label name ->
+         | Label (name, loc) ->
              (* map each label to the index following it *)
              if Env.mem name env then
-               raise (EmulatorError (DuplicateLabel name, Some loc))
+               raise (EmulatorError (DuplicateLabel name, loc))
              else Env.add name (i + 1) env
          | _ -> env)
        Env.empty
 
 (* [get_current_ins] retrieves the current instruction to execute 
   by indexing into the program using the machine's program counter *)
-let get_current_ins (pgrm : instr with_loc list) (machine : stew_3000) :
-    instr with_loc =
+let get_current_ins (pgrm : instr list) (machine : stew_3000) : instr =
   try List.nth pgrm machine.pc
   with Failure _ | Invalid_argument _ ->
     raise (EmulatorError (InvalidProgramCounter machine, None))
@@ -326,20 +325,20 @@ let get_current_ins (pgrm : instr with_loc list) (machine : stew_3000) :
 (* [emulate] emulates running the given assembly program 
   on the Stew 3000, and returns the final machine state after the run.
   verbosity indicates how much logging should happen during the run. *)
-let emulate (pgrm : instr with_loc list) (verbosity : int) : stew_3000 =
+let emulate (pgrm : instr list) (verbosity : int) : stew_3000 =
   let machine = new_stew_3000 () in
   let label_map = map_labels pgrm in
   let rec run _ =
     if machine.halted then ()
     else
-      let ins, loc = get_current_ins pgrm machine in
+      let ins = get_current_ins pgrm machine in
       (* verbosity level 2, current instruction is logged *)
       if verbosity >= 2 then
         printf "%s %s\n"
           (Colors.log "[current instruction]")
           (string_of_instr ins)
       else ();
-      emulate_instr (ins, loc) machine label_map verbosity;
+      emulate_instr ins machine label_map verbosity;
       (* verbosity level 3, entire machine state is logged *)
       if verbosity >= 3 then
         printf "%s\n%s"

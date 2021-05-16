@@ -12,10 +12,10 @@ exception CompileError of compile_err
 let rec compile_expr (expression : expr) (bindings : int env) (si : int) :
     instr list =
   match expression with
-  | Num (n, _) -> [ Mvi (n, A) ]
+  | Num (n, _) -> [ Mvi (n, A, None) ]
   | Var (x, loc) -> (
       match Env.find_opt x bindings with
-      | Some x_si -> [ Lds (x_si, A) ]
+      | Some x_si -> [ Lds (x_si, A, None) ]
       | None -> raise (CompileError (UnboundVariable (x, loc))))
   | _ -> failwith "not implemented"
 
@@ -27,7 +27,7 @@ and compile_stmt (statement : stmt) (bindings : int env) (si : int) : instr list
   | Let (name, value, scope, _) ->
       let ext_env = Env.add name si bindings in
       compile_expr value bindings si
-      @ [ Sts (A, si) ]
+      @ [ Sts (A, si, None) ]
       @ compile_stmt_lst scope ext_env (si + 1)
   | _ -> failwith "not implemented"
 
