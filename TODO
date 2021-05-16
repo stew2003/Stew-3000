@@ -16,8 +16,8 @@ Assembler
 
 Compiler
   [x] decide on language constructs
+  [] parser 
   [] implement compiler
-    [] tricky: implicit returns from functions?
   [] type checking
     NOTE: 
     - non-void functions must return value in all branches

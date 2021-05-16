@@ -17,6 +17,7 @@ type bin_op =
   | Gte
   | Lte
   | Eq
+  | Mod
 
 type un_op = BNot | LNot
 
