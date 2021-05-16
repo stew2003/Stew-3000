@@ -1,9 +1,9 @@
 entry:
-    mvi -1, a
-    mvi -1, b
-    call mult
-    out c
-    hlt
+  mvi 3, a
+  mvi -17, b
+  call mult
+  out c
+  hlt
 
 ; Makes both a and b positive, and sets c to non-zero if 
 ; only *one* of a or b was negative. 
@@ -26,49 +26,37 @@ norm_b:
 done_norm:
   ret
 
-; mult computes the product of b and c, leaving the result in a
+; mult computes the product of a and b, leaving the result in c
 ;
 ; :: Implementation :: 
 ; running_sum = 0
-; counter = 0
-; while counter != c
-;   counter += 1
-;   running_sum += b
+; counter = b
+; while counter > 0
+;   counter -= 1
+;   running_sum += a
 ; product is running_sum
 mult:
-    ; running sum at sp+1
-    ; counter at sp+2
-    ; product sign info at sp+3
-    call normalize_signs
-    sts c, 3
-    mvi 0, c
-    sts c, 2 ; init counter to 0
+  ; make a and b positive, keep sign info on stack
+  call normalize_signs
+  sts c, 1
+
+  ; Note on register allocation:
+  ; a in a
+  ; counter in b
+  ; running_sum in c
+  mvi 0, c
 loop:
-    ; store the running sum, load the counter
-    sts c, 1
-    lds 2, c
-
-    ; cmp counter to c
-    cmp c, b
-    je done
-    inr c ; increment counter
-
-    ; store the counter, load the running sum
-    sts c, 2
-    lds 1, c
-
-    ; add b to running sum another time
-    add a, c
-    jmp loop
-done:
-    ; restore sum before returning
-    lds 1, c
-
-    ; check what sign of product should be
-    lds 3, a
-    cmpi a, 0
-    je no_sign_change
-    not c
-    inr c
-no_sign_change:
-    ret
+  cmpi b, 0
+  je done_loop
+  dcr b
+  add a, c
+  jmp loop
+done_loop:
+  ; check what sign of product should be
+  lds 1, a
+  cmpi a, 0
+  je mult_done
+  not c
+  inr c
+mult_done:
+  ret
