@@ -1,6 +1,6 @@
 (library
   (name compiler)
-  (libraries util asm))
+  (libraries util asm core))
 
 (env
   (dev
