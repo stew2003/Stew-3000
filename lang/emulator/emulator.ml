@@ -51,7 +51,7 @@ let string_of_stew_3000 (machine : stew_3000) : string =
      sf: %d\n\
      of: %d\n\n\
      halted? %s\n\n\
-     == Decimal Display History == (most recent first)\n\
+     == Decimal Display History == (most recent last)\n\
      %s\n\n\
      == Stack ==%s\n"
     machine.a machine.b machine.c machine.sp machine.pc
@@ -215,6 +215,10 @@ let emulate_instr (ins : instr) (machine : stew_3000) (label_map : int env)
     machine.pc <-
       (if condition then label_to_index target srcloc else machine.pc + 1)
   in
+  (* [insert_at_end] adds an element to the end of a list *)
+  let rec insert_at_end lst elt =
+    match lst with [] -> [ elt ] | f :: r -> f :: insert_at_end r elt
+  in
 
   (* first, ensure that the instruction is valid *)
   (try validate_instr ins with
@@ -288,7 +292,8 @@ let emulate_instr (ins : instr) (machine : stew_3000) (label_map : int env)
   | Out (src, _) ->
       (* add value to decimal display history *)
       let src_value = load_reg src in
-      machine.dec_disp_history <- src_value :: machine.dec_disp_history;
+      machine.dec_disp_history <-
+        insert_at_end machine.dec_disp_history src_value;
       (* at verbosity level 1, out instrs print their output *)
       if verbosity >= 1 then printf "%s %d\n" (Colors.log "[output]") src_value
       else ();

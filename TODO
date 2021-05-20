@@ -1,6 +1,6 @@
 
 Hardware
-  [] implement sign flag and signed overflow flag (Stewart)
+  [x] implement sign flag and signed overflow flag (Stewart)
   [x] implement dream instruction set in microcode (Stewart)
   [x] get the RAM loader working (Stewart)
 

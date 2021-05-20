@@ -38,7 +38,7 @@ let test_emulates_outs _ =
   assert_int_eq 2 machine.a;
   assert_int_eq 3 machine.b;
   assert_int_eq (-17) machine.c;
-  assert_int_list_eq [ 2; 3; 3; -17 ] machine.dec_disp_history
+  assert_int_list_eq [ -17; 3; 3; 2 ] machine.dec_disp_history
 
 let test_loads_stores _ =
   let machine =
@@ -88,7 +88,7 @@ let test_jmps _ =
         Hlt None;
       ]
   in
-  assert_int_list_eq [ 4; 3; 2; 1; 0 ] machine.dec_disp_history;
+  assert_int_list_eq [ 0; 1; 2; 3; 4 ] machine.dec_disp_history;
   assert_int_eq 5 machine.a;
   let machine =
     run_emulator
