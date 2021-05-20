@@ -2,21 +2,21 @@
 ; only *one* of a or b was negative. 
 runtime_normalize_signs:
   mvi 0, c
-norm_a:
+runtime_normalize_signs_norm_a:
   ; if a is negative, make it positive
   cmpi a, 0
-  jge norm_b
+  jge runtime_normalize_signs_norm_b
   not a
   inr a
   not c
-norm_b:
+runtime_normalize_signs_norm_b:
   ; if b is negative, make it positive
   cmpi b, 0
-  jge done_norm
+  jge runtime_normalize_signs_done
   not b
   inr b
   not c
-done_norm:
+runtime_normalize_signs_done:
   ret
 
 ; Sets the sign of c based on a value on the stack at index 1.
@@ -26,8 +26,8 @@ done_norm:
 runtime_set_result_sign:
   lds 1, b
   cmpi b, 0
-  je no_sign_change
+  je runtime_set_result_sign_no_change
   not c
   inr c
-no_sign_change:
+runtime_set_result_sign_no_change:
   ret

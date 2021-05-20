@@ -1,7 +1,6 @@
 open OUnit2
 open Asm.Assemble
 open Asm.Isa
-open Util.Srcloc
 
 (* [assert_assembles_to] asserts that the given program assembles
   to the given list of bytes *)

@@ -38,7 +38,7 @@ type stmt =
   | ExprStmt of expr * src_loc
   | While of expr * stmt list * src_loc
   (* sends to decimal display *)
-  | Print of expr * src_loc
+  | PrintDec of expr * src_loc
   (* Inr/Dcr mutate a variable, incrementing/decrementing *)
   | Inr of string * src_loc
   | Dcr of string * src_loc

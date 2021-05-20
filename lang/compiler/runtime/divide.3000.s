@@ -20,13 +20,13 @@ runtime_divide:
   mvi 0, c ; now use c as a counter
 
   ; repeatedly subtract b from a
-div_loop:
+runtime_divide_loop:
   cmp a, b
-  jl div_loop_done
+  jl runtime_divide_done
   sub b, a
   inr c
-  jmp div_loop
-div_loop_done:
+  jmp runtime_divide_loop
+runtime_divide_done:
   ; quotient in c
   ; remainder in a
 

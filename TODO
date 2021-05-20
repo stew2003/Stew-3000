@@ -25,6 +25,7 @@ Compiler
   [] implement optimizations for smol code
     [] "compile to" given register (reduce movs)
     [] eliminate redundant instrs
+    [] special-case conditions (if/while)
   [] preprocessor?
 
 Virtual Machine

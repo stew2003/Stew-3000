@@ -17,13 +17,13 @@ runtime_multiply:
   call runtime_normalize_signs
   sts c, 1
   mvi 0, c
-mult_loop:
+runtime_multiply_loop:
   cmpi b, 0
-  je mult_done_loop
+  je runtime_multiply_done
   dcr b
   add a, c
-  jmp mult_loop
-mult_done_loop:
+  jmp runtime_multiply_loop
+runtime_multiply_done:
   ; set sign of product according to signs of a & b originally
   ; NOTE: set_result_sign will ret out of the call to mult
   jmp runtime_set_result_sign
