@@ -2,7 +2,7 @@
 /*
  * Multiline comments
  */
-fun main() {
+void main() {
   // Number literals
   10;
 
@@ -26,7 +26,7 @@ fun main() {
   ~10; // bitwise not
   !1;  // logical not
 
-  let a = 1;
+  int a = 1;
   a++; // increment
   a--; // decrement
 
@@ -48,7 +48,7 @@ fun main() {
 
   // Block (creates new scope)
   {
-    let x = 7;
+    int x = 7;
   }
 
   // While loops
@@ -61,7 +61,7 @@ fun main() {
 }
 
 // Function definition
-fun fact(n: int) -> int {
+int fact(int n) {
   if (n == 0) {
     return 1;
   } else {
