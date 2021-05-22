@@ -2,7 +2,7 @@ open Util.Srcloc
 
 type ty = Void | Int
 
-type un_op = BNot | LNot
+type un_op = BNot
 
 type bin_op =
   | Plus
@@ -13,8 +13,6 @@ type bin_op =
   | BAnd
   | BOr
   | BXor
-  | LAnd
-  | LOr
   | Gt
   | Lt
   | Gte
@@ -22,11 +20,14 @@ type bin_op =
   | Eq
   | Neq
 
-type expr =
+type log_op = LNot of expr | LAnd of expr * expr | LOr of expr * expr
+
+and expr =
   | Num of int * src_loc
   | Var of string * src_loc
   | UnOp of un_op * expr * src_loc
   | BinOp of bin_op * expr * expr * src_loc
+  | LogOp of log_op * src_loc
   | Call of string * expr list * src_loc
 
 type stmt =
@@ -57,3 +58,8 @@ type func_defn = {
 (* main is a special function with void return/no args
   whose body is what is run when the program is run *)
 type prog = { funcs : func_defn list; main : func_defn }
+
+(* [lookup] finds Some defn that matches the given name *)
+let lookup (func : string) (defns : func_defn list) : func_defn option =
+  try Some (List.find (fun defn -> defn.name = func) defns)
+  with Not_found -> None
