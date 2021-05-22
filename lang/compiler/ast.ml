@@ -30,7 +30,7 @@ type expr =
   | Call of string * expr list * src_loc
 
 type stmt =
-  | Let of string * expr * stmt list * src_loc
+  | Let of string * ty * expr * stmt list * src_loc
   | Assign of string * expr * src_loc
   | If of expr * stmt list * src_loc
   | IfElse of expr * stmt list * stmt list * src_loc

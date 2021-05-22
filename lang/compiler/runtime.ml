@@ -48,7 +48,7 @@ let rec check_subexprs (exp : expr) (pred : expr -> bool) : bool =
   expression that satisfies the given predicate *)
 and check_stmt (stmt : stmt) (pred : expr -> bool) : bool =
   match stmt with
-  | Let (_, value, body, _) -> pred value || check_stmt_list body pred
+  | Let (_, _, value, body, _) -> pred value || check_stmt_list body pred
   | Assign (_, value, _) -> pred value
   | If (cond, thn, _) -> pred cond || check_stmt_list thn pred
   | IfElse (cond, thn, els, _) ->

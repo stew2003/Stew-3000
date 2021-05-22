@@ -24,7 +24,7 @@ let rec compile_expr (expression : expr) (bindings : int env) (si : int) :
 and compile_stmt (statement : stmt) (bindings : int env) (si : int) : instr list
     =
   match statement with
-  | Let (name, value, scope, _) ->
+  | Let (name, _, value, scope, _) ->
       let ext_env = Env.add name si bindings in
       compile_expr value bindings si
       @ [ Sts (A, si, None) ]
