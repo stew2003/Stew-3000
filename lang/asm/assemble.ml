@@ -261,3 +261,10 @@ let assemble (instrs : instr list) : bytes =
   if size > max_pgrm_size then
     raise (AssembleError (ProgramTooLarge size, None))
   else bytes_from_list bytes_as_list
+
+(* [assemble_unflattened] produces a list of lists of bytes,
+  where each inner list represents a single instruction that has 
+  been assembled. *)
+let assemble_unflattened (instrs : instr list) : int list list =
+  let label_map = map_labels instrs in
+  instrs |> List.map (fun ins -> assemble_instr ins label_map)

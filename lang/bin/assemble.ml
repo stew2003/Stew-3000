@@ -2,22 +2,42 @@ open Core
 open Asm
 open Util
 open Err
+open Asm.Isa
 
 (* command-line interface for assembler *)
 let command =
   (* [print_bytes] writes a byte array to stdout in hexadecimal form,
      with 8 bytes per line *)
-  let printf_bytes (b : bytes) =
+  let display_bytes (b : bytes) =
     Bytes.mapi b ~f:(fun i byte ->
         Printf.printf "%02x " (int_of_char byte);
         if (i + 1) mod 8 = 0 then Printf.printf "\n" else ();
         byte)
+    |> ignore;
+    (* if didn't reach end of line, no final newline was
+       printed, so print it here *)
+    if Bytes.length b mod 8 <> 0 then Printf.printf "\n" else ()
+  in
+  (* [display_side_by_side] prints the given instructions and binary
+     from assembling side by side *)
+  let display_side_by_side (instrs : instr list) (binary : int list list) =
+    let string_of_byte_line (line : int list) =
+      List.map line ~f:(fun byte -> Printf.sprintf "%02x" (byte land 0xff))
+      |> String.concat ~sep:" "
+    in
+    List.map2 instrs binary ~f:(fun ins byte_line ->
+        Printf.printf "%6s | %s\n"
+          (string_of_byte_line byte_line)
+          (string_of_instr ins))
     |> ignore
   in
   Command.basic ~summary:"Assembles the given file into a binary"
     Command.Let_syntax.(
       let%map_open asm_filename = anon ("asm_filename" %: Filename.arg_type)
-      and binary_filename = anon ("binary_filename" %: Filename.arg_type) in
+      and binary_filename = anon ("binary_filename" %: Filename.arg_type)
+      and side_by_side =
+        flag "-side-by-side" no_arg ~doc:"print asm and binary side by side"
+      in
       fun () ->
         try
           (* read input file into string *)
@@ -36,7 +56,13 @@ let command =
               (Colors.success "Success!")
               asm_filename (List.length instrs) binary_filename
               (Bytes.length assembled);
-            printf_bytes assembled
+            display_bytes assembled;
+            (* print side-by-side view if indicated *)
+            if side_by_side then (
+              Printf.printf "%s\n" (Colors.br_cyan "Side by side:");
+              let unflattened = Assemble.assemble_unflattened instrs in
+              display_side_by_side instrs unflattened)
+            else ()
           with
           | Assemble.AssembleError (err, maybe_loc) ->
               print_err
