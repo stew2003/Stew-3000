@@ -2,11 +2,14 @@ open Util.Srcloc
 
 type ty = Void | Int
 
+type un_op = BNot | LNot
+
 type bin_op =
   | Plus
   | Minus
   | Mult
   | Div
+  | Mod
   | BAnd
   | BOr
   | BXor
@@ -18,15 +21,12 @@ type bin_op =
   | Lte
   | Eq
   | Neq
-  | Mod
-
-type un_op = BNot | LNot
 
 type expr =
   | Num of int * src_loc
   | Var of string * src_loc
-  | BinOp of bin_op * expr * expr * src_loc
   | UnOp of un_op * expr * src_loc
+  | BinOp of bin_op * expr * expr * src_loc
   | Call of string * expr list * src_loc
 
 type stmt =
@@ -43,6 +43,8 @@ type stmt =
   (* Inr/Dcr mutate a variable, incrementing/decrementing *)
   | Inr of string * src_loc
   | Dcr of string * src_loc
+  (* Halts program, emitting expr to decimal display *)
+  | Exit of expr option * src_loc
 
 type func_defn = {
   name : string;

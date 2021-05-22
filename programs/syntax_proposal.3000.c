@@ -21,6 +21,7 @@ void main() {
   2 >= 3;
   1 <= -5;
   7 == 9;
+  10 != 11;
 
   // Unary operators
   ~10; // bitwise not
@@ -58,6 +59,9 @@ void main() {
 
   // Print (to decimal display)
   print(10);
+
+  // Halts the program, outputs expression to dec display
+  exit(0);
 }
 
 // Function definition
