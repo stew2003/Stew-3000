@@ -85,10 +85,10 @@ const uint32_t PROGMEM microcode[NUM_INSTRUCTIONS][INSTRUCTION_ARR_LENGTH] = {
   { 0x18, CO|TI, SO|TS|SUM|SUB|CAR|EI|FI, EO|SI, RST, 0, 0 }, // SUB C, SP
 
   // SUBI byte, $r1: $r1 = $r1 - byte
-  { 0x19, PCO|MI, RO|TI, AO|TS|SUM|SUB|CAR|EI|FI, EO|AI, RST, 0 }, // SUB byte, A
-  { 0x1a, PCO|MI, RO|TI, BO|TS|SUM|SUB|CAR|EI|FI, EO|BI, RST, 0 }, // SUB byte, B
-  { 0x1b, PCO|MI, RO|TI, CO|TS|SUM|SUB|CAR|EI|FI, EO|CI, RST, 0 }, // SUB byte, C
-  { 0x1c, PCO|MI, RO|TI, SO|TS|SUM|SUB|CAR|EI|FI, EO|SI, RST, 0 }, // SUB byte, SP
+  { 0x19, PCO|MI, RO|TI, AO|TS|SUM|SUB|CAR|EI|FI, EO|AI|PCE, RST, 0 }, // SUB byte, A
+  { 0x1a, PCO|MI, RO|TI, BO|TS|SUM|SUB|CAR|EI|FI, EO|BI|PCE, RST, 0 }, // SUB byte, B
+  { 0x1b, PCO|MI, RO|TI, CO|TS|SUM|SUB|CAR|EI|FI, EO|CI|PCE, RST, 0 }, // SUB byte, C
+  { 0x1c, PCO|MI, RO|TI, SO|TS|SUM|SUB|CAR|EI|FI, EO|SI|PCE, RST, 0 }, // SUB byte, SP
 
   // AND $r1, $r2: $r2 = $r2 & $r1
   { 0x1d, BO|TI, AO|TS|AND|EI|FI, EO|AI, RST, 0, 0 }, // AND B, A
@@ -211,10 +211,10 @@ const uint32_t PROGMEM microcode[NUM_INSTRUCTIONS][INSTRUCTION_ARR_LENGTH] = {
   { 0x70, PCO|MI, RO|PCI, RST, 0, 0, 0 },
 
   // CALL byte: SP +=1, PC + 1, Stack[SP] = PC, PC = byte
-  { 0x77, RO|TI, SO|SUM|CAR|EI, EO|SI|PCE, SO|MI, PGM|PCO|RI, TO|PCI },
+  { 0x77, PCO|MI, RO|TI, SO|SUM|CAR|EI, EO|SI|MI|PCE, PGM|PCO|RI, TO|PCI },
   
   // RET: PC = Stack[SP], SP -= 1
-  { 0x78, SO|MI, PGM|RO|PCI, SO|SUM|SUB|CAR|EI, EO|SI, RST, 0 },
+  { 0x78, SO|MI, PGM|RO|PCI, SO|SUM|SUB|EI, EO|SI, RST, 0 },
 
   // OUT $r1: Display = $r1
   { 0x79, AO|OI, RST, 0, 0, 0, 0 }, // OUT A
@@ -235,7 +235,7 @@ const uint32_t PROGMEM microcode[NUM_INSTRUCTIONS][INSTRUCTION_ARR_LENGTH] = {
 };
 
 //  0   0   0
-// ZF  OF  SF
+//  ZF  SF  OF
 const uint32_t PROGMEM conditional_microcode[NUM_CONDITIONAL_INSTRUCTIONS][FLAG_CONFIGURATIONS][INSTRUCTION_ARR_LENGTH] = {
   // JE/JZ byte: ZF ? PC = byte
   {
@@ -351,7 +351,8 @@ void program_EEPROM(int num) {
 
 void setup() {
   Serial.begin(57600);
-  program_EEPROM(1);
+  Serial.println("Beginning!");
+  program_EEPROM(4);
   programmer.print_contents();
 }
 
