@@ -1,7 +1,7 @@
 open Core
 open Asm
 open Util
-open Errors
+open Err
 
 (* command-line interface for assembler *)
 let command =

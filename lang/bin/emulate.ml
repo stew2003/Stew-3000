@@ -3,7 +3,7 @@ open Asm
 open Emulator
 open Util
 open Printf
-open Errors
+open Err
 
 (* command-line interface for emulator *)
 let command =

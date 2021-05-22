@@ -1,6 +1,5 @@
 %{ 
   open Isa
-  open Util.Srcloc
 %}
 
 %token <int> IMM
