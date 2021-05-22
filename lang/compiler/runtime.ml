@@ -32,15 +32,17 @@ let runtime_divide = from_file "divide.3000.s"
 (* Helpful functionality for dealing with signed operands to mult/div *)
 let runtime_sign_utils = from_file "sign_utils.3000.s"
 
-(* [check_subexprs] determines if the given expression contains a 
+(* [check_expr] determines if the given expression contains a 
   sub-expression that satisfies the given predicate. *)
-let rec check_subexprs (exp : expr) (pred : expr -> bool) : bool =
+let rec check_expr (exp : expr) (pred : expr -> bool) : bool =
+  (* true if either the expression or its subexpressions yield true *)
+  pred exp
+  ||
   match exp with
-  | BinOp (_, left, right, _) ->
-      check_subexprs left pred || check_subexprs right pred
-  | UnOp (_, operand, _) -> check_subexprs operand pred
+  | BinOp (_, left, right, _) -> check_expr left pred || check_expr right pred
+  | UnOp (_, operand, _) -> check_expr operand pred
   | Call (_, args, _) ->
-      List.map (fun arg -> check_subexprs arg pred) args
+      List.map (fun arg -> check_expr arg pred) args
       |> List.fold_left ( || ) false
   | _ -> false
 
@@ -48,16 +50,18 @@ let rec check_subexprs (exp : expr) (pred : expr -> bool) : bool =
   expression that satisfies the given predicate *)
 and check_stmt (stmt : stmt) (pred : expr -> bool) : bool =
   match stmt with
-  | Let (_, _, value, body, _) -> pred value || check_stmt_list body pred
-  | Assign (_, value, _) -> pred value
-  | If (cond, thn, _) -> pred cond || check_stmt_list thn pred
+  | Let (_, _, value, body, _) ->
+      check_expr value pred || check_stmt_list body pred
+  | Assign (_, value, _) -> check_expr value pred
+  | If (cond, thn, _) -> check_expr cond pred || check_stmt_list thn pred
   | IfElse (cond, thn, els, _) ->
-      pred cond || check_stmt_list thn pred || check_stmt_list els pred
+      check_expr cond pred || check_stmt_list thn pred
+      || check_stmt_list els pred
   | Block (stmts, _) -> check_stmt_list stmts pred
-  | Return (Some value, _) -> pred value
-  | ExprStmt (value, _) -> pred value
-  | While (cond, body, _) -> pred cond || check_stmt_list body pred
-  | PrintDec (value, _) -> pred value
+  | Return (Some value, _) -> check_expr value pred
+  | ExprStmt (value, _) -> check_expr value pred
+  | While (cond, body, _) -> check_expr cond pred || check_stmt_list body pred
+  | PrintDec (value, _) -> check_expr value pred
   | _ -> false
 
 (* [check_stmt_list] determines if the given statement list 
