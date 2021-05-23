@@ -26,12 +26,15 @@ Compiler
     [] "compile to" given register (reduce movs)
     [] eliminate redundant instrs
     [] special-case conditions (if/while)
+    [] replace addi 1, _ / subi 1, _ with inr/dcr
+    [] remove addi 0, subi 0, etc (no effect)
   [] preprocessor?
 
 Emulator
   [x] fix emulation of 8-bit integers
   [x] rewrite overflow flag
   [] use actual byte addresses as opposed to list indices
+  [] bin/emulate can now throw assemble errors
   [] display registers in decimal/hex/binary
   [] "step" mode for emulator for debugging
     [] simple command language?

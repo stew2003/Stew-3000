@@ -1,7 +1,3 @@
-;; !!! NOTE: this fails on the emulator which uses
-;; indices into a list of instructions as "addresses",
-;; but should succeed on actual hardware. 
-
 entry:
   call l1
   jmp assert_not_reached

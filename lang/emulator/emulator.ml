@@ -1,9 +1,10 @@
 open Asm.Isa
-open Asm.Validate
 open Printf
 open Util.Env
+open Util.Num_env
 open Util.Srcloc
 open Util
+open Asm
 
 (*  stew_3000 models the programmer-visible state of the machine
     NOTE: dec_disp_history is a record of every byte that has 
@@ -81,30 +82,39 @@ let new_stew_3000 _ : stew_3000 =
   }
 
 type emu_err =
-  | DuplicateLabel of string
   | InvalidProgramCounter of stew_3000
-  | InvalidTarget of string
-  | InvalidImm of immediate
-  | InvalidInstr of instr
+  | InvalidPCIncrement of stew_3000
 
 exception EmulatorError of emu_err with_loc_opt
 
 let string_of_emu_err (err : emu_err) =
   match err with
-  | DuplicateLabel label -> sprintf "label `%s` appears more than once" label
   | InvalidProgramCounter machine ->
       sprintf "invalid program counter: %d\n%s" machine.pc
         (string_of_stew_3000 machine)
-  | InvalidTarget label -> sprintf "invalid target: `%s`" label
-  | InvalidImm imm -> sprintf "invalid immediate value: %s" (string_of_imm imm)
-  | InvalidInstr ins -> sprintf "invalid instruction: %s" (string_of_instr ins)
+  | InvalidPCIncrement machine ->
+      sprintf "invalid program counter increment from %d\n%s" machine.pc
+        (string_of_stew_3000 machine)
 
 (* [emulate_instr] emulates the effect of the given instruction
   on the machine, by mutating the machine in-place *)
-let emulate_instr (ins : instr) (machine : stew_3000) (label_map : int env)
+let emulate_instr (ins : instr) (machine : stew_3000) (label_to_addr : int env)
+    (addr_to_index : int num_env) (index_to_addr : int num_env)
     (verbosity : int) =
+  (* [next_pc] computes the address of the next consecutive instruction
+     after the current PC value. *)
+  let next_pc _ =
+    (* lookup current PC's index in instruction list *)
+    match Num_env.find_opt machine.pc addr_to_index with
+    | Some index -> (
+        (* lookup the address of the next instruction (index + 1) *)
+        match Num_env.find_opt (index + 1) index_to_addr with
+        | Some addr -> addr
+        | None -> raise (EmulatorError (InvalidPCIncrement machine, None)))
+    | None -> raise (EmulatorError (InvalidProgramCounter machine, None))
+  in
   (* [inc_pc] increments the program counter by 1 *)
-  let inc_pc _ = machine.pc <- machine.pc + 1 in
+  let inc_pc _ = machine.pc <- next_pc () in
   (* [load_reg] retrieves the value currently stored in a register *)
   let load_reg (reg : register) : int =
     match reg with
@@ -135,12 +145,12 @@ let emulate_instr (ins : instr) (machine : stew_3000) (label_map : int env)
     with Invalid_argument _ ->
       failwith "store stack: index error with 8-bit unsigned address"
   in
-  (* [label_to_index] converts a string label to its corresponding index,
-     erroring if there is no index for the label *)
-  let label_to_index (label : string) (srcloc : maybe_loc) =
-    match Env.find_opt label label_map with
-    | Some index -> index
-    | None -> raise (EmulatorError (InvalidTarget label, srcloc))
+  (* [get_label_addr] converts a string label to its corresponding address,
+     erroring if there is no address for the label *)
+  let get_label_addr (label : string) =
+    match Env.find_opt label label_to_addr with
+    | Some addr -> addr
+    | None -> failwith "get label addr called with invalid label"
   in
   (* [set_flags] sets zero, signed, and overflow flags based on the
      result of an operation and the two values that were operated on. *)
@@ -222,21 +232,13 @@ let emulate_instr (ins : instr) (machine : stew_3000) (label_map : int env)
   in
   (* [emulate_jmp] emulates a conditional jump, by setting the pc to the
      index of a given label if a condition is true and incrementing otherwise *)
-  let emulate_jmp (condition : bool) (target : string) (srcloc : maybe_loc) =
-    machine.pc <-
-      (if condition then label_to_index target srcloc else machine.pc + 1)
+  let emulate_jmp (condition : bool) (target : string) =
+    machine.pc <- (if condition then get_label_addr target else next_pc ())
   in
   (* [insert_at_end] adds an element to the end of a list *)
   let rec insert_at_end lst elt =
     match lst with [] -> [ elt ] | f :: r -> f :: insert_at_end r elt
   in
-
-  (* first, ensure that the instruction is valid *)
-  (try validate_instr ins with
-  | ValidityError (InvalidImm imm, maybe_loc) ->
-      raise (EmulatorError (InvalidImm imm, maybe_loc))
-  | ValidityError (InvalidInstr ins, maybe_loc) ->
-      raise (EmulatorError (InvalidInstr ins, maybe_loc)));
 
   (* simulate the effects of the instruction*)
   match ins with
@@ -271,26 +273,26 @@ let emulate_instr (ins : instr) (machine : stew_3000) (label_map : int env)
   | Cmpi (Imm imm, Reg right, _) -> emulate_cmp imm (load_reg right)
   | Cmpi (Reg left, Imm imm, _) -> emulate_cmp (load_reg left) imm
   (* jumps *)
-  | Jmp (target, loc) -> emulate_jmp true target loc
-  | Je (target, loc) -> emulate_jmp machine.zflag target loc
-  | Jne (target, loc) -> emulate_jmp (not machine.zflag) target loc
-  | Jg (target, loc) ->
+  | Jmp (target, _) -> emulate_jmp true target
+  | Je (target, _) -> emulate_jmp machine.zflag target
+  | Jne (target, _) -> emulate_jmp (not machine.zflag) target
+  | Jg (target, _) ->
       (* ~(SF ^ OF) & ~ZF *)
       emulate_jmp
         ((not (machine.sflag <> machine.oflag)) && not machine.zflag)
-        target loc
-  | Jge (target, loc) ->
+        target
+  | Jge (target, _) ->
       (* ~(SF ^ OF) *)
-      emulate_jmp (not (machine.sflag <> machine.oflag)) target loc
-  | Jl (target, loc) ->
+      emulate_jmp (not (machine.sflag <> machine.oflag)) target
+  | Jl (target, _) ->
       (* SF ^ OF *)
-      emulate_jmp (machine.sflag <> machine.oflag) target loc
-  | Jle (target, loc) ->
+      emulate_jmp (machine.sflag <> machine.oflag) target
+  | Jle (target, _) ->
       (* (SF ^ OF) | ZF *)
-      emulate_jmp (machine.sflag <> machine.oflag || machine.zflag) target loc
-  | Call (target, loc) ->
-      let fun_pc = label_to_index target loc in
-      let ret_addr = machine.pc + 1 in
+      emulate_jmp (machine.sflag <> machine.oflag || machine.zflag) target
+  | Call (target, _) ->
+      let fun_pc = get_label_addr target in
+      let ret_addr = next_pc () in
       machine.sp <- machine.sp + 1;
       store_stack machine.sp ret_addr;
       machine.pc <- fun_pc
@@ -312,49 +314,59 @@ let emulate_instr (ins : instr) (machine : stew_3000) (label_map : int env)
   | Label _ | Nop _ -> inc_pc ()
   (* XXX: Dic and Did not currently supported *)
   | Dic _ | Did _ -> inc_pc ()
-  | _ -> raise (EmulatorError (InvalidInstr ins, loc_from_instr ins))
+  | _ ->
+      failwith
+        (sprintf "invalid instruction in emulator: %s" (string_of_instr ins))
 
-(* [map_labels] constructs an environment that maps label names to indices in
-  the program's list of instructions *)
-let map_labels (instrs : instr list) =
-  (* pair instructions with their indices in the program *)
-  List.mapi (fun i ins -> (i, ins)) instrs
-  (* accumulate an environment of labels->indices *)
-  |> List.fold_left
-       (fun env (i, ins) ->
-         match ins with
-         | Label (name, loc) ->
-             (* map each label to the index following it *)
-             if Env.mem name env then
-               raise (EmulatorError (DuplicateLabel name, loc))
-             else Env.add name (i + 1) env
-         | _ -> env)
-       Env.empty
+(* [map_addr_to_index] constructs an environment mapping physical
+  addresses of the beginnings of instructions in a binary to the index
+  in pgrm at which that instruction appears, and an env implementing
+  the inverse mapping.  *)
+let map_addrs_and_indices (pgrm : instr list) : int num_env * int num_env =
+  let addr_to_index, index_to_addr, _ =
+    List.mapi (fun i ins -> (i, ins)) pgrm
+    |> List.fold_left
+         (fun (a_to_i, i_to_a, addr) (i, ins) ->
+           let instr_size = Assemble.size_of ins in
+           ( Num_env.add addr i a_to_i,
+             Num_env.add i addr i_to_a,
+             addr + instr_size ))
+         (Num_env.empty, Num_env.empty, 0)
+  in
+  (addr_to_index, index_to_addr)
 
 (* [get_current_ins] retrieves the current instruction to execute 
   by indexing into the program using the machine's program counter *)
-let get_current_ins (pgrm : instr list) (machine : stew_3000) : instr =
-  try List.nth pgrm machine.pc
-  with Failure _ | Invalid_argument _ ->
-    raise (EmulatorError (InvalidProgramCounter machine, None))
+let get_current_ins (pgrm : instr list) (machine : stew_3000)
+    (addr_to_index : int num_env) : instr =
+  (* lookup machine's PC to find index in instructions *)
+  match Num_env.find_opt machine.pc addr_to_index with
+  | Some index -> (
+      try List.nth pgrm index
+      with Failure _ | Invalid_argument _ ->
+        failwith "get current ins: addr to index yielded bad index")
+  | None -> raise (EmulatorError (InvalidProgramCounter machine, None))
 
 (* [emulate] emulates running the given assembly program 
   on the Stew 3000, and returns the final machine state after the run.
   verbosity indicates how much logging should happen during the run. *)
 let emulate (pgrm : instr list) (verbosity : int) : stew_3000 =
+  (* get byte-level info on the program from the assembler *)
+  let label_to_addr, _, _ = Assemble.assemble_with_rich_info pgrm in
+  let addr_to_index, index_to_addr = map_addrs_and_indices pgrm in
   let machine = new_stew_3000 () in
-  let label_map = map_labels pgrm in
   let rec run _ =
     if machine.halted then ()
     else
-      let ins = get_current_ins pgrm machine in
+      let ins = get_current_ins pgrm machine addr_to_index in
       (* verbosity level 2, current instruction is logged *)
       if verbosity >= 2 then
         printf "%s %s\n"
           (Colors.log "[current instruction]")
           (string_of_instr ins)
       else ();
-      emulate_instr ins machine label_map verbosity;
+      emulate_instr ins machine label_to_addr addr_to_index index_to_addr
+        verbosity;
       (* verbosity level 3, entire machine state is logged *)
       if verbosity >= 3 then
         printf "%s\n%s"

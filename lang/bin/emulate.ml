@@ -31,6 +31,11 @@ let command =
                 (Colors.error "Error Parsing Asm")
                 msg
                 (Srcloc.string_of_src_loc loc source_text)
+          | Assemble.AssembleError (err, maybe_loc) ->
+              print_err
+                (Colors.error "Assembler Error")
+                (Assemble.string_of_asm_err err)
+                (Srcloc.string_of_maybe_loc maybe_loc source_text)
           | EmulatorError (err, maybe_loc) ->
               print_err
                 (Colors.error "Emulator Error")

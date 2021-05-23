@@ -1,7 +1,3 @@
-;; !!! NOTE: this doesn't necessarily work on the emulator
-;; indices into a list of instructions as "addresses",
-;; but should succeed on actual hardware.
-
 entry:
   ; fake a return address at the l1 label
   mvi 0x07, a
