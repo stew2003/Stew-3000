@@ -45,7 +45,9 @@ let command =
           try
             (* parse and assemble input program *)
             let instrs = Parser.parse source_text in
-            let assembled = Assemble.assemble instrs in
+            let _, unflattened, assembled =
+              Assemble.assemble_with_rich_info instrs
+            in
             (* write assembled binary to out file *)
             let out = Out_channel.create binary_filename in
             Out_channel.output_bytes out assembled;
@@ -60,7 +62,6 @@ let command =
             (* print side-by-side view if indicated *)
             if side_by_side then (
               Printf.printf "%s\n" (Colors.br_cyan "Side by side:");
-              let unflattened = Assemble.assemble_unflattened instrs in
               display_side_by_side instrs unflattened)
             else ()
           with

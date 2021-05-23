@@ -251,20 +251,32 @@ let bytes_from_list (l : int list) : bytes =
   List.mapi (fun i b -> Bytes.set_int8 buf i b) l |> ignore;
   buf
 
+(* [assemble_with_rich_info] assembles the given list of instructions
+  and produces several pieces of information about the program:
+    - a map from label names to physical addresses in the
+      generated binary
+    - a list of list of bytes, one inner list per instruction, which 
+      encodes which instructions assembled to which bytes
+    - a byte array containing the bytes of the assembled program *)
+let assemble_with_rich_info (instrs : instr list) :
+    int env * int list list * bytes =
+  let label_map = map_labels instrs in
+  (* assemble instructions to list of list of bytes (preserving
+     which bytes constitute which instructions) *)
+  let unflattened_bytes =
+    instrs |> List.map (fun ins -> assemble_instr ins label_map)
+  in
+  (* convert list of list of bytes into a flat array of bytes *)
+  let bytes = bytes_from_list (unflattened_bytes |> List.concat) in
+  (* check assembled program size (in bytes) to ensure it can fit *)
+  let size = Bytes.length bytes in
+  if size > max_pgrm_size then
+    raise (AssembleError (ProgramTooLarge size, None))
+  else ();
+  (label_map, unflattened_bytes, bytes)
+
 (* [assemble] processes a list of asm instructions and 
   produces a byte sequence representing the program in binary form *)
 let assemble (instrs : instr list) : bytes =
-  let label_map = map_labels instrs in
-  let bytes_as_list = assemble_to_list instrs label_map in
-  (* check assembled program size to ensure it can fit *)
-  let size = List.length bytes_as_list in
-  if size > max_pgrm_size then
-    raise (AssembleError (ProgramTooLarge size, None))
-  else bytes_from_list bytes_as_list
-
-(* [assemble_unflattened] produces a list of lists of bytes,
-  where each inner list represents a single instruction that has 
-  been assembled. *)
-let assemble_unflattened (instrs : instr list) : int list list =
-  let label_map = map_labels instrs in
-  instrs |> List.map (fun ins -> assemble_instr ins label_map)
+  let _, _, bytes = assemble_with_rich_info instrs in
+  bytes
