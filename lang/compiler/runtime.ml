@@ -39,8 +39,11 @@ let rec check_expr (exp : expr) (pred : expr -> bool) : bool =
   pred exp
   ||
   match exp with
-  | BinOp (_, left, right, _) -> check_expr left pred || check_expr right pred
-  | UnOp (_, operand, _) -> check_expr operand pred
+  | UnOp (_, operand, _) | LogOp (LNot operand, _) -> check_expr operand pred
+  | BinOp (_, left, right, _)
+  | LogOp (LAnd (left, right), _)
+  | LogOp (LOr (left, right), _) ->
+      check_expr left pred || check_expr right pred
   | Call (_, args, _) ->
       List.map (fun arg -> check_expr arg pred) args
       |> List.fold_left ( || ) false
