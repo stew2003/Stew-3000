@@ -31,6 +31,7 @@ Compiler
 Virtual Machine
   [x] software simulation of the stew3000, for compiler testing
   [x] add flag for levels of verbose output:
+  [] (thomas): display registers in decimal/hex/binary
   [] *future*: "step" mode for emulator for debugging?
 
 [] document everything
