@@ -33,9 +33,9 @@ Compiler
 Emulator
   [x] fix emulation of 8-bit integers
   [x] rewrite overflow flag
-  [] use actual byte addresses as opposed to list indices
-  [] bin/emulate can now throw assemble errors
-  [] display registers in decimal/hex/binary
+  [x] use actual byte addresses as opposed to list indices
+  [x] bin/emulate can now throw assemble errors
+  [x] display registers in decimal/hex/binary
   [] "step" mode for emulator for debugging
     [] simple command language?
 

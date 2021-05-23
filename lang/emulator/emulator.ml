@@ -29,24 +29,34 @@ let string_of_stew_3000 (machine : stew_3000) : string =
     | [] -> "(no output)"
     | _ -> List.map string_of_int history |> String.concat ", "
   in
+  let string_of_stack_value (value : int) =
+    if value = 0 then "__" else sprintf "%02x" (Numbers.as_8bit_unsigned value)
+  in
   let string_of_stack (stack : int list) : string =
     List.mapi
-      (fun i elt ->
-        if i mod 8 = 0 then sprintf "\n0x%02x:\t|%3d" i elt
-        else sprintf "%3d" elt)
+      (fun i value ->
+        if i mod 8 = 0 then
+          sprintf "\n0x%02x: %s" i (string_of_stack_value value)
+        else string_of_stack_value value)
       stack
-    |> String.concat "|"
+    |> String.concat " "
   in
-
+  (* [string_of_reg] formats a register's contents in a string,
+     showing unsigned hex, and unsigned/signed decimal *)
+  let string_of_reg (name : string) (contents : int) =
+    let unsigned = Numbers.as_8bit_unsigned contents in
+    let signed = Numbers.as_8bit_signed contents in
+    sprintf "%2s: 0x%02x %4d %4d" name unsigned unsigned signed
+  in
   let bool_to_int (b : bool) = if b then 1 else 0 in
   sprintf
-    "Emulated Stew 3000 State:\n\
-     == Registers ==\n\
-     a: %d\n\
-     b: %d\n\
-     c: %d\n\
-     sp: %d\n\
-     pc: %d\n\n\
+    "== Registers ==\n\
+     %s\n\
+     %s\n\
+     %s\n\
+     %s\n\
+     %s\n\
+     %s\n\n\
      == Flags ==\n\
      zf: %d\n\
      sf: %d\n\
@@ -55,7 +65,12 @@ let string_of_stew_3000 (machine : stew_3000) : string =
      == Decimal Display History == (most recent last)\n\
      %s\n\n\
      == Stack ==%s\n"
-    machine.a machine.b machine.c machine.sp machine.pc
+    "     hex  uns  sig"
+    (string_of_reg "a" machine.a)
+    (string_of_reg "b" machine.b)
+    (string_of_reg "c" machine.c)
+    (string_of_reg "sp" machine.sp)
+    (string_of_reg "pc" machine.pc)
     (bool_to_int machine.zflag)
     (bool_to_int machine.sflag)
     (bool_to_int machine.oflag)
