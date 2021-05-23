@@ -28,10 +28,12 @@ Compiler
     [] special-case conditions (if/while)
   [] preprocessor?
 
-Virtual Machine
-  [x] software simulation of the stew3000, for compiler testing
-  [x] add flag for levels of verbose output:
-  [] (thomas): display registers in decimal/hex/binary
-  [] *future*: "step" mode for emulator for debugging?
+Emulator
+  [x] fix emulation of 8-bit integers
+  [x] rewrite overflow flag
+  [] use actual byte addresses as opposed to list indices
+  [] display registers in decimal/hex/binary
+  [] "step" mode for emulator for debugging
+    [] simple command language?
 
 [] document everything

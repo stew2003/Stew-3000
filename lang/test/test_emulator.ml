@@ -171,7 +171,7 @@ let test_overflow_flag _ =
   let machine =
     run_emulator [ Mvi (-128, B, None); Subi (1, B, None); Hlt None ]
   in
-  assert_bool "overflow flag set after -128 - 1" machine.oflag;
+  assert_bool "overflow flag set after cmp -128 - 1" machine.oflag;
   let machine =
     run_emulator
       [ Mvi (-120, A, None); Mvi (100, B, None); Cmp (A, B, None); Hlt None ]
