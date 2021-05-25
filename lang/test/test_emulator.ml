@@ -1,6 +1,7 @@
 open OUnit2
 open Asm.Isa
 open Emulator
+open Emulator__Machine
 open Asm.Assemble
 
 (* wrapper around emulate, with no logging *)

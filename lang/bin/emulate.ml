@@ -24,7 +24,7 @@ let command =
             (* emulate and print final state *)
             let final_state = emulate instrs verbosity in
             printf "%s\n" (Colors.bold "Halted via hlt!");
-            printf "%s\n" (string_of_stew_3000 final_state)
+            printf "%s\n" (Emulator__Machine.string_of_stew_3000 final_state)
           with
           | Parser.AsmParseError (msg, loc) ->
               print_err

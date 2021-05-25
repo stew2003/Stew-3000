@@ -37,6 +37,6 @@ Emulator
   [x] bin/emulate can now throw assemble errors
   [x] display registers in decimal/hex/binary
   [] "step" mode for emulator for debugging
-    [] simple command language?
+    [] simple command language
 
 [] document everything

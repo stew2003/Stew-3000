@@ -2,6 +2,7 @@ open OUnit2
 open Compiler.Compile
 open Compiler.Ast
 open Emulator
+open Emulator__Machine
 open Util.Srcloc
 
 let dummy_src_loc = loc 0 0
