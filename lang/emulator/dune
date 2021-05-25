@@ -1,6 +1,12 @@
+(ocamllex
+ (modules lex))
+
+(menhir
+ (modules parse))
+
 (library
   (name emulator)
-  (libraries asm util))
+  (libraries asm util core))
 
 (env
   (dev

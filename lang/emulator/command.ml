@@ -1,33 +1,31 @@
 open Machine
 open Asm.Isa
+open Ast
+open Parser
 
-type register = A | B | C | SP | PC
-
-type flag = ZF | SF | OF
-
-type command =
-  | PrintReg of register
-  | PrintFlag of flag
-  | PrintStackAtAddr of int
-  | PrintRegs
-  | PrintFlags
-  | PrintDecHistory
-  | PrintStack
-  | PrintFullState
-  | PrintCurrentIns
-  | SetReg of register * int
-  | SetFlag of flag * bool
-  | SetStackAtAddr of int * int
-  | SetHalted of bool
-  | Next
-
-let print_line (str : string) = Printf.printf "%s\n" str
+(* 
+  Command Examples:
+  print a
+  print zf
+  print stack[17]
+  print regs
+  print flags
+  print dec
+  print stack
+  print machine
+  print ins
+  set a 0xae
+  set of 1
+  set stack[10] 0xff
+  set halted true
+  next
+ *)
 
 (* [exec_command] carries out the command given, updating the given machine *)
 let exec_command (cmd : command) (machine : stew_3000) (ins : instr) =
   match cmd with
   | PrintReg reg ->
-      print_line
+      print_endline
         (match reg with
         | A -> string_of_reg "a" machine.a
         | B -> string_of_reg "b" machine.b
@@ -35,20 +33,20 @@ let exec_command (cmd : command) (machine : stew_3000) (ins : instr) =
         | SP -> string_of_reg "sp" machine.sp
         | PC -> string_of_reg "pc" machine.pc)
   | PrintFlag flag ->
-      print_line
+      print_endline
         (match flag with
         | ZF -> string_of_flag "zf" machine.zflag
         | SF -> string_of_flag "sf" machine.sflag
         | OF -> string_of_flag "of" machine.oflag)
   | PrintStackAtAddr addr ->
-      print_line (string_of_stack_at_addr machine.stack addr)
-  | PrintRegs -> print_line (string_of_all_regs machine)
-  | PrintFlags -> print_line (string_of_all_flags machine)
+      print_endline (string_of_stack_at_addr machine.stack addr)
+  | PrintRegs -> print_endline (string_of_all_regs machine)
+  | PrintFlags -> print_endline (string_of_all_flags machine)
   | PrintDecHistory ->
-      print_line (string_of_dec_display machine.dec_disp_history)
-  | PrintStack -> print_line (string_of_stack machine.stack)
-  | PrintFullState -> print_line (string_of_stew_3000 machine)
-  | PrintCurrentIns -> print_line (string_of_instr ins)
+      print_endline (string_of_dec_display machine.dec_disp_history)
+  | PrintStack -> print_endline (string_of_stack machine.stack)
+  | PrintFullState -> print_endline (string_of_stew_3000 machine)
+  | PrintCurrentIns -> print_endline (string_of_instr ins)
   | SetReg (reg, value) -> (
       match reg with
       | A -> machine.a <- value
@@ -65,4 +63,33 @@ let exec_command (cmd : command) (machine : stew_3000) (ins : instr) =
       let unsigned_addr = Numbers.as_8bit_unsigned addr in
       Array.set machine.stack unsigned_addr value
   | SetHalted halted -> machine.halted <- halted
-  | Next -> ()
+  | NoCommand | Next -> ()
+
+let stop_for_commands (machine : stew_3000) (ins : instr) =
+  let last_cmd = ref None in
+  let rec loop _ =
+    let cmd =
+      print_string "(3db) ";
+      try Some (parse (read_line ()))
+      with CmdParseError msg ->
+        print_endline (Printf.sprintf "command parse error: %s" msg);
+        None
+    in
+    match cmd with
+    (* next instruction, break out of loop & back to emulator *)
+    | Some Next -> ()
+    (* empty input, repeat last command *)
+    | Some NoCommand -> (
+        match !last_cmd with
+        | Some cmd ->
+            exec_command cmd machine ins;
+            loop ()
+        | None -> loop ())
+    (* parsed command, run it *)
+    | Some cmd ->
+        last_cmd := Some cmd;
+        exec_command cmd machine ins;
+        loop ()
+    | None -> loop ()
+  in
+  loop ()

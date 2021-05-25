@@ -283,6 +283,7 @@ let emulate (pgrm : instr list) (verbosity : int) : stew_3000 =
     if machine.halted then ()
     else
       let ins = get_current_ins pgrm machine addr_to_index in
+      Command.stop_for_commands machine ins;
       Logging.log_current_ins verbosity ins;
       emulate_instr ins machine label_to_addr addr_to_index index_to_addr
         verbosity;
