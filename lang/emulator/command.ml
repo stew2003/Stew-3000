@@ -22,6 +22,19 @@ open Util
   next
  *)
 
+let help_message =
+  let help_line cmd descrip = Printf.sprintf "  %17s\t%s" cmd descrip in
+  [
+    "3db - The 3000 debugger";
+    "";
+    "Basic commands:";
+    help_line "print <state>" "prints state (register, flag, stack, etc)";
+    help_line "set <state> <imm>" "sets state to an immediate";
+    help_line "next" "executes the current instruction, moving to the next";
+    help_line "help" "prints this message";
+  ]
+  |> String.concat "\n"
+
 (* [exec_command] carries out the command given, updating the given machine *)
 let exec_command (cmd : command) (machine : stew_3000) (ins : instr) =
   match cmd with
@@ -68,6 +81,7 @@ let exec_command (cmd : command) (machine : stew_3000) (ins : instr) =
       Array.set machine.stack unsigned_addr value
   | SetHalted halted -> machine.halted <- halted
   | NoCommand | Next -> ()
+  | Help -> print_endline help_message
 
 let prompt = Colors.log "(3db) "
 

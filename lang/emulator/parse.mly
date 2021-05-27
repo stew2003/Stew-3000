@@ -18,6 +18,7 @@
 %token PRINT
 %token SET
 %token NEXT
+%token HELP
 
 %token EOF
 
@@ -30,8 +31,8 @@ main:
   { p }
 | s = set_cmd EOF
   { s }
-| n = next EOF
-  { n }
+| o = other EOF
+  { o }
 | EOF
   { NoCommand }
 
@@ -67,5 +68,6 @@ set_cmd:
 | SET HALTED b = BOOL
   { SetHalted b }
 
-next:
+other:
   | NEXT { Next }
+  | HELP { Help }

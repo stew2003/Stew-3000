@@ -36,7 +36,8 @@ Emulator
   [x] use actual byte addresses as opposed to list indices
   [x] bin/emulate can now throw assemble errors
   [x] display registers in decimal/hex/binary
-  [] "step" mode for emulator for debugging
-    [] simple command language
+  [x] "step" mode for emulator for debugging
+    [x] simple command language
+    [x] add shortcuts
 
 [] document everything

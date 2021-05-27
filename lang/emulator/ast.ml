@@ -19,3 +19,4 @@ type command =
   | SetHalted of bool
   | Next
   | NoCommand
+  | Help
