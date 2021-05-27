@@ -12,9 +12,12 @@ let command =
       let%map_open filename = anon ("filename" %: Filename.arg_type)
       and verbosity =
         flag "-v" (optional int) ~doc:"verbosity level of output logging"
-      in
+      and db_mode = flag "-3db" no_arg ~doc:"emulate in debug mode" in
       fun () ->
-        let verbosity = match verbosity with None -> 0 | Some v -> v in
+        (* debug mode puts verbosity at max *)
+        let verbosity =
+          if db_mode then 2 else match verbosity with None -> 0 | Some v -> v
+        in
         try
           (* read input file into string *)
           let source_text = In_channel.read_all filename in
@@ -22,7 +25,7 @@ let command =
             (* parse input program *)
             let instrs = Parser.parse source_text in
             (* emulate and print final state *)
-            let final_state = emulate instrs verbosity in
+            let final_state = emulate instrs verbosity db_mode in
             printf "%s\n" (Colors.bold "Halted via hlt!");
             printf "%s\n" (Emulator__Machine.string_of_stew_3000 final_state)
           with

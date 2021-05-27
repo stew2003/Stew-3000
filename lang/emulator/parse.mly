@@ -54,6 +54,8 @@ print_cmd:
   { PrintFullState }
 | PRINT INS
   { PrintCurrentIns }
+| PRINT HALTED
+  { PrintHalted }
 
 set_cmd:
 | SET r = REG v = NUM

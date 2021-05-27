@@ -274,7 +274,7 @@ let get_current_ins (pgrm : instr list) (machine : stew_3000)
 (* [emulate] emulates running the given assembly program 
   on the Stew 3000, and returns the final machine state after the run.
   verbosity indicates how much logging should happen during the run. *)
-let emulate (pgrm : instr list) (verbosity : int) : stew_3000 =
+let emulate (pgrm : instr list) (verbosity : int) (db_mode : bool) : stew_3000 =
   (* get byte-level info on the program from the assembler *)
   let label_to_addr, _, _ = Assemble.assemble_with_rich_info pgrm in
   let addr_to_index, index_to_addr = map_addrs_and_indices pgrm in
@@ -282,12 +282,15 @@ let emulate (pgrm : instr list) (verbosity : int) : stew_3000 =
   let rec run _ =
     if machine.halted then ()
     else
+      (* fetch the instruction at the program counter *)
       let ins = get_current_ins pgrm machine addr_to_index in
-      Command.stop_for_commands machine ins;
-      Logging.log_current_ins verbosity ins;
+      (* in debug mode, stop to allow user to run commands
+         before the instruction is executed *)
+      if db_mode then Command.loop_for_commands machine ins else ();
+      (* log the current instruction and execute it *)
+      Logging.log_current_ins verbosity machine ins;
       emulate_instr ins machine label_to_addr addr_to_index index_to_addr
         verbosity;
-      Logging.log_full_state verbosity machine;
       run ()
   in
   run ();

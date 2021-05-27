@@ -52,9 +52,13 @@ rule token = parse
   { HALTED }
 | "print"
   { PRINT }
+| "p"
+  { PRINT }
 | "set"
   { SET }
 | "next"
+  { NEXT }
+| "n"
   { NEXT }
 | eof
     { EOF }

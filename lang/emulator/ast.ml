@@ -12,6 +12,7 @@ type command =
   | PrintStack
   | PrintFullState
   | PrintCurrentIns
+  | PrintHalted
   | SetReg of register * int
   | SetFlag of flag * bool
   | SetStackAtAddr of int * int

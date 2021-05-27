@@ -12,16 +12,9 @@ let log_output (verbosity : int) (out_value : int) =
 
 (* [log_current_ins] logs the current instruction as it is about
   to be executed, if verbosity is at level 2 or greater *)
-let log_current_ins (verbosity : int) (ins : instr) =
+let log_current_ins (verbosity : int) (machine : stew_3000) (ins : instr) =
   if verbosity >= 2 then
-    printf "%s %s\n" (Colors.log "[current instruction]") (string_of_instr ins)
-  else ()
-
-(* [log_full_state] logs the entire state of the machine after
-  executing an instruction, if verbosity is at level 3 or greater. *)
-let log_full_state (verbosity : int) (machine : stew_3000) =
-  if verbosity >= 3 then
-    printf "%s\n%s"
-      (Colors.log "[state after executing]")
-      (string_of_stew_3000 machine)
+    printf "%s %s\n"
+      (Colors.log (sprintf "[executing at 0x%02x]" machine.pc))
+      (string_of_instr ins)
   else ()
