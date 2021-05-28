@@ -26,7 +26,7 @@ let string_of_emu_err (err : emu_err) =
   on the machine, by mutating the machine in-place *)
 let emulate_instr (ins : instr) (machine : stew_3000) (label_to_addr : int env)
     (addr_to_index : int num_env) (index_to_addr : int num_env)
-    (verbosity : int) =
+    (verbosity : int) (warn : bool) =
   (* [next_pc] computes the address of the next consecutive instruction
      after the current PC value. *)
   let next_pc _ =
@@ -110,6 +110,9 @@ let emulate_instr (ins : instr) (machine : stew_3000) (label_to_addr : int env)
     let result = Numbers.as_8bit_signed (i8_dest_value + i8_src_value) in
     store_reg dest result;
     set_flags result i8_dest_value i8_src_value;
+    (* emit a warning if overflow occurred *)
+    if machine.oflag then Logging.warn_arith_overflow warn ins result machine.pc
+    else ();
     inc_pc ()
   in
   (* [emulate_logic] emulates binary logical operators that
@@ -274,7 +277,8 @@ let get_current_ins (pgrm : instr list) (machine : stew_3000)
 (* [emulate] emulates running the given assembly program 
   on the Stew 3000, and returns the final machine state after the run.
   verbosity indicates how much logging should happen during the run. *)
-let emulate (pgrm : instr list) (verbosity : int) (db_mode : bool) : stew_3000 =
+let emulate ?(verbosity = 0) ?(db_mode = false) ?(warn = false)
+    (pgrm : instr list) : stew_3000 =
   (* get byte-level info on the program from the assembler *)
   let label_to_addr, _, _ = Assemble.assemble_with_rich_info pgrm in
   let addr_to_index, index_to_addr = map_addrs_and_indices pgrm in
@@ -290,7 +294,7 @@ let emulate (pgrm : instr list) (verbosity : int) (db_mode : bool) : stew_3000 =
       (* log the current instruction and execute it *)
       Logging.log_current_ins verbosity machine ins;
       emulate_instr ins machine label_to_addr addr_to_index index_to_addr
-        verbosity;
+        verbosity warn;
       run ()
   in
   run ();

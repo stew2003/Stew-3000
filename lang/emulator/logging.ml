@@ -18,3 +18,13 @@ let log_current_ins (verbosity : int) (machine : stew_3000) (ins : instr) =
       (Colors.log (sprintf "[executing at 0x%02x]" machine.pc))
       (string_of_instr ins)
   else ()
+
+(* [warn_arith_overflow] prints a warning (if enabled) indicating
+  that signed overflow occurred during an arithmetic instruction *)
+let warn_arith_overflow (warn : bool) (ins : instr) (result : int) (pc : int) =
+  if warn then
+    print_endline
+      (Colors.warn
+         (sprintf "[arithmetic overflow at pc 0x%02x %s: produced %d]" pc
+            (string_of_instr ins) result))
+  else ()

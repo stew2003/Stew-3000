@@ -12,7 +12,7 @@ let main_from_body (body : stmt list) : func_defn =
 
 let compile_and_run (pgrm : prog) : stew_3000 =
   let instrs = compile pgrm in
-  emulate instrs 0 false
+  emulate instrs
 
 let test_simple_pgrm _ =
   let machine =

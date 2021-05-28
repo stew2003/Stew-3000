@@ -20,8 +20,12 @@ let br_black s = effect "90" s
 
 let white s = effect "37" s
 
+let magenta s = effect "35" s
+
 let error s = bold (br_red s)
 
 let success s = bold (br_green s)
 
 let log s = bold (br_blue s)
+
+let warn s = bold (magenta s)

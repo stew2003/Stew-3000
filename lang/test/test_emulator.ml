@@ -5,7 +5,7 @@ open Emulator__Machine
 open Asm.Assemble
 
 (* wrapper around emulate, with no logging *)
-let run_emulator (pgrm : instr list) = emulate pgrm 0 false
+let run_emulator (pgrm : instr list) = emulate pgrm
 
 let assert_int_eq (exp : int) (act : int) =
   assert_equal exp act ~printer:string_of_int
