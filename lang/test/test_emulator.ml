@@ -1,9 +1,11 @@
 open OUnit2
 open Asm.Isa
 open Emulator
+open Emulator__Machine
+open Asm.Assemble
 
 (* wrapper around emulate, with no logging *)
-let run_emulator (pgrm : instr list) = emulate pgrm 0
+let run_emulator (pgrm : instr list) = emulate pgrm
 
 let assert_int_eq (exp : int) (act : int) =
   assert_equal exp act ~printer:string_of_int
@@ -171,7 +173,7 @@ let test_overflow_flag _ =
   let machine =
     run_emulator [ Mvi (-128, B, None); Subi (1, B, None); Hlt None ]
   in
-  assert_bool "overflow flag set after -128 - 1" machine.oflag;
+  assert_bool "overflow flag set after cmp -128 - 1" machine.oflag;
   let machine =
     run_emulator
       [ Mvi (-120, A, None); Mvi (100, B, None); Cmp (A, B, None); Hlt None ]
@@ -204,44 +206,44 @@ let test_call_ret _ =
 
 let test_dup_label _ =
   assert_raises
-    (EmulatorError (DuplicateLabel "dup", None))
+    (AssembleError (DuplicateLabel "dup", None))
     (fun _ ->
       run_emulator
         [ Label ("dup", None); Label ("dup", None); Label ("dup", None) ])
 
-let test_invalid_pc _ =
+let test_invalid_pc_increment _ =
   let machine = new_stew_3000 () in
-  (* pc runs right off the end *)
-  machine.pc <- 3;
+  (* pc runs right off the end, can't increment from 0x2 to 0x3 *)
+  machine.pc <- 2;
   assert_raises
-    (EmulatorError (InvalidProgramCounter machine, None))
+    (EmulatorError (InvalidPCIncrement machine, None))
     (fun _ -> run_emulator [ Nop None; Nop None; Nop None ])
 
 let test_invalid_target _ =
   assert_raises
-    (EmulatorError (InvalidTarget "not_here", None))
+    (AssembleError (InvalidTarget "not_here", None))
     (fun _ -> run_emulator [ Jmp ("not_here", None) ]);
   assert_raises
-    (EmulatorError (InvalidTarget "not_a_fun", None))
+    (AssembleError (InvalidTarget "not_a_fun", None))
     (fun _ -> run_emulator [ Call ("not_a_fun", None) ])
 
 let test_invalid_imm _ =
   assert_raises
-    (EmulatorError (InvalidImm (-129), None))
+    (AssembleError (InvalidImm (-129), None))
     (fun _ -> run_emulator [ Addi (-129, B, None) ]);
   assert_raises
-    (EmulatorError (InvalidImm (-129), None))
+    (AssembleError (InvalidImm (-129), None))
     (fun _ -> run_emulator [ Lds (-129, A, None) ]);
   assert_raises
-    (EmulatorError (InvalidImm 256, None))
+    (AssembleError (InvalidImm 256, None))
     (fun _ -> run_emulator [ Sts (C, 256, None) ])
 
 let test_invalid_instr _ =
   assert_raises
-    (EmulatorError (InvalidInstr (Sub (B, B, None)), None))
+    (AssembleError (InvalidInstr (Sub (B, B, None)), None))
     (fun _ -> run_emulator [ Sub (B, B, None) ]);
   assert_raises
-    (EmulatorError (InvalidInstr (Cmpi (Imm 1, Imm 2, None)), None))
+    (AssembleError (InvalidInstr (Cmpi (Imm 1, Imm 2, None)), None))
     (fun _ -> run_emulator [ Cmpi (Imm 1, Imm 2, None) ])
 
 let test_overflow_immediates _ =
@@ -283,7 +285,7 @@ let suite =
          "test_sign_flag" >:: test_sign_flag;
          "test_overflow_flag" >:: test_overflow_flag;
          "test_call_ret" >:: test_call_ret;
-         "test_invalid_pc" >:: test_invalid_pc;
+         "test_invalid_pc_increment" >:: test_invalid_pc_increment;
          "test_invalid_target" >:: test_invalid_target;
          "test_invalid_imm" >:: test_invalid_imm;
          "test_invalid_instr" >:: test_invalid_instr;

@@ -2,6 +2,7 @@ open OUnit2
 open Compiler.Compile
 open Compiler.Ast
 open Emulator
+open Emulator__Machine
 open Util.Srcloc
 
 let dummy_src_loc = loc 0 0
@@ -11,7 +12,7 @@ let main_from_body (body : stmt list) : func_defn =
 
 let compile_and_run (pgrm : prog) : stew_3000 =
   let instrs = compile pgrm in
-  emulate instrs 0
+  emulate instrs
 
 let test_simple_pgrm _ =
   let machine =

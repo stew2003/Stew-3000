@@ -12,9 +12,13 @@ let command =
       let%map_open filename = anon ("filename" %: Filename.arg_type)
       and verbosity =
         flag "-v" (optional int) ~doc:"verbosity level of output logging"
-      in
+      and db_mode = flag "-3db" no_arg ~doc:"emulate in debug mode"
+      and warn = flag "-warn" no_arg ~doc:"emit warnings" in
       fun () ->
-        let verbosity = match verbosity with None -> 0 | Some v -> v in
+        (* debug mode puts verbosity at max *)
+        let verbosity =
+          if db_mode then 2 else match verbosity with None -> 0 | Some v -> v
+        in
         try
           (* read input file into string *)
           let source_text = In_channel.read_all filename in
@@ -22,15 +26,20 @@ let command =
             (* parse input program *)
             let instrs = Parser.parse source_text in
             (* emulate and print final state *)
-            let final_state = emulate instrs verbosity in
+            let final_state = emulate instrs ~verbosity ~db_mode ~warn in
             printf "%s\n" (Colors.bold "Halted via hlt!");
-            printf "%s\n" (string_of_stew_3000 final_state)
+            printf "%s\n" (Emulator__Machine.string_of_stew_3000 final_state)
           with
           | Parser.AsmParseError (msg, loc) ->
               print_err
                 (Colors.error "Error Parsing Asm")
                 msg
                 (Srcloc.string_of_src_loc loc source_text)
+          | Assemble.AssembleError (err, maybe_loc) ->
+              print_err
+                (Colors.error "Assembler Error")
+                (Assemble.string_of_asm_err err)
+                (Srcloc.string_of_maybe_loc maybe_loc source_text)
           | EmulatorError (err, maybe_loc) ->
               print_err
                 (Colors.error "Emulator Error")

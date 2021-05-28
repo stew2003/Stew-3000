@@ -26,12 +26,18 @@ Compiler
     [] "compile to" given register (reduce movs)
     [] eliminate redundant instrs
     [] special-case conditions (if/while)
+    [] replace addi 1, _ / subi 1, _ with inr/dcr
+    [] remove addi 0, subi 0, etc (no effect)
   [] preprocessor?
 
-Virtual Machine
-  [x] software simulation of the stew3000, for compiler testing
-  [x] add flag for levels of verbose output:
-  [] (thomas): display registers in decimal/hex/binary
-  [] *future*: "step" mode for emulator for debugging?
+Emulator
+  [x] fix emulation of 8-bit integers
+  [x] rewrite overflow flag
+  [x] use actual byte addresses as opposed to list indices
+  [x] bin/emulate can now throw assemble errors
+  [x] display registers in decimal/hex/binary
+  [x] "step" mode for emulator for debugging
+    [x] simple command language
+    [x] add shortcuts
 
 [] document everything
