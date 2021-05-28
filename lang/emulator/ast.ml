@@ -20,3 +20,4 @@ type command =
   | Next
   | NoCommand
   | Help
+  | Clear

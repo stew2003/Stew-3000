@@ -62,6 +62,8 @@ rule token = parse
   { NEXT }
 | "help"
   { HELP }
+| "clear"
+  { CLEAR }
 | eof
     { EOF }
 | _

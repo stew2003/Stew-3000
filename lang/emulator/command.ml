@@ -4,34 +4,34 @@ open Ast
 open Parser
 open Util
 
-(* 
-  Command Examples:
-  print a
-  print zf
-  print stack[17]
-  print regs
-  print flags
-  print dec
-  print stack
-  print machine
-  print ins
-  set a 0xae
-  set of 1
-  set stack[10] 0xff
-  set halted true
-  next
- *)
+(* [clear_screen] clears the screen and moves the cursor to home position *)
+let clear_screen _ = Printf.printf "\027[2J\027[H"
 
 let help_message =
-  let help_line cmd descrip = Printf.sprintf "  %17s\t%s" cmd descrip in
+  let help_line cmd descrip = Printf.sprintf "  %23s\t%s" cmd descrip in
   [
     "3db - The 3000 debugger";
     "";
-    "Basic commands:";
-    help_line "print <state>" "prints state (register, flag, stack, etc)";
-    help_line "set <state> <imm>" "sets state to an immediate";
-    help_line "next" "executes the current instruction, moving to the next";
-    help_line "help" "prints this message";
+    "Commands:";
+    help_line "print <reg>" "print register contents";
+    help_line "print <flag>" "print flag's state";
+    help_line "print stack[<addr>]" "print stack contents at address";
+    help_line "print regs" "print all register contents";
+    help_line "print flags" "print all flag info";
+    help_line "print dec" "print decimal display history";
+    help_line "print stack" "print full stack";
+    help_line "print machine" "print full machine state";
+    help_line "print ins" "print instruction about to be executed";
+    help_line "print halted" "print whether machine has halted";
+    help_line "set <reg> <imm>" "set a register's contents";
+    help_line "set <flag> <bool>" "set/unset a flag";
+    help_line "set stack[<addr>] <imm>" "set stack at address";
+    help_line "set halted <bool>" "set the machine's halted state";
+    help_line "next" "execute current instruction and move to next";
+    help_line "clear" "clears the screen";
+    help_line "help" "print this message";
+    "";
+    "Note: enter repeats the last command";
   ]
   |> String.concat "\n"
 
@@ -82,6 +82,7 @@ let exec_command (cmd : command) (machine : stew_3000) (ins : instr) =
   | SetHalted halted -> machine.halted <- halted
   | NoCommand | Next -> ()
   | Help -> print_endline help_message
+  | Clear -> clear_screen ()
 
 let prompt = Colors.log "(3db) "
 

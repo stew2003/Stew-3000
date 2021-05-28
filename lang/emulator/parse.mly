@@ -19,6 +19,7 @@
 %token SET
 %token NEXT
 %token HELP
+%token CLEAR
 
 %token EOF
 
@@ -71,3 +72,4 @@ set_cmd:
 other:
   | NEXT { Next }
   | HELP { Help }
+  | CLEAR { Clear }
