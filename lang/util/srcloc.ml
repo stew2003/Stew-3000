@@ -22,6 +22,11 @@ let loc_from_lexbuf (buf : lexbuf) =
   let lno = (lexeme_start_p buf).pos_lnum in
   loc lno lno
 
+(* [span] constructs a new source location representing 
+  the span of two given source locations. *)
+let span (min_loc : src_loc) (max_loc : src_loc) : src_loc =
+  loc min_loc.startl max_loc.endl
+
 (* the periphery is how many lines above and below the source 
   location are printed when the location is printed *)
 let periphery = 2

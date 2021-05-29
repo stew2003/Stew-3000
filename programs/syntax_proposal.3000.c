@@ -11,6 +11,7 @@ void main() {
   10 - 4;
   5 * 7;
   6 / 2;
+  10 % 2;
   2 & 4;  // bitwise and
   7 | 8;  // bitwise or
   10 ^ 2; // bitwise xor
