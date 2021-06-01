@@ -11,6 +11,7 @@
 %token <Util.Srcloc.src_loc> LBRACE
 %token <Util.Srcloc.src_loc> RBRACE
 %token <Util.Srcloc.src_loc> SEMICOLON
+%token <Util.Srcloc.src_loc> COMMA
 
 %token <Util.Srcloc.src_loc> PLUS
 %token <Util.Srcloc.src_loc> MINUS
@@ -51,6 +52,17 @@
 
 %start <func_defn list> program
 
+%left LOR
+%left LAND
+%left BOR
+%left BXOR
+%left BAND
+%left EQ NEQ
+%left LT LTE GT GTE
+%left PLUS MINUS
+%left TIMES DIV MOD
+%right BNOT LNOT
+
 %%
 
 program:
@@ -60,7 +72,7 @@ program:
   { [] }
 
 definition:
-| t = typ name = IDENT LPAREN p = params RPAREN 
+| t = typ name = IDENT LPAREN p = param_list RPAREN 
   LBRACE b = stmt_list end_loc = RBRACE
   {
     let (return_ty, start_loc) = t in 
@@ -80,14 +92,24 @@ typ:
 | loc = VOID
   { (Void, loc) }
 
-params:
-| first = decl rest = params
-  { 
-    let (name, typ, _) = first in 
-    (name, typ) :: rest 
-  }
+param_list:
+| lst = non_empty_param_list
+  { lst }
 | RPAREN 
   { [] }
+
+rest_of_param_list:
+| COMMA rest = non_empty_param_list
+  { rest }
+| RPAREN 
+  { [] }
+
+non_empty_param_list:
+| param = decl rest = rest_of_param_list
+  {
+    let (name, typ, _) = param in 
+    (name, typ) :: rest
+  }
 
 decl:
 | t = typ name = IDENT
@@ -259,8 +281,15 @@ expr:
     ((LogOp ((LNot e), loc)), loc) }
 
 arg_list:
-| first = expr rest = arg_list
+| first = expr rest = rest_of_arg_list
   { let (first, _) = first in 
     first :: rest }
+| RPAREN
+  { [] }
+
+rest_of_arg_list:
+| COMMA arg = expr rest = rest_of_arg_list
+  { let (arg, _) = arg in 
+    arg :: rest }
 | RPAREN
   { [] }

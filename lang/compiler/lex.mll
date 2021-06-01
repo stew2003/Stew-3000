@@ -28,6 +28,8 @@ rule token = parse
   { RBRACE (loc_from_lexbuf lexbuf) }
 | ';'
   { SEMICOLON (loc_from_lexbuf lexbuf) }
+| ','
+  { COMMA (loc_from_lexbuf lexbuf) }
 | '+'
   { PLUS (loc_from_lexbuf lexbuf) }
 | '-'
