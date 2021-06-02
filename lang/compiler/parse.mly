@@ -65,26 +65,29 @@
 
 %%
 
+// a program is a list of function definitions
 program:
-| fn = definition rest = program
-  { fn :: rest }
-| EOF 
-  { [] }
+| defns = list(definition) EOF
+  { defns }
 
 definition:
-| t = typ name = IDENT LPAREN p = param_list RPAREN 
-  LBRACE b = stmt_list end_loc = RBRACE
+| fn = decl LPAREN params = params RPAREN 
+  LBRACE body = stmt_list end_loc = RBRACE
   {
-    let (return_ty, start_loc) = t in 
-    let (name, _) = name in 
+    let (name, return_ty, start_loc) = fn in 
+    let params = List.map (fun (name, typ, _) -> (name, typ)) params in
     {
       name;
-      params= p;
-      body= b;
+      params;
+      body;
       return_ty;
       loc= span start_loc end_loc;
     }
   }
+
+params:
+| p = separated_list(COMMA, decl)
+  { p }
 
 typ:
 | loc = INT
@@ -92,25 +95,7 @@ typ:
 | loc = VOID
   { (Void, loc) }
 
-param_list:
-| lst = non_empty_param_list
-  { lst }
-| RPAREN 
-  { [] }
-
-rest_of_param_list:
-| COMMA rest = non_empty_param_list
-  { rest }
-| RPAREN 
-  { [] }
-
-non_empty_param_list:
-| param = decl rest = rest_of_param_list
-  {
-    let (name, typ, _) = param in 
-    (name, typ) :: rest
-  }
-
+// variable declaration, type then name
 decl:
 | t = typ name = IDENT
   { 
@@ -120,13 +105,18 @@ decl:
   }
 
 stmt_list:
-| first = stmt SEMICOLON rest = stmt_list
-  { first :: rest }
-| first = block_stmt rest = stmt_list
-  { first :: rest }
-| RBRACE
-  { [] }
+| stmts = list(stmt_in_block)
+  { stmts }
 
+// statement inside a block can be either simple stmt with semicolon,
+// or block statement (if, while, etc)
+stmt_in_block:
+| stmt = stmt SEMICOLON
+  { stmt }
+| stmt = block_stmt
+  { stmt }
+
+// statements that do not require semicolon termination
 block_stmt:
 | d = decl ASSIGN e = expr end_loc = SEMICOLON scope = stmt_list
   {
@@ -148,6 +138,7 @@ block_stmt:
   { let (cond, _) = cond in 
     While (cond, body, span start_loc end_loc) }
 
+// statements that require semicolon termination
 stmt:
 | var = IDENT ASSIGN e = expr
   { 
@@ -180,6 +171,7 @@ stmt:
 | start_loc = EXIT LPAREN end_loc = RPAREN
   { Exit (None, span start_loc end_loc) }
 
+// expressions
 expr:
 | n = NUM
   { let (n, loc) = n in 
@@ -280,16 +272,10 @@ expr:
     let loc = span start_loc end_loc in 
     ((LogOp ((LNot e), loc)), loc) }
 
+// argument list of expressions for function calls
 arg_list:
-| first = expr rest = rest_of_arg_list
-  { let (first, _) = first in 
-    first :: rest }
-| RPAREN
-  { [] }
-
-rest_of_arg_list:
-| COMMA arg = expr rest = rest_of_arg_list
-  { let (arg, _) = arg in 
-    arg :: rest }
-| RPAREN
-  { [] }
+| args = separated_list(COMMA, expr)
+{ 
+  let args = List.map (fun (arg, _) -> arg) args in 
+  args
+}
