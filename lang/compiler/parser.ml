@@ -8,11 +8,11 @@ exception CompilerParseError of string * maybe_loc
 (* [prog_from_defns] converts a list of function definitions
   into a program, by extracting out the main function *)
 let prog_from_defns (defns : func_defn list) : prog =
-  match lookup "main" defns with
-  | Some main ->
-      let funcs = List.filter (fun d -> d.name <> "main") defns in
-      { main; funcs }
-  | None -> raise (CompilerParseError ("missing main function", None))
+  match List.partition (fun defn -> defn.name = "main") defns with
+  | [ main ], funcs -> { main; funcs }
+  | _ ->
+      raise
+        (CompilerParseError ("program must have exactly one main function", None))
 
 (* [parse] consumes a string representing a source program
   and parses it into a list of function definitions *)
