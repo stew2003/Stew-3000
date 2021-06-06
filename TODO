@@ -18,10 +18,10 @@ Compiler
   [x] decide on language constructs
   [x] parser
   [] runtime
-    [] add assert to runtime
-    [] test runtime
+    [x] add assert to runtime
+    [x] test runtime
   [] add compiler binary
-  [] compiler tests using parser
+  [x] compiler tests using parser
   [] implement compiler
   [] type checking
     NOTE: 
