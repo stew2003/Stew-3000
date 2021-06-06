@@ -173,6 +173,9 @@ stmt:
 
 // expressions
 expr:
+| start_loc = LPAREN e = expr end_loc = RPAREN
+  { let (e, _) = e in
+    (e, span start_loc end_loc) }
 | n = NUM
   { let (n, loc) = n in 
     (Num (n, loc), loc) }

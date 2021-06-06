@@ -16,7 +16,10 @@ Assembler
 
 Compiler
   [x] decide on language constructs
-  [] parser 
+  [] parser
+  [] runtime
+    [] add assert to runtime
+    [] test runtime
   [] implement compiler
   [] type checking
     NOTE: 

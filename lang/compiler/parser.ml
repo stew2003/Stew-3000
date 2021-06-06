@@ -12,7 +12,7 @@ let prog_from_defns (defns : func_defn list) : prog =
   | Some main ->
       let funcs = List.filter (fun d -> d.name <> "main") defns in
       { main; funcs }
-  | None -> raise (CompilerParseError ("program had no main function", None))
+  | None -> raise (CompilerParseError ("missing main function", None))
 
 (* [parse] consumes a string representing a source program
   and parses it into a list of function definitions *)
