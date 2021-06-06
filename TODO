@@ -17,10 +17,10 @@ Assembler
 Compiler
   [x] decide on language constructs
   [x] parser
-  [] runtime
+  [x] runtime
     [x] add assert to runtime
     [x] test runtime
-  [] add compiler binary
+  [x] add compiler binary
   [x] compiler tests using parser
   [] implement compiler
   [] type checking

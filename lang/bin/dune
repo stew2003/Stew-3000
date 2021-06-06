@@ -12,6 +12,13 @@
     (pps ppx_let))
   (libraries core asm util emulator err))
 
+(executable
+  (name compile)
+  (modules compile)
+  (preprocess
+    (pps ppx_let))
+  (libraries core asm util err compiler))
+
 (library
   (name err)
   (modules err)
