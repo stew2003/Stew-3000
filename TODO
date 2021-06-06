@@ -20,6 +20,8 @@ Compiler
   [] runtime
     [] add assert to runtime
     [] test runtime
+  [] add compiler binary
+  [] compiler tests using parser
   [] implement compiler
   [] type checking
     NOTE: 

@@ -1,5 +1,5 @@
 (tests 
-  (names test_assembler test_emulator test_compiler test_parser)
+  (names test_assembler test_emulator test_compiler test_parser test_runtime)
   (libraries ounit2 asm emulator compiler))
 
 (env
