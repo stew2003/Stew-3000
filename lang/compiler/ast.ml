@@ -46,6 +46,7 @@ type stmt =
   | Dcr of string * src_loc
   (* Halts program, emitting expr to decimal display *)
   | Exit of expr option * src_loc
+  | Assert of expr * src_loc
 
 type func_defn = {
   name : string;

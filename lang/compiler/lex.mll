@@ -84,6 +84,8 @@ rule token = parse
   { PRINT (loc_from_lexbuf lexbuf) }
 | "exit"
   { EXIT (loc_from_lexbuf lexbuf) }
+| "assert"
+  { ASSERT (loc_from_lexbuf lexbuf) }
 | "int"
   { INT (loc_from_lexbuf lexbuf) }
 | "void"

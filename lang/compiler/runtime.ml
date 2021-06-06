@@ -129,69 +129,120 @@ let runtime_set_result_sign =
     Ret None;
   ]
 
-(* [check_expr] determines if the given expression contains a 
-  sub-expression that satisfies the given predicate. *)
-let rec check_expr (exp : expr) (pred : expr -> bool) : bool =
-  (* true if either the expression or its subexpressions yield true *)
-  pred exp
-  ||
-  match exp with
-  | UnOp (_, operand, _) | LogOp (LNot operand, _) -> check_expr operand pred
-  | BinOp (_, left, right, _)
-  | LogOp (LAnd (left, right), _)
-  | LogOp (LOr (left, right), _) ->
-      check_expr left pred || check_expr right pred
-  | Call (_, args, _) ->
-      List.map (fun arg -> check_expr arg pred) args
-      |> List.fold_left ( || ) false
-  | _ -> false
+(* Asserts that a condition is true and halts indicating error otherwise *)
+let runtime_assert =
+  let rt_assert = "runtime_assert" in
+  let success = gensym "success" in
+  (* ; Asserts that the value passed in the a register
+     ; is not 0. If the value is found to be 0, we halt with
+     ; -1 on the decimal display. *)
+  [
+    Label (rt_assert, None);
+    Cmpi (Reg A, Imm 0, None);
+    Jne (success, None);
+    Mvi (-1, C, None);
+    Out (C, None);
+    Hlt None;
+    Label (success, None);
+    Ret None;
+  ]
 
-(* [check_stmt] determines if the given statement contains an 
+(* [check_for_expr] determines if the program contains an 
   expression that satisfies the given predicate *)
-and check_stmt (stmt : stmt) (pred : expr -> bool) : bool =
-  match stmt with
-  | Let (_, _, value, body, _) ->
-      check_expr value pred || check_stmt_list body pred
-  | Assign (_, value, _) -> check_expr value pred
-  | If (cond, thn, _) -> check_expr cond pred || check_stmt_list thn pred
-  | IfElse (cond, thn, els, _) ->
-      check_expr cond pred || check_stmt_list thn pred
-      || check_stmt_list els pred
-  | Block (stmts, _) -> check_stmt_list stmts pred
-  | Return (Some value, _) -> check_expr value pred
-  | ExprStmt (value, _) -> check_expr value pred
-  | While (cond, body, _) -> check_expr cond pred || check_stmt_list body pred
-  | PrintDec (value, _) -> check_expr value pred
-  | _ -> false
-
-(* [check_stmt_list] determines if the given statement list 
-  contains an expression that satisfies the predicate *)
-and check_stmt_list (stmts : stmt list) (pred : expr -> bool) : bool =
-  stmts
-  |> List.map (fun stmt -> check_stmt stmt pred)
+let check_for_expr (pgrm : prog) (pred : expr -> bool) : bool =
+  (* [check_expr] determines if the given expression contains a
+     sub-expression that satisfies the given predicate. *)
+  let rec check_expr (exp : expr) (pred : expr -> bool) : bool =
+    (* true if either the expression or its subexpressions yield true *)
+    pred exp
+    ||
+    match exp with
+    | UnOp (_, operand, _) | LogOp (LNot operand, _) -> check_expr operand pred
+    | BinOp (_, left, right, _)
+    | LogOp (LAnd (left, right), _)
+    | LogOp (LOr (left, right), _) ->
+        check_expr left pred || check_expr right pred
+    | Call (_, args, _) ->
+        List.map (fun arg -> check_expr arg pred) args
+        |> List.fold_left ( || ) false
+    | _ -> false
+  (* [check_stmt] determines if the given statement contains an
+     expression that satisfies the given predicate *)
+  and check_stmt (stmt : stmt) (pred : expr -> bool) : bool =
+    match stmt with
+    | Let (_, _, value, body, _) ->
+        check_expr value pred || check_stmt_list body pred
+    | Assign (_, value, _) -> check_expr value pred
+    | If (cond, thn, _) -> check_expr cond pred || check_stmt_list thn pred
+    | IfElse (cond, thn, els, _) ->
+        check_expr cond pred || check_stmt_list thn pred
+        || check_stmt_list els pred
+    | Block (stmts, _) -> check_stmt_list stmts pred
+    | Return (Some value, _) -> check_expr value pred
+    | ExprStmt (value, _) -> check_expr value pred
+    | While (cond, body, _) -> check_expr cond pred || check_stmt_list body pred
+    | PrintDec (value, _) -> check_expr value pred
+    | Exit (Some e, _) -> check_expr e pred
+    | Assert (e, _) -> check_expr e pred
+    | _ -> false
+  (* [check_stmt_list] determines if the given statement list
+     contains an expression that satisfies the predicate *)
+  and check_stmt_list (stmts : stmt list) (pred : expr -> bool) : bool =
+    stmts
+    |> List.map (fun stmt -> check_stmt stmt pred)
+    |> List.fold_left ( || ) false
+  in
+  List.map
+    (fun defn -> check_stmt_list defn.body pred)
+    (pgrm.funcs @ [ pgrm.main ])
   |> List.fold_left ( || ) false
 
-(* [check_program] determines if the program contains an 
-  expression that satisfies the given predicate *)
-and check_program (pgrm : prog) (pred : expr -> bool) : bool =
-  List.map (fun defn -> check_stmt_list defn.body pred) pgrm.funcs
+(* [check_for_stmt] checks a given program for a statement 
+  that satisfies the given predicate *)
+let check_for_stmt (pgrm : prog) (pred : stmt -> bool) : bool =
+  (* [check_stmt] checks a statement for the presence of a statement
+     that satisfies the given predicate *)
+  let rec check_stmt (stmt : stmt) (pred : stmt -> bool) : bool =
+    pred stmt
+    ||
+    match stmt with
+    | Let (_, _, _, body, _) -> check_stmt_list body pred
+    | If (_, thn, _) -> check_stmt_list thn pred
+    | IfElse (_, thn, els, _) ->
+        check_stmt_list thn pred || check_stmt_list els pred
+    | Block (stmts, _) -> check_stmt_list stmts pred
+    | While (_, body, _) -> check_stmt_list body pred
+    | _ -> false
+  (* [check_stmt_list] checks a list of statements for one that satisfies
+     the given predicate *)
+  and check_stmt_list (stmts : stmt list) (pred : stmt -> bool) : bool =
+    stmts
+    |> List.map (fun stmt -> check_stmt stmt pred)
+    |> List.fold_left ( || ) false
+  in
+  List.map
+    (fun defn -> check_stmt_list defn.body pred)
+    (pgrm.funcs @ [ pgrm.main ])
   |> List.fold_left ( || ) false
-  || check_stmt_list pgrm.main.body pred
+
+let uses_mult (pgrm : prog) =
+  check_for_expr pgrm (function BinOp (Mult, _, _, _) -> true | _ -> false)
+
+let uses_div (pgrm : prog) =
+  check_for_expr pgrm (function BinOp (Div, _, _, _) -> true | _ -> false)
+
+let uses_assert (pgrm : prog) =
+  check_for_stmt pgrm (function Assert _ -> true | _ -> false)
 
 (* [runtime] constructs the runtime code necessary for a given 
   program. Usually, this will be empty, but if the program requires
   special runtime functionality (multiplication, division, ...) this
   will contribute those subroutines *)
 let runtime (program : prog) : instr list =
-  let uses_mult =
-    check_program program (function
-      | BinOp (Mult, _, _, _) -> true
-      | _ -> false)
-  in
-  let uses_div =
-    check_program program (function BinOp (Div, _, _, _) -> true | _ -> false)
-  in
   let sign_utils = runtime_normalize_signs @ runtime_set_result_sign in
-  (if uses_mult || uses_div then sign_utils else [])
-  @ (if uses_mult then runtime_multiply else [])
-  @ if uses_div then runtime_divide else []
+  let needs_mult_code = uses_mult program in
+  let needs_div_code = uses_div program in
+  (if needs_mult_code || needs_div_code then sign_utils else [])
+  @ (if needs_mult_code then runtime_multiply else [])
+  @ (if needs_div_code then runtime_divide else [])
+  @ if uses_assert program then runtime_assert else []

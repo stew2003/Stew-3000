@@ -44,6 +44,7 @@
 
 %token <Util.Srcloc.src_loc> PRINT
 %token <Util.Srcloc.src_loc> EXIT
+%token <Util.Srcloc.src_loc> ASSERT
 
 %token <Util.Srcloc.src_loc> INT
 %token <Util.Srcloc.src_loc> VOID
@@ -170,6 +171,11 @@ stmt:
     Exit (Some arg, span start_loc end_loc) }
 | start_loc = EXIT LPAREN end_loc = RPAREN
   { Exit (None, span start_loc end_loc) }
+| start_loc = ASSERT LPAREN e = expr end_loc = RPAREN 
+  { 
+    let (e, _) = e in 
+    Assert (e, span start_loc end_loc)
+  }
 
 // expressions
 expr:

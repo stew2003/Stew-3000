@@ -37,6 +37,7 @@ let norm_src_locs (pgrm : prog) =
     | Dcr (name, _) -> Dcr (name, sl)
     | Exit (Some e, _) -> Exit (Some (norm_expr e), sl)
     | Exit (None, _) -> Exit (None, sl)
+    | Assert (e, _) -> Assert (e, sl)
   and norm_stmt_list (stmts : stmt list) = List.map norm_stmt stmts
   and norm_func (func : func_defn) =
     { func with body = norm_stmt_list func.body; loc = sl }
