@@ -9,7 +9,7 @@ rule token = parse
   { token lexbuf }
 | "//"[^'\n']*?
   { token lexbuf }
-| "/*"('*'[^'/']|[^'*']'/'|[^'*''/'])*?"*/" as comment
+| "/*"('*'[^'/']|'/'|[^'*''/'])*?"*/" as comment
   { 
     (* count the number of newlines in the multiline 
        comment and apply them to the lexbuf. *)
