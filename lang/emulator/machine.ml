@@ -64,7 +64,16 @@ let string_of_halted (halted : bool) : string = if halted then "yes" else "no"
 let string_of_dec_display (history : int list) =
   match history with
   | [] -> "(no output)"
-  | _ -> List.map string_of_int history |> String.concat ", "
+  | _ ->
+      let last = List.length history - 1 in
+      List.mapi
+        (fun i value ->
+          let value = Numbers.as_8bit_signed value in
+          if (i + 1) mod 8 = 0 then sprintf "%d\n" value
+          else if i = last then sprintf "%d" value
+          else sprintf "%d, " value)
+        history
+      |> String.concat ""
 
 (* [string_of_stack_at_addr] gets a string of the stack contents 
   at a given address. The address is always interpreted as unsigned 8-bit *)

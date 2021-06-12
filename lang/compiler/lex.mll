@@ -9,8 +9,15 @@ rule token = parse
   { token lexbuf }
 | "//"[^'\n']*?
   { token lexbuf }
-| "/*"_*?"*/"
-  { token lexbuf }
+| "/*"('*'[^'/']|[^'*']'/'|[^'*''/'])*?"*/" as comment
+  { 
+    (* count the number of newlines in the multiline 
+       comment and apply them to the lexbuf. *)
+    let lines = String.split_on_char '\n' comment in 
+    for _ = 1 to (List.length lines) - 1 do 
+      Lexing.new_line lexbuf;
+    done;
+    token lexbuf }
 | '\n' { Lexing.new_line lexbuf; token lexbuf }
 | '-'?['0'-'9']+ as i
   { NUM (int_of_string i, loc_from_lexbuf lexbuf) }
