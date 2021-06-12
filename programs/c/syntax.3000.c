@@ -1,3 +1,6 @@
+/**
+ * This is an overview of the syntax of the 3000's high-level language.
+ */
 
 /*
  * Multiline comments
