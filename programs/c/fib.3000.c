@@ -34,6 +34,7 @@ void main() {
  * (n is 0-indexed).
  */
 int fib_rec(int n) {
+    assert(n >= 0);
     if (n == 0 || n == 1) {
         return 1;
     }
