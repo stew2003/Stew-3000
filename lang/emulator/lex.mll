@@ -56,14 +56,14 @@ rule token = parse
   { PRINT }
 | "set"
   { SET }
-| "next"
-  { NEXT }
-| "n"
+| "next" | "n"
   { NEXT }
 | "help"
   { HELP }
 | "clear"
   { CLEAR }
+| "continue"
+  { CONTINUE }
 | eof
     { EOF }
 | _

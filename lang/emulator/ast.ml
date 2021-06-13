@@ -21,3 +21,4 @@ type command =
   | NoCommand
   | Help
   | Clear
+  | Continue

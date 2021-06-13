@@ -44,7 +44,7 @@ Emulator
   [x] "step" mode for emulator for debugging
     [x] simple command language
     [x] add shortcuts
-    [] `continue` command
+    [x] `continue` command
   [x] better printing of decimal display
 
 [] document everything

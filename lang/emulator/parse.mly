@@ -20,6 +20,7 @@
 %token NEXT
 %token HELP
 %token CLEAR
+%token CONTINUE
 
 %token EOF
 
@@ -73,3 +74,4 @@ other:
   | NEXT { Next }
   | HELP { Help }
   | CLEAR { Clear }
+  | CONTINUE { Continue }

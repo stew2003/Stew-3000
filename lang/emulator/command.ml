@@ -28,6 +28,8 @@ let help_message =
     help_line "set stack[<addr>] <imm>" "set stack at address";
     help_line "set halted <bool>" "set the machine's halted state";
     help_line "next" "execute current instruction and move to next";
+    help_line "continue"
+      "execute the rest of the program without stopping for commands";
     help_line "clear" "clears the screen";
     help_line "help" "print this message";
     "";
@@ -80,7 +82,7 @@ let exec_command (cmd : command) (machine : stew_3000) (ins : instr) =
       let unsigned_addr = Numbers.as_8bit_unsigned addr in
       Array.set machine.stack unsigned_addr value
   | SetHalted halted -> machine.halted <- halted
-  | NoCommand | Next -> ()
+  | NoCommand | Next | Continue -> ()
   | Help -> print_endline help_message
   | Clear -> clear_screen ()
 
@@ -94,6 +96,7 @@ let loop_for_commands =
   (* last_cmd tracks the last executed command, and is shared
      across all calls to loop_for_commands *)
   let last_cmd = ref None in
+  let continuing = ref false in
   fun (machine : stew_3000) (ins : instr) ->
     let rec loop _ =
       let cmd =
@@ -106,6 +109,7 @@ let loop_for_commands =
           None
       in
       match cmd with
+      | Some Continue -> continuing := true
       (* next instruction, break out of loop & back to emulator *)
       | Some Next -> last_cmd := Some Next
       (* empty input, repeat last command *)
@@ -123,4 +127,4 @@ let loop_for_commands =
           loop ()
       | None -> loop ()
     in
-    loop ()
+    if not !continuing then loop ()
