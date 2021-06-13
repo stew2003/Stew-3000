@@ -1,4 +1,7 @@
 entry:
+  ; halt successfully
+  mvi 0, c
+  out c
   hlt
   call assert_not_reached
 

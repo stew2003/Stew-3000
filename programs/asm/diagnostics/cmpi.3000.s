@@ -13,7 +13,7 @@ entry:
   cmpi b, 16
   ; NOTE: manually observe: zf = 0, sf = 1, of = 0
   cmpi 42, b
-  ; NOTE: manually observe: zf = 0, sf = 1, of = 0
+  ; NOTE: manually observe: zf = 0, sf = 0, of = 0
 
   ; cmpi byte, c
   ; cmpi c, byte
