@@ -229,6 +229,9 @@ let uses_mult (pgrm : prog) =
 let uses_div (pgrm : prog) =
   check_for_expr pgrm (function BinOp (Div, _, _, _) -> true | _ -> false)
 
+let uses_mod (pgrm : prog) =
+  check_for_expr pgrm (function BinOp (Mod, _, _, _) -> true | _ -> false)
+
 let uses_assert (pgrm : prog) =
   check_for_stmt pgrm (function Assert _ -> true | _ -> false)
 
@@ -239,7 +242,7 @@ let uses_assert (pgrm : prog) =
 let runtime (program : prog) : instr list =
   let sign_utils = runtime_normalize_signs @ runtime_set_result_sign in
   let needs_mult_code = uses_mult program in
-  let needs_div_code = uses_div program in
+  let needs_div_code = uses_div program || uses_mod program in
   (if needs_mult_code || needs_div_code then sign_utils else [])
   @ (if needs_mult_code then runtime_multiply else [])
   @ (if needs_div_code then runtime_divide else [])

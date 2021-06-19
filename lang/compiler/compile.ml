@@ -8,6 +8,14 @@ type compile_err = UnboundVariable of string * src_loc
 
 exception CompileError of compile_err
 
+(* [call_runtime] adjusts the stack pointer and calls
+   a runtime function, then adjusts the stack pointer back *)
+let call_runtime (func : string) (si : int) =
+  let stack_base = si - 1 in
+  [
+    Addi (stack_base, SP, None); Call (func, None); Subi (stack_base, SP, None);
+  ]
+
 (* [compile_un_op] generates code for a unary operator.
   Note: this assumes the operand value is in the a register. *)
 let rec compile_un_op (op : un_op) = match op with BNot -> [ Not (A, None) ]
@@ -32,14 +40,7 @@ and compile_bin_op (op : bin_op) (si : int) =
       Label (continue, None);
     ]
   in
-  (* [call_runtime] adjusts the stack pointer and calls
-     a runtime function, then adjusts the stack pointer back *)
-  let call_runtime (func : string) (si : int) =
-    let stack_base = si - 1 in
-    [
-      Addi (stack_base, SP, None); Call (func, None); Subi (stack_base, SP, None);
-    ]
-  in
+
   match op with
   | Plus -> [ Add (B, A, None) ]
   | Minus -> [ Sub (B, A, None) ]
@@ -62,10 +63,10 @@ and compile_expr (expression : expr) (bindings : int env) (si : int)
     (defns : func_defn list) : instr list =
   match expression with
   | Num (n, _) -> [ Mvi (n, A, None) ]
-  | Var (x, loc) -> (
+  | Var (x, _) -> (
       match Env.find_opt x bindings with
       | Some x_si -> [ Lds (x_si, A, None) ]
-      | None -> raise (CompileError (UnboundVariable (x, loc))))
+      | None -> failwith "Internal Error: Unbound variable")
   | UnOp (op, operand, _) ->
       compile_expr operand bindings si defns @ compile_un_op op
   | BinOp (op, left, right, _) ->
@@ -84,7 +85,7 @@ and compile_expr (expression : expr) (bindings : int env) (si : int)
       |> List.concat)
       @ [
           Addi (stack_base, SP, None);
-          Call (func, None);
+          Call (function_label func, None);
           Subi (stack_base, SP, None);
         ]
 
@@ -130,21 +131,93 @@ and compile_stmt (statement : stmt) (bindings : int env) (si : int)
       let ext_env = Env.add name si bindings in
       compile_expr value bindings si defns
       @ [ Sts (A, si, None) ]
-      @ compile_stmt_lst scope ext_env (si + 1) defns
-  | _ -> failwith "not implemented"
+      @ compile_stmt_list scope ext_env (si + 1) defns
+  | Assign (name, expr, _) -> (
+      match Env.find_opt name bindings with
+      | Some name_si ->
+          compile_expr expr bindings si defns @ [ Sts (A, name_si, None) ]
+      | None -> failwith "Internal Error: Assign before initialize")
+  | Block (stmt_list, _) -> compile_stmt_list stmt_list bindings si defns
+  | ExprStmt (expr, _) -> compile_expr expr bindings si defns
+  | Exit (expr, _) ->
+      (match expr with
+      | Some expr -> compile_expr expr bindings si defns @ [ Out (A, None) ]
+      | None -> [])
+      @ [ Hlt None ]
+  | Return (expr, _) ->
+      (match expr with
+      | Some expr -> compile_expr expr bindings si defns
+      | None -> [])
+      @ [ Ret None ]
+  | PrintDec (expr, _) ->
+      compile_expr expr bindings si defns @ [ Out (A, None) ]
+  | Inr (name, _) -> (
+      match Env.find_opt name bindings with
+      | Some name_si ->
+          [ Lds (name_si, A, None); Inr (A, None); Sts (A, name_si, None) ]
+      | None -> failwith "Internal Error: Increment before initialize")
+  | Dcr (name, _) -> (
+      match Env.find_opt name bindings with
+      | Some name_si ->
+          [ Lds (name_si, A, None); Dcr (A, None); Sts (A, name_si, None) ]
+      | None -> failwith "Internal Error: Decrement before initialize")
+  | Assert (expr, _) ->
+      compile_expr expr bindings si defns @ call_runtime "runtime_assert" si
+  | If (cond, thn, _) ->
+      let condition_failed = gensym "condition_failed" in
+      compile_expr cond bindings si defns
+      @ [ Cmpi (Reg A, Imm 0, None); Je (condition_failed, None) ]
+      @ compile_stmt_list thn bindings si defns
+      @ [ Label (condition_failed, None) ]
+  | IfElse (cond, thn, els, _) ->
+      let condition_failed = gensym "condition_failed" in
+      let end_else = gensym "end_else" in
+      compile_expr cond bindings si defns
+      @ [ Cmpi (Reg A, Imm 0, None); Je (condition_failed, None) ]
+      @ compile_stmt_list thn bindings si defns
+      @ [ Jmp (end_else, None); Label (condition_failed, None) ]
+      @ compile_stmt_list els bindings si defns
+      @ [ Label (end_else, None) ]
+  | While (cond, body, _) ->
+      let start_while = gensym "start_while" in
+      let condition_failed = gensym "condition_failed" in
+      [ Label (start_while, None) ]
+      @ compile_expr cond bindings si defns
+      @ [ Cmpi (Reg A, Imm 0, None); Je (condition_failed, None) ]
+      @ compile_stmt_list body bindings si defns
+      @ [ Jmp (start_while, None); Label (condition_failed, None) ]
 
-(* [compile_stmt_lst] generates instructions for a list of statements,
+(* [compile_stmt_list] generates instructions for a list of statements,
   in an environment and stack index *)
-and compile_stmt_lst (statements : stmt list) (bindings : int env) (si : int)
+and compile_stmt_list (statements : stmt list) (bindings : int env) (si : int)
     (defns : func_defn list) : instr list =
   statements
   |> List.map (fun stmt -> compile_stmt stmt bindings si defns)
   |> List.concat
 
 (* [compile_func_defn] generates instructions for a function definition *)
-and compile_func_defn (function_definition : func_defn) (defns : func_defn list)
-    : instr list =
-  failwith "not implemented"
+and compile_func_defn (defn : func_defn) (defns : func_defn list) : instr list =
+  (*
+     | ...       |
+     | arg 2     | si=3
+     | arg 1     | si=2
+     | arg 0     | si=1
+     | ret addr  | <-- SP
+  *)
+  let bindings, si =
+    List.fold_left
+      (fun (env, si) (name, _) -> (Env.add name si env, si + 1))
+      (Env.empty, 1) defn.params
+  in
+  [ Label (function_label defn.name, None) ]
+  @ compile_stmt_list defn.body bindings si defns
+  @ [ Ret None ]
 
 (* [compile] generates instructions for a complete program *)
-and compile (program : prog) : instr list = failwith "not implemented"
+and compile (program : prog) : instr list =
+  compile_stmt_list program.main.body Env.empty 1 program.funcs
+  @ [ Hlt None ]
+  @ List.concat_map
+      (fun defn -> compile_func_defn defn program.funcs)
+      program.funcs
+  @ Runtime.runtime program

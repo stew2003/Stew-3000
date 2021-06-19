@@ -9,5 +9,4 @@ let gensym : string -> string =
 
 (* [function_label] produces a unique label for a given
     function, given its name. *)
-let function_label (base : string) : string =
-  Printf.sprintf "function_%s_%d" base (Hashtbl.hash base)
+let function_label (base : string) : string = Printf.sprintf "function_%s" base

@@ -18,11 +18,6 @@ void setup() {
 }
 
 void loop() {
-  // delay until data to arrives
-  while (!Serial.available()) {
-    loader->standby();
-  }
-
   // serial read section
   while (Serial.available()) {
     byte instr = Serial.read();

@@ -45,7 +45,7 @@ let test_let _ =
 
 let test_if _ =
   assert_a "100; if (1) { 17; }" 17;
-  assert_a "100; if (0) { 17; }" 100
+  assert_a "int x = 100; if (0) { x = 17; } x;" 100
 
 let test_if_else _ =
   assert_a "if (1) { 50; } else { 100; }" 50;
@@ -143,7 +143,7 @@ let test_binops _ =
 
   (* less than or eq *)
   assert_a "7 <= 21;" 1;
-  assert_a "-44 <= -128;" 0;
+  assert_a "-44 <= -127;" 0;
   assert_a "-9 <= -9;" 1;
 
   (* equal *)
@@ -156,7 +156,7 @@ let test_binops _ =
 
 let test_log_ops _ =
   (* logical and *)
-  assert_a "10 && 2;" 10;
+  assert_a "10 && 2;" 2;
   assert_a "0 && 17;" 0;
   assert_a "1 && 2 && 0 && 3;" 0;
   assert_a "-1 && 18 && 44 && 11;" 11;

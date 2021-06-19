@@ -11,7 +11,6 @@ connection = serial.Serial(serial_port, baud_rate, timeout=5)
 time.sleep(2) # wait for arduino
 
 with open(sys.argv[1], "rb") as file:
-    print("hello world")
     byte = file.read(1)
     while byte:
         connection.flush()
@@ -19,7 +18,7 @@ with open(sys.argv[1], "rb") as file:
         print("Python sent: " + str(bytes(byte)))
         connection.write(bytes(byte))
         
-        time.sleep(0.2)
+        time.sleep(0.3)
 
         response = connection.read(connection.inWaiting()) # read all characters in buffer
         print ("Message from arduino: " + str(response))

@@ -187,9 +187,9 @@ const uint32_t PROGMEM microcode[NUM_INSTRUCTIONS][INSTRUCTION_ARR_LENGTH] = {
   { 0x60, PCO|MI, SO|TI, RO|TS|SUM|EI, EO|MI, PGM|RO|CI|PCE, RST }, // LDS byte, C
 
   // STS $r1, byte: RAM[SP + byte] = $r1
-  { 0x61, PCO|MI, SO|TI, RO|TS|SUM|EI, EO|MI, PGM|AO|RI|PGM|PCE, RST }, // STS A, byte
-  { 0x62, PCO|MI, SO|TI, RO|TS|SUM|EI, EO|MI, PGM|BO|RI|PGM|PCE, RST }, // STS B, byte
-  { 0x63, PCO|MI, SO|TI, RO|TS|SUM|EI, EO|MI, PGM|CO|RI|PGM|PCE, RST }, // STS A, byte
+  { 0x61, PCO|MI, SO|TI, RO|TS|SUM|EI, EO|MI, PGM|AO|RI|PCE, RST }, // STS A, byte
+  { 0x62, PCO|MI, SO|TI, RO|TS|SUM|EI, EO|MI, PGM|BO|RI|PCE, RST }, // STS B, byte
+  { 0x63, PCO|MI, SO|TI, RO|TS|SUM|EI, EO|MI, PGM|CO|RI|PCE, RST }, // STS A, byte
 
   // CMP $r1, $r1: $r1 - $r2 and set flags
   { 0x64, BO|TI, AO|TS|SUM|SUB|CAR|EI|FI, RST, 0, 0, 0 }, // CMP A, B
@@ -211,7 +211,7 @@ const uint32_t PROGMEM microcode[NUM_INSTRUCTIONS][INSTRUCTION_ARR_LENGTH] = {
   { 0x70, PCO|MI, RO|PCI, RST, 0, 0, 0 },
 
   // CALL byte: SP +=1, PC + 1, Stack[SP] = PC, PC = byte
-  { 0x77, PCO|MI, RO|TI, SO|SUM|CAR|EI, EO|SI|MI|PCE, PGM|PCO|RI, TO|PCI },
+  { 0x77, PCO|MI, RO|TI, SO|SUM|CAR|EI, EO|SI|MI|PCE|PGM, PGM|PCO|RI, PGM|TO|PCI },
   
   // RET: PC = Stack[SP], SP -= 1
   { 0x78, SO|MI, PGM|RO|PCI, SO|SUM|SUB|EI, EO|SI, RST, 0 },

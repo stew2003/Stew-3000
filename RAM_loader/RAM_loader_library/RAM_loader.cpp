@@ -47,7 +47,7 @@ void RAM_loader::write_byte(int address, byte data) {
     }
     
     // carry out the writing
-    delayMicroseconds(10);
+    delayMicroseconds(100);
     digitalWrite(write_enable, LOW);
     delayMicroseconds(10);
     digitalWrite(write_enable, HIGH);

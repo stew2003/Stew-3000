@@ -126,9 +126,10 @@ let string_of_instr (ins : instr) : string =
     into a single, newline-separated string *)
 let string_of_instr_list (instrs : instr list) =
   (* convert instrs to strings *)
-  instrs |> List.map string_of_instr
-  (* concat them all into one big string with newline separators *)
-  |> String.concat "\n"
+  (instrs |> List.map string_of_instr
+ (* concat them all into one big string with newline separators *)
+ |> String.concat "\n")
+  ^ "\n"
 
 (* [loc_from_instr] extracts the (optional) source 
     location info from an instruction *)
