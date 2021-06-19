@@ -2,8 +2,6 @@ open Ast
 open Asm.Isa
 open Util.Names
 
-type runtime_module = { name : string; code : instr list }
-
 (* Implementation of multiplication *)
 let runtime_multiply =
   let multiply = "runtime_multiply" in
