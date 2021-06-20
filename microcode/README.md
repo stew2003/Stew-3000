@@ -1,4 +1,8 @@
-# Microcode
+# microcode
+
+Below is documentation for the 3000's microinstructions, as well as the full instruction set currently supported on the 3000.
+
+## Microinstructions 
 
 | Instruction | Description |
 | ------------- | ------------- |
@@ -39,7 +43,7 @@
 | `SI` | Stack pointer in |
 
 
-# Instruction Set
+## Instruction Set
 
 Note: instructions listed with opcode N/A describe the behavior of a whole class of instructions, which have specific opcodes that correspond to the use of specific registers.
 
