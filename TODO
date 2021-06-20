@@ -22,7 +22,7 @@ Compiler
     [x] test runtime
   [x] add compiler binary
   [x] compiler tests using parser
-  [] implement compiler
+  [x] implement compiler
   [] type checking
     NOTE: 
     - non-void functions must return value in all branches

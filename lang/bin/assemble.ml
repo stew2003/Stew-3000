@@ -1,7 +1,7 @@
 open Core
 open Asm
-open Util
 open Err
+open Util
 open Asm.Isa
 
 (* command-line interface for assembler *)
@@ -25,8 +25,18 @@ let command =
       List.map line ~f:(fun byte -> Printf.sprintf "%02x" (byte land 0xff))
       |> String.concat ~sep:" "
     in
-    List.map2 instrs binary ~f:(fun ins byte_line ->
-        Printf.printf "%6s | %s\n"
+    (* compute address of start of each byte line. empty lines (labels)
+       have no addresses. *)
+    let binary, _ =
+      List.fold_left binary ~init:([], 0) ~f:(fun (lst, addr) line ->
+          ( ((if List.is_empty line then None else Some addr), line) :: lst,
+            addr + List.length line ))
+    in
+    let binary = List.rev binary in
+    List.map2 instrs binary ~f:(fun ins (addr, byte_line) ->
+        (* print address of line in hex, bytes for line, then text instruction *)
+        Printf.printf "%s %6s | %s\n"
+          (match addr with None -> "   " | Some addr -> sprintf "%02x:" addr)
           (string_of_byte_line byte_line)
           (string_of_instr ins))
     |> ignore
@@ -39,43 +49,30 @@ let command =
         flag "-side-by-side" no_arg ~doc:"print asm and binary side by side"
       in
       fun () ->
+        (* read input file into string *)
+        let source_text = try_read_source asm_filename in
         try
-          (* read input file into string *)
-          let source_text = In_channel.read_all asm_filename in
-          try
-            (* parse and assemble input program *)
-            let instrs = Parser.parse source_text in
-            let _, unflattened, assembled =
-              Assemble.assemble_with_rich_info instrs
-            in
-            (* write assembled binary to out file *)
-            let out = Out_channel.create binary_filename in
-            Out_channel.output_bytes out assembled;
-            Out_channel.close out;
+          (* parse and assemble input program *)
+          let instrs = Parser.parse source_text in
+          let _, unflattened, assembled =
+            Assemble.assemble_with_rich_info instrs
+          in
+          (* write assembled binary to out file *)
+          let out = Out_channel.create binary_filename in
+          Out_channel.output_bytes out assembled;
+          Out_channel.close out;
 
-            (* print message and display assembled bytes *)
-            Printf.printf "%s `%s` (%d instructions) ==> `%s` (%d bytes)\n"
-              (Colors.success "Success!")
-              asm_filename (List.length instrs) binary_filename
-              (Bytes.length assembled);
-            display_bytes assembled;
-            (* print side-by-side view if indicated *)
-            if side_by_side then (
-              Printf.printf "%s\n" (Colors.br_cyan "Side by side:");
-              display_side_by_side instrs unflattened)
-            else ()
-          with
-          | Assemble.AssembleError (err, maybe_loc) ->
-              print_err
-                (Colors.error "Assembler Error")
-                (Assemble.string_of_asm_err err)
-                (Srcloc.string_of_maybe_loc maybe_loc source_text)
-          | Parser.AsmParseError (msg, loc) ->
-              print_err
-                (Colors.error "Error Parsing Asm")
-                msg
-                (Srcloc.string_of_src_loc loc source_text)
-          | err -> print_arbitrary_err err
-        with err -> print_arbitrary_err err)
+          (* print message and display assembled bytes *)
+          Printf.printf "%s `%s` (%d instructions) ==> `%s` (%d bytes)\n"
+            (Colors.success "Success!")
+            asm_filename (List.length instrs) binary_filename
+            (Bytes.length assembled);
+          display_bytes assembled;
+          (* print side-by-side view if indicated *)
+          if side_by_side then (
+            Printf.printf "%s\n" (Colors.br_cyan "Side by side:");
+            display_side_by_side instrs unflattened)
+          else ()
+        with err -> handle_err err source_text)
 
 let () = Command.run ~version:"1.0" command

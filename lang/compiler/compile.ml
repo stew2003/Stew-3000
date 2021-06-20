@@ -1,12 +1,8 @@
 open Ast
 open Asm.Isa
 open Util.Env
-open Util.Srcloc
 open Util.Names
-
-type compile_err = UnboundVariable of string * src_loc
-
-exception CompileError of compile_err
+open Util.Err
 
 (* [call_runtime] adjusts the stack pointer and calls
    a runtime function, then adjusts the stack pointer back *)
@@ -66,7 +62,7 @@ and compile_expr (expression : expr) (bindings : int env) (si : int)
   | Var (x, _) -> (
       match Env.find_opt x bindings with
       | Some x_si -> [ Lds (x_si, A, None) ]
-      | None -> failwith "Internal Error: Unbound variable")
+      | None -> raise (InternalError "compiler: unbound variable"))
   | UnOp (op, operand, _) ->
       compile_expr operand bindings si defns @ compile_un_op op
   | BinOp (op, left, right, _) ->
@@ -136,7 +132,7 @@ and compile_stmt (statement : stmt) (bindings : int env) (si : int)
       match Env.find_opt name bindings with
       | Some name_si ->
           compile_expr expr bindings si defns @ [ Sts (A, name_si, None) ]
-      | None -> failwith "Internal Error: Assign before initialize")
+      | None -> raise (InternalError "compiler: assign before initialize"))
   | Block (stmt_list, _) -> compile_stmt_list stmt_list bindings si defns
   | ExprStmt (expr, _) -> compile_expr expr bindings si defns
   | Exit (expr, _) ->
@@ -155,12 +151,12 @@ and compile_stmt (statement : stmt) (bindings : int env) (si : int)
       match Env.find_opt name bindings with
       | Some name_si ->
           [ Lds (name_si, A, None); Inr (A, None); Sts (A, name_si, None) ]
-      | None -> failwith "Internal Error: Increment before initialize")
+      | None -> raise (InternalError "compiler: increment before initialize"))
   | Dcr (name, _) -> (
       match Env.find_opt name bindings with
       | Some name_si ->
           [ Lds (name_si, A, None); Dcr (A, None); Sts (A, name_si, None) ]
-      | None -> failwith "Internal Error: Decrement before initialize")
+      | None -> raise (InternalError "compiler: decrement before initialize"))
   | Assert (expr, _) ->
       compile_expr expr bindings si defns @ call_runtime "runtime_assert" si
   | If (cond, thn, _) ->

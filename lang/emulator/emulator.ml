@@ -3,6 +3,7 @@ open Printf
 open Util.Env
 open Util.Num_env
 open Util.Srcloc
+open Util.Err
 open Util
 open Asm
 open Machine
@@ -62,21 +63,25 @@ let emulate_instr (ins : instr) (machine : stew_3000) (label_to_addr : int env)
   let load_stack (addr : int) : int =
     try Array.get machine.stack (Numbers.as_8bit_unsigned addr)
     with Invalid_argument _ ->
-      failwith "load stack: index error with 8-bit unsigned address"
+      raise
+        (InternalError
+           "emulator: load stack: index error with 8-bit unsigned address")
   in
   (* [store_stack] writes a given value to the stack at a given
      location, or errors if the access is bad *)
   let store_stack (addr : int) (value : int) =
     try Array.set machine.stack (Numbers.as_8bit_unsigned addr) value
     with Invalid_argument _ ->
-      failwith "store stack: index error with 8-bit unsigned address"
+      raise
+        (InternalError
+           "emulator: store stack: index error with 8-bit unsigned address")
   in
   (* [get_label_addr] converts a string label to its corresponding address,
      erroring if there is no address for the label *)
   let get_label_addr (label : string) =
     match Env.find_opt label label_to_addr with
     | Some addr -> addr
-    | None -> failwith "get label addr called with invalid label"
+    | None -> raise (InternalError "emulator: get label addr: invalid label")
   in
   (* [set_flags] sets zero, signed, and overflow flags based on the
      result of an operation and the two values that were operated on. *)
@@ -242,8 +247,9 @@ let emulate_instr (ins : instr) (machine : stew_3000) (label_to_addr : int env)
   (* XXX: Dic and Did not currently supported *)
   | Dic _ | Did _ -> inc_pc ()
   | _ ->
-      failwith
-        (sprintf "invalid instruction in emulator: %s" (string_of_instr ins))
+      raise
+        (InternalError
+           (sprintf "emulator: invalid instruction: %s" (string_of_instr ins)))
 
 (* [map_addr_to_index] constructs an environment mapping physical
   addresses of the beginnings of instructions in a binary to the index
@@ -271,7 +277,9 @@ let get_current_ins (pgrm : instr list) (machine : stew_3000)
   | Some index -> (
       try List.nth pgrm index
       with Failure _ | Invalid_argument _ ->
-        failwith "get current ins: addr to index yielded bad index")
+        raise
+          (InternalError
+             "emulator: get current ins: addr to index yielded bad index"))
   | None -> raise (EmulatorError (InvalidProgramCounter machine, None))
 
 (* [emulate] emulates running the given assembly program 

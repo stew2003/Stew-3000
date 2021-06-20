@@ -1,9 +1,9 @@
 open Core
 open Asm
 open Emulator
+open Err
 open Util
 open Printf
-open Err
 
 (* command-line interface for emulator *)
 let command =
@@ -19,33 +19,15 @@ let command =
         let verbosity =
           if db_mode then 2 else match verbosity with None -> 0 | Some v -> v
         in
+        (* read input file into string *)
+        let source_text = try_read_source filename in
         try
-          (* read input file into string *)
-          let source_text = In_channel.read_all filename in
-          try
-            (* parse input program *)
-            let instrs = Parser.parse source_text in
-            (* emulate and print final state *)
-            let final_state = emulate instrs ~verbosity ~db_mode ~warn in
-            printf "%s\n" (Colors.bold "Halted via hlt!");
-            printf "%s\n" (Emulator__Machine.string_of_stew_3000 final_state)
-          with
-          | Parser.AsmParseError (msg, loc) ->
-              print_err
-                (Colors.error "Error Parsing Asm")
-                msg
-                (Srcloc.string_of_src_loc loc source_text)
-          | Assemble.AssembleError (err, maybe_loc) ->
-              print_err
-                (Colors.error "Assembler Error")
-                (Assemble.string_of_asm_err err)
-                (Srcloc.string_of_maybe_loc maybe_loc source_text)
-          | EmulatorError (err, maybe_loc) ->
-              print_err
-                (Colors.error "Emulator Error")
-                (string_of_emu_err err)
-                (Srcloc.string_of_maybe_loc maybe_loc source_text)
-          | err -> print_arbitrary_err err
-        with err -> print_arbitrary_err err)
+          (* parse input program *)
+          let instrs = Parser.parse source_text in
+          (* emulate and print final state *)
+          let final_state = emulate instrs ~verbosity ~db_mode ~warn in
+          printf "%s\n" (Colors.bold "Halted via hlt!");
+          printf "%s\n" (Emulator__Machine.string_of_stew_3000 final_state)
+        with err -> handle_err err source_text)
 
 let () = Command.run ~version:"1.0" command

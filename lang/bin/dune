@@ -17,12 +17,12 @@
   (modules compile)
   (preprocess
     (pps ppx_let))
-  (libraries core asm util err compiler))
+  (libraries core asm util compiler err))
 
 (library
   (name err)
   (modules err)
-  (libraries core util))
+  (libraries core util asm compiler emulator))
 
 (env
   (dev
