@@ -1,6 +1,5 @@
 open OUnit2
 open Compiler
-open Emulator
 open Emulator__Machine
 
 (* [run] parses a source program, compiles it, and runs
@@ -9,7 +8,7 @@ open Emulator__Machine
 let run (source : string) : stew_3000 =
   let pgrm = Parser.parse source in
   let instrs = Compile.compile pgrm in
-  emulate instrs
+  Emulator.emulate instrs
 
 (* [main_from_body] constructs a source string for a main function
   given the contents of its body. *)

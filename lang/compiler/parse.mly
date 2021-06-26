@@ -82,7 +82,7 @@ definition:
       params;
       body;
       return_ty;
-      loc= span start_loc end_loc;
+      loc= Some (span start_loc end_loc);
     }
   }
 
@@ -123,21 +123,21 @@ block_stmt:
   {
     let (name, typ, start_loc) = d in 
     let (e, _) = e in 
-    Let (name, typ, e, scope, span start_loc end_loc)
+    Let (name, typ, e, scope, Some (span start_loc end_loc))
   }
 | start_loc = IF LPAREN cond = expr RPAREN 
   LBRACE thn = stmt_list end_loc = RBRACE
   { let (cond, _) = cond in 
-    If (cond, thn, span start_loc end_loc) }
+    If (cond, thn, Some (span start_loc end_loc)) }
 | start_loc = IF LPAREN cond = expr RPAREN LBRACE thn = stmt_list RBRACE 
   ELSE LBRACE els = stmt_list end_loc = RBRACE
   { let (cond, _) = cond in 
-    IfElse (cond, thn, els, span start_loc end_loc) }
+    IfElse (cond, thn, els, Some (span start_loc end_loc)) }
 | start_loc = LBRACE stmts = stmt_list end_loc = RBRACE
-  { Block (stmts, span start_loc end_loc) }
+  { Block (stmts, Some (span start_loc end_loc)) }
 | start_loc = WHILE LPAREN cond = expr RPAREN LBRACE body = stmt_list end_loc = RBRACE
   { let (cond, _) = cond in 
-    While (cond, body, span start_loc end_loc) }
+    While (cond, body, Some (span start_loc end_loc)) }
 
 // statements that require semicolon termination
 stmt:
@@ -145,36 +145,36 @@ stmt:
   { 
     let (var, start_loc) = var in 
     let (e, end_loc) = e in 
-    Assign (var, e, span start_loc end_loc)
+    Assign (var, e, Some (span start_loc end_loc))
   }
 | start_loc = RETURN e = expr 
   {
     let (e, end_loc) = e in 
-    Return (Some e, span start_loc end_loc)
+    Return (Some e, Some (span start_loc end_loc))
   }
 | loc = RETURN 
-  { Return (None, loc) }
+  { Return (None, Some loc) }
 | e = expr 
   { let (e, loc) = e in 
-    ExprStmt (e, loc) }
+    ExprStmt (e, Some loc) }
 | start_loc = PRINT LPAREN arg = expr end_loc = RPAREN
   { let (arg, _) = arg in 
-    PrintDec (arg, span start_loc end_loc) }
+    PrintDec (arg, Some (span start_loc end_loc)) }
 | var = IDENT end_loc = INR
   { let (var, start_loc) = var in 
-    Inr (var, span start_loc end_loc) }
+    Inr (var, Some (span start_loc end_loc)) }
 | var = IDENT end_loc = DCR
   { let (var, start_loc) = var in 
-    Dcr (var, span start_loc end_loc) }
+    Dcr (var, Some (span start_loc end_loc)) }
 | start_loc = EXIT LPAREN arg = expr end_loc = RPAREN
   { let (arg, _) = arg in 
-    Exit (Some arg, span start_loc end_loc) }
+    Exit (Some arg, Some (span start_loc end_loc)) }
 | start_loc = EXIT LPAREN end_loc = RPAREN
-  { Exit (None, span start_loc end_loc) }
+  { Exit (None, Some (span start_loc end_loc)) }
 | start_loc = ASSERT LPAREN e = expr end_loc = RPAREN 
   { 
     let (e, _) = e in 
-    Assert (e, span start_loc end_loc)
+    Assert (e, Some (span start_loc end_loc))
   }
 
 // expressions
@@ -184,102 +184,102 @@ expr:
     (e, span start_loc end_loc) }
 | n = NUM
   { let (n, loc) = n in 
-    (Num (n, loc), loc) }
+    (Num (n, Some loc), loc) }
 | var = IDENT 
   { let (var, loc) = var in 
-    (Var (var, loc), loc) }
+    (Var (var, Some loc), loc) }
 | fn = IDENT LPAREN args = arg_list end_loc = RPAREN
   { let (fn, start_loc) = fn in 
     let loc = span start_loc end_loc in 
-    (Call (fn, args, loc), loc) }
+    (Call (fn, args, Some loc), loc) }
 | start_loc = BNOT e = expr 
   { let (e, end_loc) = e in 
     let loc = span start_loc end_loc in 
-    (UnOp (BNot, e, loc), loc) }
+    (UnOp (BNot, e, Some loc), loc) }
 | l = expr PLUS r = expr 
   { let (l, start_loc) = l in 
     let (r, end_loc) = r in 
     let loc = span start_loc end_loc in 
-    (BinOp (Plus, l, r, loc), loc) }
+    (BinOp (Plus, l, r, Some loc), loc) }
 | l = expr MINUS r = expr 
   { let (l, start_loc) = l in 
     let (r, end_loc) = r in 
     let loc = span start_loc end_loc in 
-    (BinOp (Minus, l, r, loc), loc) }
+    (BinOp (Minus, l, r, Some loc), loc) }
 | l = expr TIMES r = expr 
   { let (l, start_loc) = l in 
     let (r, end_loc) = r in 
     let loc = span start_loc end_loc in 
-    (BinOp (Mult, l, r, loc), loc) }
+    (BinOp (Mult, l, r, Some loc), loc) }
 | l = expr DIV r = expr 
   { let (l, start_loc) = l in 
     let (r, end_loc) = r in 
     let loc = span start_loc end_loc in 
-    (BinOp (Div, l, r, loc), loc) }
+    (BinOp (Div, l, r, Some loc), loc) }
 | l = expr MOD r = expr 
   { let (l, start_loc) = l in 
     let (r, end_loc) = r in 
     let loc = span start_loc end_loc in 
-    (BinOp (Mod, l, r, loc), loc) }
+    (BinOp (Mod, l, r, Some loc), loc) }
 | l = expr BAND r = expr 
   { let (l, start_loc) = l in 
     let (r, end_loc) = r in 
     let loc = span start_loc end_loc in 
-    (BinOp (BAnd, l, r, loc), loc) }
+    (BinOp (BAnd, l, r, Some loc), loc) }
 | l = expr BOR r = expr 
   { let (l, start_loc) = l in 
     let (r, end_loc) = r in 
     let loc = span start_loc end_loc in 
-    (BinOp (BOr, l, r, loc), loc) }
+    (BinOp (BOr, l, r, Some loc), loc) }
 | l = expr BXOR r = expr 
   { let (l, start_loc) = l in 
     let (r, end_loc) = r in 
     let loc = span start_loc end_loc in 
-    (BinOp (BXor, l, r, loc), loc) }
+    (BinOp (BXor, l, r, Some loc), loc) }
 | l = expr GT r = expr 
   { let (l, start_loc) = l in 
     let (r, end_loc) = r in 
     let loc = span start_loc end_loc in 
-    (BinOp (Gt, l, r, loc), loc) }
+    (BinOp (Gt, l, r, Some loc), loc) }
 | l = expr LT r = expr 
   { let (l, start_loc) = l in 
     let (r, end_loc) = r in 
     let loc = span start_loc end_loc in 
-    (BinOp (Lt, l, r, loc), loc) }
+    (BinOp (Lt, l, r, Some loc), loc) }
 | l = expr GTE r = expr 
   { let (l, start_loc) = l in 
     let (r, end_loc) = r in 
     let loc = span start_loc end_loc in 
-    (BinOp (Gte, l, r, loc), loc) }
+    (BinOp (Gte, l, r, Some loc), loc) }
 | l = expr LTE r = expr 
   { let (l, start_loc) = l in 
     let (r, end_loc) = r in 
     let loc = span start_loc end_loc in 
-    (BinOp (Lte, l, r, loc), loc) }
+    (BinOp (Lte, l, r, Some loc), loc) }
 | l = expr EQ r = expr 
   { let (l, start_loc) = l in 
     let (r, end_loc) = r in 
     let loc = span start_loc end_loc in 
-    (BinOp (Eq, l, r, loc), loc) }
+    (BinOp (Eq, l, r, Some loc), loc) }
 | l = expr NEQ r = expr 
   { let (l, start_loc) = l in 
     let (r, end_loc) = r in 
     let loc = span start_loc end_loc in 
-    (BinOp (Neq, l, r, loc), loc) }
+    (BinOp (Neq, l, r, Some loc), loc) }
 | l = expr LAND r = expr 
   { let (l, start_loc) = l in 
     let (r, end_loc) = r in 
     let loc = span start_loc end_loc in 
-    ((LogOp ((LAnd (l, r)), loc)), loc) }
+    ((LogOp ((LAnd (l, r)), Some loc)), loc) }
 | l = expr LOR r = expr 
   { let (l, start_loc) = l in 
     let (r, end_loc) = r in 
     let loc = span start_loc end_loc in 
-    ((LogOp ((LOr (l, r)), loc)), loc) }
+    ((LogOp ((LOr (l, r)), Some loc)), loc) }
 | start_loc = LNOT e = expr 
   { let (e, end_loc) = e in 
     let loc = span start_loc end_loc in 
-    ((LogOp ((LNot e), loc)), loc) }
+    ((LogOp ((LNot e), Some loc)), loc) }
 
 // argument list of expressions for function calls
 arg_list:
