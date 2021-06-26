@@ -53,6 +53,7 @@ type func_defn = {
   params : (string * ty) list;
   body : stmt list;
   return_ty : ty;
+  mutable ctrl_reaches_end : bool;
   loc : maybe_loc;
 }
 
@@ -63,3 +64,44 @@ type prog = { funcs : func_defn list; main : func_defn }
 (* [lookup] finds Some defn that matches the given name *)
 let lookup (name : string) (defns : func_defn list) : func_defn option =
   List.find_opt (fun defn -> defn.name = name) defns
+
+(* [string_of_ty] turns a type into a string *)
+let string_of_ty (t : ty) : string =
+  match t with Void -> "void" | Int -> "int"
+
+(* [describe_expr] returns an abstract description of a
+  given expression. *)
+let describe_expr (e : expr) : string =
+  let describe_un_op (op : un_op) : string =
+    match op with BNot -> "bitwise not"
+  in
+  let describe_bin_op (op : bin_op) : string =
+    match op with
+    | Plus -> "addition"
+    | Minus -> "subtraction"
+    | Mult -> "multiplication"
+    | Div -> "division"
+    | Mod -> "modulus"
+    | BAnd -> "bitwise and"
+    | BOr -> "bitwise or"
+    | BXor -> "bitwise xor"
+    | Gt -> "greater than"
+    | Lt -> "less than"
+    | Gte -> "greater than or equal"
+    | Lte -> "less than or equal"
+    | Eq -> "equality"
+    | Neq -> "inequality"
+  in
+  let describe_log_op (op : log_op) : string =
+    match op with
+    | LNot _ -> "logical not"
+    | LAnd _ -> "logical and"
+    | LOr _ -> "logical or"
+  in
+  match e with
+  | Num _ -> "number"
+  | Var _ -> "variable"
+  | UnOp (op, _, _) -> describe_un_op op
+  | BinOp (op, _, _, _) -> describe_bin_op op
+  | LogOp (op, _) -> describe_log_op op
+  | Call _ -> "function call"

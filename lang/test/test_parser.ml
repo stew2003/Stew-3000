@@ -43,7 +43,14 @@ let norm_src_locs (pgrm : prog) =
 (* [main_from_body] constructs an ast function defn that conforms
   to what main functions must look like, with the given body filled in. *)
 let main_from_body (body : stmt list) : func_defn =
-  { name = "main"; params = []; body; return_ty = Void; loc = None }
+  {
+    name = "main";
+    params = [];
+    body;
+    return_ty = Void;
+    ctrl_reaches_end = false;
+    loc = None;
+  }
 
 let empty_main = main_from_body []
 
@@ -356,6 +363,7 @@ let test_fact _ =
                     None );
               ];
             return_ty = Int;
+            ctrl_reaches_end = false;
             loc = None;
           };
         ];
