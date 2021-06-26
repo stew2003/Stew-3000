@@ -167,6 +167,8 @@ let check_for_expr (pgrm : prog) (pred : expr -> bool) : bool =
   (* [check_stmt] determines if the given statement contains an
      expression that satisfies the given predicate *)
   and check_stmt (stmt : stmt) (pred : expr -> bool) : bool =
+    (* NOTE: We are checking for sub-expressions here so we
+       only examine statements that contain sub-expressions. *)
     match stmt with
     | Let (_, _, value, body, _) ->
         check_expr value pred || check_stmt_list body pred
@@ -203,6 +205,8 @@ let check_for_stmt (pgrm : prog) (pred : stmt -> bool) : bool =
   let rec check_stmt (stmt : stmt) (pred : stmt -> bool) : bool =
     pred stmt
     ||
+    (* NOTE: We are checking for sub-statements here so only
+       check the statements that have them. *)
     match stmt with
     | Let (_, _, _, body, _) -> check_stmt_list body pred
     | If (_, thn, _) -> check_stmt_list thn pred
@@ -235,6 +239,11 @@ let uses_mod (pgrm : prog) =
 let uses_assert (pgrm : prog) =
   check_for_stmt pgrm (function Assert _ -> true | _ -> false)
 
+(* [conditionally_include] returns either the given code or an empty program,
+  depending on whether the given condition is true or not. *)
+let conditionally_include (code : instr list) (condition : bool) : instr list =
+  if condition then code else []
+
 (* [runtime] constructs the runtime code necessary for a given 
   program. Usually, this will be empty, but if the program requires
   special runtime functionality (multiplication, division, ...) this
@@ -242,8 +251,11 @@ let uses_assert (pgrm : prog) =
 let runtime (program : prog) : instr list =
   let sign_utils = runtime_normalize_signs @ runtime_set_result_sign in
   let needs_mult_code = uses_mult program in
+
+  (* modulus and division use the same division algorithm *)
   let needs_div_code = uses_div program || uses_mod program in
-  (if needs_mult_code || needs_div_code then sign_utils else [])
-  @ (if needs_mult_code then runtime_multiply else [])
-  @ (if needs_div_code then runtime_divide else [])
-  @ if uses_assert program then runtime_assert else []
+
+  conditionally_include sign_utils (needs_mult_code || needs_div_code)
+  @ conditionally_include runtime_multiply needs_mult_code
+  @ conditionally_include runtime_divide needs_div_code
+  @ conditionally_include runtime_assert (uses_assert program)

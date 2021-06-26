@@ -19,9 +19,21 @@ let test_expr_detection _ =
     (Runtime.uses_div (Parser.parse "void main() { exit(100 / 25); }"));
   assert_equal true
     (Runtime.uses_assert (pgrm_from_body "int y = 10; assert(y != 5);"));
-  assert_equal false (Runtime.uses_assert (pgrm_from_body "if (1) { 2 + 2; }"))
+  assert_equal false (Runtime.uses_assert (pgrm_from_body "if (1) { 2 + 2; }"));
+  assert_equal true
+    (Runtime.uses_mod (Parser.parse "void main() { int x = 40 % 2; }"));
+  assert_equal false (Runtime.uses_mod (Parser.parse "void main() { 10 / 3; }"))
+
+let test_empty_runtime _ =
+  assert_equal []
+    (Runtime.runtime
+       (Parser.parse "void main() { int x = 5; x++; exit(x + 3); }"))
 
 let suite =
-  "Runtime Tests" >::: [ "test_expr_detection" >:: test_expr_detection ]
+  "Runtime Tests"
+  >::: [
+         "test_expr_detection" >:: test_expr_detection;
+         "test_empty_runtime" >:: test_empty_runtime;
+       ]
 
 let () = run_test_tt_main suite
