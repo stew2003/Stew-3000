@@ -207,16 +207,17 @@ and compile_func_defn (defn : func_defn) (defns : func_defn list) : instr list =
   in
   [ Label (function_label defn.name, None) ]
   @ compile_stmt_list defn.body bindings si defns
-  (* TODO: only include this ret if ctrl_reaches_end is set
-     and the function is void. *)
-  @ [ Ret None ]
+  @
+  if defn.ctrl_reaches_end then
+    match defn.return_ty with
+    | Void -> [ Ret None ]
+    | _ -> raise (InternalError "control reached end of non-void function")
+  else []
 
 (* [compile] generates instructions for a complete program *)
 and compile (program : prog) : instr list =
   compile_stmt_list program.main.body Env.empty 1 program.funcs
-  (* TODO: only include this hlt if ctrl_reaches_end is set
-     and main is void. *)
-  @ [ Hlt None ]
+  @ (if program.main.ctrl_reaches_end then [ Hlt None ] else [])
   @ List.concat_map
       (fun defn -> compile_func_defn defn program.funcs)
       program.funcs

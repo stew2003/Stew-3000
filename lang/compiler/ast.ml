@@ -69,35 +69,37 @@ let lookup (name : string) (defns : func_defn list) : func_defn option =
 let string_of_ty (t : ty) : string =
   match t with Void -> "void" | Int -> "int"
 
+(* [describe_bin_op] turns a bin_op into a string *)
+let describe_bin_op (op : bin_op) : string =
+  match op with
+  | Plus -> "addition"
+  | Minus -> "subtraction"
+  | Mult -> "multiplication"
+  | Div -> "division"
+  | Mod -> "modulus"
+  | BAnd -> "bitwise and"
+  | BOr -> "bitwise or"
+  | BXor -> "bitwise xor"
+  | Gt -> "greater than"
+  | Lt -> "less than"
+  | Gte -> "greater than or equal"
+  | Lte -> "less than or equal"
+  | Eq -> "equality"
+  | Neq -> "inequality"
+
+(* [describe_un_op] turns un_op into a string *)
+let describe_un_op (op : un_op) : string = match op with BNot -> "bitwise not"
+
+(* [describe_log_op] turns a log_op into a string *)
+let describe_log_op (op : log_op) : string =
+  match op with
+  | LNot _ -> "logical not"
+  | LAnd _ -> "logical and"
+  | LOr _ -> "logical or"
+
 (* [describe_expr] returns an abstract description of a
   given expression. *)
 let describe_expr (e : expr) : string =
-  let describe_un_op (op : un_op) : string =
-    match op with BNot -> "bitwise not"
-  in
-  let describe_bin_op (op : bin_op) : string =
-    match op with
-    | Plus -> "addition"
-    | Minus -> "subtraction"
-    | Mult -> "multiplication"
-    | Div -> "division"
-    | Mod -> "modulus"
-    | BAnd -> "bitwise and"
-    | BOr -> "bitwise or"
-    | BXor -> "bitwise xor"
-    | Gt -> "greater than"
-    | Lt -> "less than"
-    | Gte -> "greater than or equal"
-    | Lte -> "less than or equal"
-    | Eq -> "equality"
-    | Neq -> "inequality"
-  in
-  let describe_log_op (op : log_op) : string =
-    match op with
-    | LNot _ -> "logical not"
-    | LAnd _ -> "logical and"
-    | LOr _ -> "logical or"
-  in
   match e with
   | Num _ -> "number"
   | Var _ -> "variable"
@@ -105,3 +107,13 @@ let describe_expr (e : expr) : string =
   | BinOp (op, _, _, _) -> describe_bin_op op
   | LogOp (op, _) -> describe_log_op op
   | Call _ -> "function call"
+
+let loc_from_expr (exp : expr) : maybe_loc =
+  match exp with
+  | Num (_, loc)
+  | Var (_, loc)
+  | UnOp (_, _, loc)
+  | BinOp (_, _, _, loc)
+  | LogOp (_, loc)
+  | Call (_, _, loc) ->
+      loc
