@@ -208,16 +208,29 @@ and compile_func_defn (defn : func_defn) (defns : func_defn list) : instr list =
   [ Label (function_label defn.name, None) ]
   @ compile_stmt_list defn.body bindings si defns
   @
-  if defn.ctrl_reaches_end then
-    match defn.return_ty with
-    | Void -> [ Ret None ]
-    | _ -> raise (InternalError "control reached end of non-void function")
-  else []
+  match defn.ctrl_reaches_end with
+  | Some reaches_end ->
+      if reaches_end then
+        match defn.return_ty with
+        | Void -> [ Ret None ]
+        | _ -> raise (InternalError "control reached end of non-void function")
+      else []
+  | None ->
+      raise
+        (InternalError
+           "tried to compile function without checking if control can reach \
+            its end")
 
 (* [compile] generates instructions for a complete program *)
 and compile (program : prog) : instr list =
   compile_stmt_list program.main.body Env.empty 1 program.funcs
-  @ (if program.main.ctrl_reaches_end then [ Hlt None ] else [])
+  @ (match program.main.ctrl_reaches_end with
+    | Some reaches_end -> if reaches_end then [ Hlt None ] else []
+    | None ->
+        raise
+          (InternalError
+             "tried to compile main without checking if control can reach its \
+              end"))
   @ List.concat_map
       (fun defn -> compile_func_defn defn program.funcs)
       program.funcs

@@ -1,5 +1,7 @@
 open Ast
 open Util.Srcloc
+open Util.Env
+open Util.Err
 open Printf
 
 type check_err =
@@ -11,17 +13,17 @@ type check_err =
   | UnboundVariable of string
   (* When a function is called without a definition *)
   | UndefinedFunction of string
-  (* (expression, expected type, actual type) *)
+  (* A type did not match the expected type (expression, expected type, actual type) *)
   | TypeError of expr * ty * ty
-  (* expression cannot be this type *)
+  (* Expression cannot be this type (but we don't expect it to be a particular type) *)
   | InvalidTypeError of expr * ty
-  (* operation with two types that should be the same but aren't *)
+  (* Operation with two types that should be the same but aren't *)
   | TypeMismatch of string * expr * ty * expr * ty
-  (* main was typed as non-void *)
+  (* Main was typed as non-void *)
   | NonVoidMain
-  (* variable was annotated as void *)
-  | VoidVar of string
-  (* mismatched number of arguments supplied to a function call *)
+  (* Something not a function definition was annotated as void *)
+  | NonFunctionAnnotatedAsVoid of string
+  (* Mismatched number of arguments supplied to a function call *)
   | ArityMismatch of string * int * int
 
 exception CheckError of check_err with_loc_opt
@@ -52,7 +54,8 @@ let string_of_check_err = function
         op_name (describe_expr left) (string_of_ty left_ty)
         (describe_expr right) (string_of_ty right_ty)
   | NonVoidMain -> "The main function must have return type void."
-  | VoidVar name -> sprintf "The variable `%s` cannot have type void." name
+  | NonFunctionAnnotatedAsVoid name ->
+      sprintf "`%s` is not a function and therefore cannot have type void." name
   | ArityMismatch (name, expected, actual) ->
       sprintf "The function `%s` expects %d arguments, but got %d." name
         expected actual
@@ -79,11 +82,14 @@ let ctrl_reaches_end (defn : func_defn) : bool =
 (* [type_check] checks the program for type errors, raising an 
   error if they are discovered. *)
 let type_check (defn : func_defn) (defns : func_defn list) =
+  (* [expect_non_void] checks that an expression is non-void type
+     and raises an error if it is. *)
   let expect_non_void (exp : expr) (exp_ty : ty) =
     if exp_ty = Void then
       raise (CheckError (InvalidTypeError (exp, exp_ty), loc_from_expr exp))
   in
-
+  (* [lookup_var] looks up the type of a variable in the type environment
+     and returns it, or errors if the variable is unbound *)
   let lookup_var (name : string) (env : ty env) (loc : maybe_loc) : ty =
     match Env.find_opt name env with
     | Some typ ->
@@ -92,26 +98,32 @@ let type_check (defn : func_defn) (defns : func_defn list) =
         typ
     | None -> raise (CheckError (UnboundVariable name, loc))
   in
-
+  (* [type_check_expr] calculates the type of the given expression,
+     or raises an error if it violates type rules. *)
   let rec type_check_expr (exp : expr) (env : ty env) : ty =
-    match expr with
+    match exp with
     | Num _ -> Int
     | Var (name, loc) -> lookup_var name env loc
     | UnOp (_, expr, _) ->
+        (* operand can be any non-void type *)
         let expr_ty = type_check_expr expr env in
         expect_non_void expr expr_ty;
         expr_ty
     | BinOp (op, left, right, loc) -> (
+        (* left and right can be any non-void type *)
         let left_expr_ty = type_check_expr left env in
         expect_non_void left left_expr_ty;
         let right_expr_ty = type_check_expr right env in
         expect_non_void right right_expr_ty;
+        (* left and right operand types must match *)
         if left_expr_ty <> right_expr_ty then
           raise
             (CheckError
                ( TypeMismatch
                    (describe_bin_op op, left, left_expr_ty, right, right_expr_ty),
                  loc ));
+        (* comparison operators evaluate to an int, other bin ops evaluate
+           to same type as the operands *)
         match op with
         | Gt | Lt | Gte | Lte | Eq | Neq -> Int
         | _ -> left_expr_ty)
@@ -130,20 +142,26 @@ let type_check (defn : func_defn) (defns : func_defn list) =
                     raise
                       (CheckError
                          (TypeError (arg, param_ty, arg_ty), loc_from_expr arg)))
-                called_defn.params args
-            with Invalid_argument ->
+                called_defn.params args;
+              (* function call has type of function's return type *)
+              called_defn.return_ty
+              (* Invalid_argument here means param/arg list were of different
+                 lengths, which is arity mismatch error. *)
+            with Invalid_argument _ ->
               raise
                 (CheckError
-                   (ArityMismatch
-                      ( called_defn.name,
-                        List.length called_defn.params,
-                        List.length args ))))
-        | None -> CheckError (UndefinedFunction name, loc))
+                   ( ArityMismatch
+                       ( called_defn.name,
+                         List.length called_defn.params,
+                         List.length args ),
+                     loc )))
+        | None -> raise (CheckError (UndefinedFunction name, loc)))
   and type_check_stmt (stmt : stmt) (env : ty env) =
     match stmt with
     | Let (name, typ, expr, scope, loc) ->
         (* cannot annotate a variable as having void type *)
-        if typ = Void then raise (CheckError (VoidVar name), loc);
+        if typ = Void then
+          raise (CheckError (NonFunctionAnnotatedAsVoid name, loc));
         let expr_ty = type_check_expr expr env in
         (* type of expression must match annotated type *)
         if expr_ty <> typ then
@@ -155,7 +173,9 @@ let type_check (defn : func_defn) (defns : func_defn list) =
         let expr_ty = type_check_expr expr env in
         if expr_ty <> typ then
           raise (CheckError (TypeError (expr, typ, expr_ty), loc))
-    | Inr (name, loc) | Dcr (name, loc) -> lookup_var name env loc
+    | Inr (name, loc) | Dcr (name, loc) ->
+        (* lookup will throw unbound error if var is unbound *)
+        lookup_var name env loc |> ignore
     | If (cond, thn, _) ->
         let cond_ty = type_check_expr cond env in
         expect_non_void cond cond_ty;
@@ -173,47 +193,70 @@ let type_check (defn : func_defn) (defns : func_defn list) =
     | Return (maybe_expr, loc) -> (
         match maybe_expr with
         | Some expr ->
+            (* returning an expression from a void function: bad *)
             if defn.return_ty = Void then
-              raise (CheckError (MismatchedReturn defn), loc);
+              raise (CheckError (MismatchedReturn defn, loc));
+            (* returned expression should match return type of function *)
             let expr_ty = type_check_expr expr env in
             if defn.return_ty <> expr_ty then
               raise
                 (CheckError (TypeError (expr, defn.return_ty, expr_ty), loc))
         | None ->
+            (* returning nothing from a non-void function: bad *)
             if defn.return_ty <> Void then
-              raise (CheckError (MismatchedReturn defn), loc))
+              raise (CheckError (MismatchedReturn defn, loc)))
     | Exit (maybe_expr, loc) -> (
         match maybe_expr with
         | Some expr ->
             let expr_ty = type_check_expr expr env in
+            (* must exit with integer expression if given *)
             if expr_ty <> Int then
               raise (CheckError (TypeError (expr, Int, expr_ty), loc))
         | None -> ())
     | PrintDec (expr, loc) ->
         let expr_ty = type_check_expr expr env in
+        (* must print only integers on decimal display *)
         if expr_ty <> Int then
           raise (CheckError (TypeError (expr, Int, expr_ty), loc))
-    | ExprStmt (expr, _) -> type_check_expr expr env
+    | ExprStmt (expr, _) ->
+        (* as long as expression internally type checks, we are good *)
+        type_check_expr expr env |> ignore
     | Assert (cond, _) ->
         let cond_ty = type_check_expr cond env in
         expect_non_void cond cond_ty
   and type_check_stmt_list (stmts : stmt list) (env : ty env) =
     List.iter (fun stmt -> type_check_stmt stmt env) stmts
   in
+  (* ensure all parameters are annotated as non-void *)
+  List.iter
+    (fun (name, typ) ->
+      if typ = Void then
+        raise (CheckError (NonFunctionAnnotatedAsVoid name, defn.loc)))
+    defn.params;
 
-  (* TODO: check defn parameters for non-void *)
-  type_check_stmt_list defn.body Env.empty
+  (* construct environment binding function parameters to their annotated types *)
+  let env = Util.Env.of_list defn.params in
+
+  (* type check the defintion's body *)
+  type_check_stmt_list defn.body env
 
 (* [check] performs all validity checking on the input program,
   throwing an error if it finds problems. *)
 (* TODO: check for returns in main *)
 let check (pgrm : prog) =
   (* main must have return type void *)
-  if pgrm.main.return_ty <> Void then raise (CheckError NonVoidMain);
-  (* check whether control can reach the end of each definition *)
-  List.iter
-    (fun defn ->
-      defn.ctrl_reaches_end <- ctrl_reaches_end defn;
-      if defn.ctrl_reaches_end && defn.return_ty <> Void then
-        raise (CheckError (CtrlReachesEndOfNonVoid defn)))
-    (pgrm.main :: pgrm.funcs)
+  if pgrm.main.return_ty <> Void then
+    raise (CheckError (NonVoidMain, pgrm.main.loc));
+
+  pgrm.main :: pgrm.funcs
+  |> List.iter (fun defn ->
+         (* check whether control can reach the end of each definition *)
+         let reaches_end = ctrl_reaches_end defn in
+         defn.ctrl_reaches_end <- Some reaches_end;
+
+         (* control must not reach end of non-void function *)
+         if reaches_end && defn.return_ty <> Void then
+           raise (CheckError (CtrlReachesEndOfNonVoid defn, defn.loc));
+
+         (* type check the function definition *)
+         type_check defn pgrm.funcs)

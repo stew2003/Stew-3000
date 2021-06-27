@@ -2,11 +2,12 @@ open OUnit2
 open Compiler
 open Emulator__Machine
 
-(* [run] parses a source program, compiles it, and runs
+(* [run] parses a source program, checks it, compiles it, and runs
   the generated instructions in the emulator, returning
   the final machine state. *)
 let run (source : string) : stew_3000 =
   let pgrm = Parser.parse source in
+  Check.check pgrm;
   let instrs = Compile.compile pgrm in
   Emulator.emulate instrs
 

@@ -82,7 +82,7 @@ definition:
       params;
       body;
       return_ty;
-      ctrl_reaches_end= false;
+      ctrl_reaches_end= None;
       loc= Some (span start_loc end_loc);
     }
   }

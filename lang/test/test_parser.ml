@@ -48,7 +48,7 @@ let main_from_body (body : stmt list) : func_defn =
     params = [];
     body;
     return_ty = Void;
-    ctrl_reaches_end = false;
+    ctrl_reaches_end = None;
     loc = None;
   }
 
@@ -363,7 +363,7 @@ let test_fact _ =
                     None );
               ];
             return_ty = Int;
-            ctrl_reaches_end = false;
+            ctrl_reaches_end = None;
             loc = None;
           };
         ];

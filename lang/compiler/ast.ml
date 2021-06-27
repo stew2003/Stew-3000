@@ -53,7 +53,9 @@ type func_defn = {
   params : (string * ty) list;
   body : stmt list;
   return_ty : ty;
-  mutable ctrl_reaches_end : bool;
+  (* Can control flow reach the end of this function's body? This is
+     initialized to None by the parser, but is set during checking *)
+  mutable ctrl_reaches_end : bool option;
   loc : maybe_loc;
 }
 
@@ -69,7 +71,7 @@ let lookup (name : string) (defns : func_defn list) : func_defn option =
 let string_of_ty (t : ty) : string =
   match t with Void -> "void" | Int -> "int"
 
-(* [describe_bin_op] turns a bin_op into a string *)
+(* [describe_bin_op] returns a description of a binary operator *)
 let describe_bin_op (op : bin_op) : string =
   match op with
   | Plus -> "addition"
@@ -87,18 +89,17 @@ let describe_bin_op (op : bin_op) : string =
   | Eq -> "equality"
   | Neq -> "inequality"
 
-(* [describe_un_op] turns un_op into a string *)
+(* [describe_un_op] returns a description of a unary operator *)
 let describe_un_op (op : un_op) : string = match op with BNot -> "bitwise not"
 
-(* [describe_log_op] turns a log_op into a string *)
+(* [describe_log_op] returns a description of a logical operator *)
 let describe_log_op (op : log_op) : string =
   match op with
   | LNot _ -> "logical not"
   | LAnd _ -> "logical and"
   | LOr _ -> "logical or"
 
-(* [describe_expr] returns an abstract description of a
-  given expression. *)
+(* [describe_expr] returns an abstract description of a given expression. *)
 let describe_expr (e : expr) : string =
   match e with
   | Num _ -> "number"
@@ -108,6 +109,7 @@ let describe_expr (e : expr) : string =
   | LogOp (op, _) -> describe_log_op op
   | Call _ -> "function call"
 
+(* [loc_from_expr] extracts the source location from an expression *)
 let loc_from_expr (exp : expr) : maybe_loc =
   match exp with
   | Num (_, loc)
