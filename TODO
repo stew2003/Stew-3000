@@ -24,8 +24,8 @@ Compiler
   [x] compiler tests using parser
   [x] implement compiler
   [] type checking
-    - non-void functions must return value in all branches
-    - void functions must not contain any return *with a value*
+    [] tests for checking
+    [] add checking to bin/compile + handle errors in bin/err
   [] implement optimizations for smol code
     [] "compile to" given register (reduce movs)
     [] eliminate redundant instrs

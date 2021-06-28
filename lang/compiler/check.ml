@@ -6,9 +6,9 @@ open Printf
 
 type check_err =
   (* When control flow can reach the end of a non-void function *)
-  | CtrlReachesEndOfNonVoid of func_defn
+  | CtrlReachesEndOfNonVoid of string
   (* When a void function returns a value, or a non-void returns without a value *)
-  | MismatchedReturn of func_defn
+  | MismatchedReturn of string * ty
   (* When a variable is referenced without being bound first *)
   | UnboundVariable of string
   (* When a function is called without a definition *)
@@ -25,19 +25,20 @@ type check_err =
   | NonFunctionAnnotatedAsVoid of string
   (* Mismatched number of arguments supplied to a function call *)
   | ArityMismatch of string * int * int
+  (* Multiple function definitions using the same name *)
+  | MultipleDefinitions of string
 
 exception CheckError of check_err with_loc_opt
 
 (* [string_of_check_err] turns a check error into a printable string. *)
 let string_of_check_err = function
-  | CtrlReachesEndOfNonVoid defn ->
-      sprintf "Control can reach the end of non-void function `%s`." defn.name
-  | MismatchedReturn defn ->
-      sprintf "The %s function `%s` must return %s."
-        (string_of_ty defn.return_ty)
-        defn.name
-        (if defn.return_ty = Void then "nothing."
-        else sprintf "a value of type %s." (string_of_ty defn.return_ty))
+  | CtrlReachesEndOfNonVoid name ->
+      sprintf "Control can reach the end of non-void function `%s`." name
+  | MismatchedReturn (name, return_ty) ->
+      sprintf "The %s function `%s` must return %s." (string_of_ty return_ty)
+        name
+        (if return_ty = Void then "nothing."
+        else sprintf "a value of type %s." (string_of_ty return_ty))
   | UnboundVariable var -> sprintf "The variable `%s` is unbound." var
   | UndefinedFunction name -> sprintf "The function `%s` is undefined." name
   | TypeError (e, expected, actual) ->
@@ -57,8 +58,12 @@ let string_of_check_err = function
   | NonFunctionAnnotatedAsVoid name ->
       sprintf "`%s` is not a function and therefore cannot have type void." name
   | ArityMismatch (name, expected, actual) ->
-      sprintf "The function `%s` expects %d arguments, but got %d." name
-        expected actual
+      sprintf "The function `%s` expects %d argument%s, but got %d." name
+        expected
+        (if expected = 1 then "" else "s")
+        actual
+  | MultipleDefinitions name ->
+      sprintf "The function `%s` has multiple definitions." name
 
 (* [ctrl_reaches_end] determines if the control flow of a function's
   body can reach the end of the function without encountering a return. *)
@@ -79,7 +84,7 @@ let ctrl_reaches_end (defn : func_defn) : bool =
   in
   ctrl_reaches_end_stmt_list defn.body
 
-(* [type_check] checks the program for type errors, raising an 
+(* [type_check] checks a function definition for type errors, raising an 
   error if they are discovered. *)
 let type_check (defn : func_defn) (defns : func_defn list) =
   (* [expect_non_void] checks that an expression is non-void type
@@ -156,6 +161,7 @@ let type_check (defn : func_defn) (defns : func_defn list) =
                          List.length args ),
                      loc )))
         | None -> raise (CheckError (UndefinedFunction name, loc)))
+  (* [type_check_stmt] checks a single statement for type errors *)
   and type_check_stmt (stmt : stmt) (env : ty env) =
     match stmt with
     | Let (name, typ, expr, scope, loc) ->
@@ -195,7 +201,8 @@ let type_check (defn : func_defn) (defns : func_defn list) =
         | Some expr ->
             (* returning an expression from a void function: bad *)
             if defn.return_ty = Void then
-              raise (CheckError (MismatchedReturn defn, loc));
+              raise
+                (CheckError (MismatchedReturn (defn.name, defn.return_ty), loc));
             (* returned expression should match return type of function *)
             let expr_ty = type_check_expr expr env in
             if defn.return_ty <> expr_ty then
@@ -204,7 +211,9 @@ let type_check (defn : func_defn) (defns : func_defn list) =
         | None ->
             (* returning nothing from a non-void function: bad *)
             if defn.return_ty <> Void then
-              raise (CheckError (MismatchedReturn defn, loc)))
+              raise
+                (CheckError (MismatchedReturn (defn.name, defn.return_ty), loc))
+        )
     | Exit (maybe_expr, loc) -> (
         match maybe_expr with
         | Some expr ->
@@ -240,6 +249,15 @@ let type_check (defn : func_defn) (defns : func_defn list) =
   (* type check the defintion's body *)
   type_check_stmt_list defn.body env
 
+(* [check_funcs_are_unique] checks that function names are unique *)
+let rec check_funcs_are_unique (defns : func_defn list) =
+  match defns with
+  | [] -> ()
+  | defn :: rest -> (
+      match List.filter (fun d -> d.name = defn.name) rest with
+      | [] -> check_funcs_are_unique rest
+      | dup :: _ -> raise (CheckError (MultipleDefinitions dup.name, dup.loc)))
+
 (* [check] performs all validity checking on the input program,
   throwing an error if it finds problems. *)
 (* TODO: check for returns in main *)
@@ -247,6 +265,9 @@ let check (pgrm : prog) =
   (* main must have return type void *)
   if pgrm.main.return_ty <> Void then
     raise (CheckError (NonVoidMain, pgrm.main.loc));
+
+  (* function definitions must have unique names *)
+  check_funcs_are_unique pgrm.funcs;
 
   pgrm.main :: pgrm.funcs
   |> List.iter (fun defn ->
@@ -256,7 +277,7 @@ let check (pgrm : prog) =
 
          (* control must not reach end of non-void function *)
          if reaches_end && defn.return_ty <> Void then
-           raise (CheckError (CtrlReachesEndOfNonVoid defn, defn.loc));
+           raise (CheckError (CtrlReachesEndOfNonVoid defn.name, defn.loc));
 
          (* type check the function definition *)
          type_check defn pgrm.funcs)
