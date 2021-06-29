@@ -133,7 +133,7 @@ let type_check (defn : func_defn) (defns : func_defn list) =
         match op with
         | Gt | Lt | Gte | Lte | Eq | Neq -> Int
         | _ -> left_expr_ty)
-    | LogOp (log_op, loc) -> (
+    | LogOp (log_op, _) -> (
         match log_op with
         | LNot expr ->
             (* expression needs to be type checked and cannot be void *)
