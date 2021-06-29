@@ -133,9 +133,22 @@ let type_check (defn : func_defn) (defns : func_defn list) =
         match op with
         | Gt | Lt | Gte | Lte | Eq | Neq -> Int
         | _ -> left_expr_ty)
-    | LogOp (log_op, loc) ->
-        (* TODO: check how C implements this *)
-        failwith "not implemented"
+    | LogOp (log_op, loc) -> (
+        match log_op with
+        | LNot expr ->
+            (* expression needs to be type checked and cannot be void *)
+            expect_non_void expr (type_check_expr expr env);
+            (* log ops are always ints *)
+            Int
+        | LAnd (left, right) | LOr (left, right) ->
+            (* left and right should type check internally *)
+            let left_expr_ty = type_check_expr left env in
+            let right_expr_ty = type_check_expr right env in
+            (* neither left nor right can be void *)
+            expect_non_void left left_expr_ty;
+            expect_non_void right right_expr_ty;
+            (* log ops are always ints *)
+            Int)
     | Call (name, args, loc) -> (
         match lookup name defns with
         | Some called_defn -> (
