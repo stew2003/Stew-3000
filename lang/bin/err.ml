@@ -34,6 +34,10 @@ let handle_err (error : exn) (source_text : string) =
   | Compiler.Parser.CompilerParseError (msg, loc) ->
       print_err "Parse Error" msg
         (Some (Srcloc.string_of_maybe_loc loc source_text))
+  | Compiler.Check.CheckError (err, maybe_loc) ->
+      print_err "Check Error"
+        (Compiler.Check.string_of_check_err err)
+        (Some (Srcloc.string_of_maybe_loc maybe_loc source_text))
   | Emulator.EmulatorError (err, maybe_loc) ->
       print_err "Emulator Error"
         (Emulator.string_of_emu_err err)

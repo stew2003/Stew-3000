@@ -19,6 +19,7 @@ let command =
         let source_text = try_read_source src_file in
         try
           let pgrm = Parser.parse source_text in
+          Check.check pgrm;
           let instrs = Compile.compile pgrm in
 
           (* write generated asm to target file *)

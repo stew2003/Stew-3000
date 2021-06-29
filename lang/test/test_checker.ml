@@ -72,10 +72,60 @@ let test_undefined_func _ =
 let test_type_err _ =
   assert_raises_check_err
     (TypeError (Call ("g", [], None), Int, Void))
-    "void main() { f(g()); } void f(int n) {} void g() {}"
+    "void main() { f(g()); } void f(int n) {} void g() {}";
+  assert_raises_check_err
+    (TypeError (Call ("g", [], None), Int, Void))
+    "void main() { int x = g(); } void g() {}";
+  assert_raises_check_err
+    (TypeError (Call ("g", [], None), Int, Void))
+    "void main() { int x = 1; x = g(); } void g() {}";
+  assert_raises_check_err
+    (TypeError (Call ("g", [], None), Int, Void))
+    "void main() {} int f() { return g(); } void g() {}";
+  assert_raises_check_err
+    (TypeError (Call ("g", [], None), Int, Void))
+    "void main() { exit(g()); } void g() {}";
+  assert_raises_check_err
+    (TypeError (Call ("g", [], None), Int, Void))
+    "void main() { print(g()); } void g() {}"
+
+let test_invalid_type_err _ =
+  assert_raises_check_err
+    (InvalidTypeError (Call ("g", [], None), Void))
+    "void main() { ~g(); } void g() {}";
+  assert_raises_check_err
+    (InvalidTypeError (Call ("g", [], None), Void))
+    "void main() { g() * h(); } void g(){} void h(){}"
+
+let test_type_mismatch _ =
+  assert_raises_check_err
+    (TypeMismatch ("addition", Num (2, None), Int, Call ("g", [], None), Void))
+    "void main() { 2 + g(); } void g(){}";
+  assert_raises_check_err
+    (TypeMismatch
+       ("bitwise xor", Call ("f", [], None), Void, Num (0x4, None), Int))
+    "void main() { f() ^ 0x4; } void f(){}"
 
 let test_non_void_main _ =
   assert_raises_check_err NonVoidMain "int main() { return 1; }"
+
+let test_non_func_void _ =
+  assert_raises_check_err (NonFunctionAnnotatedAsVoid "x")
+    "void main() { void x = 5; }";
+  assert_raises_check_err (NonFunctionAnnotatedAsVoid "n")
+    "void main() {} void f(void n) {}"
+
+let test_arity_mismatch _ =
+  assert_raises_check_err
+    (ArityMismatch ("f", 2, 1))
+    "void main() { f(1); } void f(int a, int b) {}";
+  assert_raises_check_err
+    (ArityMismatch ("f", 0, 3))
+    "void main() { f(6, 5, 2); } void f() {}"
+
+let test_mult_defns _ =
+  assert_raises_check_err (MultipleDefinitions "f")
+    "void main() {} void f(int n) {} int g() { return 1; } void f() {}"
 
 let suite =
   "Checker Tests"
@@ -85,7 +135,12 @@ let suite =
          "test_unbound_var" >:: test_unbound_var;
          "test_undefined_func" >:: test_undefined_func;
          "test_type_err" >:: test_type_err;
+         "test_invalid_type_err" >:: test_invalid_type_err;
+         "test_type_mismatch" >:: test_type_mismatch;
          "test_non_void_main" >:: test_non_void_main;
+         "test_non_func_void" >:: test_non_func_void;
+         "test_arity_mismatch" >:: test_arity_mismatch;
+         "test_mult_defns" >:: test_mult_defns;
        ]
 
 let () = run_test_tt_main suite

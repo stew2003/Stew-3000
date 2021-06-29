@@ -24,8 +24,9 @@ Compiler
   [x] compiler tests using parser
   [x] implement compiler
   [] type checking
-    [] tests for checking
-    [] add checking to bin/compile + handle errors in bin/err
+    [x] tests for checking
+    [x] add checking to bin/compile + handle errors in bin/err
+    [] type check logical operators
   [] implement optimizations for smol code
     [] "compile to" given register (reduce movs)
     [] eliminate redundant instrs

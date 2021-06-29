@@ -23,7 +23,7 @@ type check_err =
   | NonVoidMain
   (* Something not a function definition was annotated as void *)
   | NonFunctionAnnotatedAsVoid of string
-  (* Mismatched number of arguments supplied to a function call *)
+  (* Mismatched number of arguments supplied to a function call (name, expected #, actual #) *)
   | ArityMismatch of string * int * int
   (* Multiple function definitions using the same name *)
   | MultipleDefinitions of string
@@ -37,8 +37,8 @@ let string_of_check_err = function
   | MismatchedReturn (name, return_ty) ->
       sprintf "The %s function `%s` must return %s." (string_of_ty return_ty)
         name
-        (if return_ty = Void then "nothing."
-        else sprintf "a value of type %s." (string_of_ty return_ty))
+        (if return_ty = Void then "nothing"
+        else sprintf "a value of type %s" (string_of_ty return_ty))
   | UnboundVariable var -> sprintf "The variable `%s` is unbound." var
   | UndefinedFunction name -> sprintf "The function `%s` is undefined." name
   | TypeError (e, expected, actual) ->
@@ -115,11 +115,9 @@ let type_check (defn : func_defn) (defns : func_defn list) =
         expect_non_void expr expr_ty;
         expr_ty
     | BinOp (op, left, right, loc) -> (
-        (* left and right can be any non-void type *)
+        (* left and right should type check internally *)
         let left_expr_ty = type_check_expr left env in
-        expect_non_void left left_expr_ty;
         let right_expr_ty = type_check_expr right env in
-        expect_non_void right right_expr_ty;
         (* left and right operand types must match *)
         if left_expr_ty <> right_expr_ty then
           raise
@@ -127,6 +125,9 @@ let type_check (defn : func_defn) (defns : func_defn list) =
                ( TypeMismatch
                    (describe_bin_op op, left, left_expr_ty, right, right_expr_ty),
                  loc ));
+        (* neither left nor right can be void *)
+        expect_non_void left left_expr_ty;
+        expect_non_void right right_expr_ty;
         (* comparison operators evaluate to an int, other bin ops evaluate
            to same type as the operands *)
         match op with
