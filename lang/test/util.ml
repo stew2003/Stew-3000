@@ -47,7 +47,14 @@ and norm_stmt_list_locs (stmts : stmt list) = List.map norm_stmt_locs stmts
 and norm_func_locs (func : func_defn) =
   { func with body = norm_stmt_list_locs func.body; loc = None }
 
+and norm_define_locs (define : pp_define) =
+  { define with expression = norm_expr_locs define.expression; loc = None }
+
 (* [norm_prog_locs] replaces all source locations in a program with None *)
 and norm_prog_locs (pgrm : prog) =
-  let { funcs; main } = pgrm in
-  { funcs = List.map norm_func_locs funcs; main = norm_func_locs main }
+  let { defines; funcs; main } = pgrm in
+  {
+    defines = List.map norm_define_locs defines;
+    funcs = List.map norm_func_locs funcs;
+    main = norm_func_locs main;
+  }

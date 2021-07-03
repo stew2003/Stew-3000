@@ -7,9 +7,9 @@ exception CompilerParseError of string * maybe_loc
 
 (* [prog_from_defns] converts a list of function definitions
   into a program, by extracting out the main function *)
-let prog_from_defns (defns : func_defn list) : prog =
+let prog_from_defns (defines : pp_define list) (defns : func_defn list) : prog =
   match List.partition (fun defn -> defn.name = "main") defns with
-  | [ main ], funcs -> { main; funcs }
+  | [ main ], funcs -> { defines; main; funcs }
   | _ ->
       raise
         (CompilerParseError ("program must have exactly one main function", None))
@@ -19,7 +19,7 @@ let prog_from_defns (defns : func_defn list) : prog =
 let parse (s : string) : prog =
   let buf = Lexing.from_string s in
   match Parse.program Lex.token buf with
-  | funcs -> prog_from_defns funcs
+  | defines, funcs -> prog_from_defns defines funcs
   | exception Lex.Error (msg, loc) -> raise (CompilerParseError (msg, Some loc))
   | exception Parse.Error ->
       let pos = Lexing.lexeme_start_p buf in

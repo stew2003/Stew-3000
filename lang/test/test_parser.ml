@@ -29,11 +29,10 @@ let assert_parses_to (pgrm : string) (exp : prog) =
   of constructing full programs when testing individual constructs. *)
 let assert_body_parses_to (body : string) (exp_body : stmt list) =
   let pgrm = Printf.sprintf "void main() { %s }" body in
-  let expected = { funcs = []; main = main_from_body exp_body } in
+  let expected = { defines = []; funcs = []; main = main_from_body exp_body } in
   assert_parses_to pgrm expected
 
-let test_empty_main _ =
-  assert_parses_to "void main() {}" { funcs = []; main = empty_main }
+let test_empty_main _ = assert_body_parses_to "" []
 
 let test_num _ =
   assert_body_parses_to "1; -117; 0xc; -0b101;"
@@ -294,6 +293,7 @@ let test_fact _ =
   in
   assert_parses_to fact
     {
+      defines = [];
       funcs =
         [
           {
@@ -333,6 +333,18 @@ let test_fact _ =
       main = empty_main;
     }
 
+let test_defines _ =
+  assert_parses_to "#define X 10 #define Y name void main() {}"
+    {
+      defines =
+        [
+          { var = "X"; expression = Num (10, None); loc = None };
+          { var = "Y"; expression = Var ("name", None); loc = None };
+        ];
+      funcs = [];
+      main = empty_main;
+    }
+
 let suite =
   "Source Language Parser Tests"
   >::: [
@@ -358,6 +370,7 @@ let suite =
          "test_dcr" >:: test_dcr;
          "test_exit" >:: test_exit;
          "test_fact" >:: test_fact;
+         "test_defines" >:: test_defines;
        ]
 
 let () = run_test_tt_main suite

@@ -97,6 +97,8 @@ rule token = parse
   { INT (loc_from_lexbuf lexbuf) }
 | "void"
   { VOID (loc_from_lexbuf lexbuf) }
+| "#define"
+  { DEFINE (loc_from_lexbuf lexbuf) }
 | ['a'-'z''A'-'Z''_']['a'-'z''A'-'Z''_''0'-'9']* as name
     { IDENT (name, (loc_from_lexbuf lexbuf)) }
 | eof

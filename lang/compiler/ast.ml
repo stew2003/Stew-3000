@@ -59,13 +59,20 @@ type func_defn = {
   loc : maybe_loc;
 }
 
+(* Represents a preprocessor definition, which binds a name to an expression. *)
+type pp_define = { var : string; expression : expr; loc : maybe_loc }
+
 (* main is a special function with void return/no args
   whose body is what is run when the program is run *)
-type prog = { funcs : func_defn list; main : func_defn }
+type prog = {
+  defines : pp_define list;
+  funcs : func_defn list;
+  main : func_defn;
+}
 
 (* [lookup] finds Some defn that matches the given name *)
 let lookup (name : string) (defns : func_defn list) : func_defn option =
-  List.find_opt (fun defn -> defn.name = name) defns
+  List.find_opt (fun (defn : func_defn) -> defn.name = name) defns
 
 (* [string_of_ty] turns a type into a string *)
 let string_of_ty (t : ty) : string =

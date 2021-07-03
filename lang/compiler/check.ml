@@ -279,7 +279,7 @@ let rec check_funcs_are_unique (defns : func_defn list) =
 (* [check_for_returns_in_main] checks that there are no return statements
   within the main function, and errors if there are. *)
 let check_for_returns_in_main (main : func_defn) =
-  check_for_stmt { funcs = []; main } (function
+  check_for_stmt { defines = []; funcs = []; main } (function
     | Return (_, loc) -> raise (CheckError (ReturnInMain, loc))
     | _ -> false)
   |> ignore

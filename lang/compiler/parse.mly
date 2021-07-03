@@ -49,9 +49,11 @@
 %token <Util.Srcloc.src_loc> INT
 %token <Util.Srcloc.src_loc> VOID
 
+%token <Util.Srcloc.src_loc> DEFINE
+
 %token EOF
 
-%start <func_defn list> program
+%start <pp_define list * func_defn list> program
 
 %left LOR
 %left LAND
@@ -66,10 +68,22 @@
 
 %%
 
-// a program is a list of function definitions
+// a program is a tuple of preprocessor #defines and function definitions
 program:
-| defns = list(definition) EOF
-  { defns }
+| defines = list(define) defns = list(definition) EOF
+  { (defines, defns) }
+
+define:
+| start_loc = DEFINE var = IDENT expression = expr
+  {
+    let (var, _) = var in 
+    let (expression, end_loc) = expression in 
+    {
+      var;
+      expression;
+      loc= Some (span start_loc end_loc);
+    }
+  }
 
 definition:
 | fn = decl LPAREN params = params RPAREN 
