@@ -27,6 +27,8 @@ type check_err =
   | ArityMismatch of string * int * int
   (* Multiple function definitions using the same name *)
   | MultipleDefinitions of string
+  (* Returned from main *)
+  | ReturnInMain
 
 exception CheckError of check_err with_loc_opt
 
@@ -64,6 +66,8 @@ let string_of_check_err = function
         actual
   | MultipleDefinitions name ->
       sprintf "The function `%s` has multiple definitions." name
+  | ReturnInMain ->
+      "Cannot return from main function. Consider using exit() instead."
 
 (* [ctrl_reaches_end] determines if the control flow of a function's
   body can reach the end of the function without encountering a return. *)
@@ -272,13 +276,23 @@ let rec check_funcs_are_unique (defns : func_defn list) =
       | [] -> check_funcs_are_unique rest
       | dup :: _ -> raise (CheckError (MultipleDefinitions dup.name, dup.loc)))
 
+(* [check_for_returns_in_main] checks that there are no return statements
+  within the main function, and errors if there are. *)
+let check_for_returns_in_main (main : func_defn) =
+  check_for_stmt { funcs = []; main } (function
+    | Return (_, loc) -> raise (CheckError (ReturnInMain, loc))
+    | _ -> false)
+  |> ignore
+
 (* [check] performs all validity checking on the input program,
   throwing an error if it finds problems. *)
-(* TODO: check for returns in main *)
 let check (pgrm : prog) =
   (* main must have return type void *)
   if pgrm.main.return_ty <> Void then
     raise (CheckError (NonVoidMain, pgrm.main.loc));
+
+  (* main cannot have return statements *)
+  check_for_returns_in_main pgrm.main;
 
   (* function definitions must have unique names *)
   check_funcs_are_unique pgrm.funcs;

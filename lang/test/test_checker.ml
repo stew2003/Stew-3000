@@ -127,6 +127,11 @@ let test_mult_defns _ =
   assert_raises_check_err (MultipleDefinitions "f")
     "void main() {} void f(int n) {} int g() { return 1; } void f() {}"
 
+let test_ret_in_main _ =
+  assert_raises_check_err ReturnInMain
+    "void main() { if (10 > 11) { return 5; } else {} }";
+  assert_raises_check_err ReturnInMain "void main() { while (1) { return; } }"
+
 let suite =
   "Checker Tests"
   >::: [
@@ -141,6 +146,7 @@ let suite =
          "test_non_func_void" >:: test_non_func_void;
          "test_arity_mismatch" >:: test_arity_mismatch;
          "test_mult_defns" >:: test_mult_defns;
+         "test_ret_in_main" >:: test_ret_in_main;
        ]
 
 let () = run_test_tt_main suite

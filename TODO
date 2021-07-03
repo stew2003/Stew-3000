@@ -23,17 +23,17 @@ Compiler
   [x] add compiler binary
   [x] compiler tests using parser
   [x] implement compiler
-  [] type checking
+  [x] type checking
     [x] tests for checking
     [x] add checking to bin/compile + handle errors in bin/err
-    [] type check logical operators
+    [x] type check logical operators
+  [] preprocessor
   [] implement optimizations for smol code
     [] "compile to" given register (reduce movs)
     [] eliminate redundant instrs
     [] special-case conditions (if/while)
     [] replace addi 1, _ / subi 1, _ with inr/dcr
     [] remove addi 0, subi 0, etc (no effect)
-  [] preprocessor?
 
 Emulator
   [x] fix emulation of 8-bit integers
