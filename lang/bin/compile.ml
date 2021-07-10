@@ -19,6 +19,11 @@ let command =
         let source_text = try_read_source src_file in
         try
           let pgrm = Parser.parse source_text in
+          let pgrm = Preprocess.preprocess pgrm in
+
+          (* TEMP: pretty print the ast after preprocessing as sanity check *)
+          Printf.printf "%s\n" (Prettyprint.pretty_print pgrm);
+
           Check.check pgrm;
           let instrs = Compile.compile pgrm in
 

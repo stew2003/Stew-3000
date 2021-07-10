@@ -1,11 +1,12 @@
 
+#define MAX_FIB 11
+
 /**
  * This program computes fibonacci numbers, using both recursive
  * and iterative approaches.
  */
 void main() {
     int n = 0;
-    int MAX_FIB = 11;
 
     // calculate each fibonacci number recursively
     while (n < MAX_FIB) {

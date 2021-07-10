@@ -1,11 +1,12 @@
 
+#define MAX_FACT 5
+
 /**
  * This program computes factorials for the range [0, 5], since
  * after that we would overflow. It does so iteratively
  * and recursively.
  */
 void main() {
-    int MAX_FACT = 5;
     int n = MAX_FACT;
 
     // iterative:
