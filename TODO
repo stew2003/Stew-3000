@@ -27,13 +27,18 @@ Compiler
     [x] tests for checking
     [x] add checking to bin/compile + handle errors in bin/err
     [x] type check logical operators
-  [] preprocessor
+  [x] preprocessor
   [] implement optimizations for smol code
-    [] "compile to" given register (reduce movs)
-    [] eliminate redundant instrs
-    [] special-case conditions (if/while)
-    [] replace addi 1, _ / subi 1, _ with inr/dcr
-    [] remove addi 0, subi 0, etc (no effect)
+    Pre-compile: 
+      [] constant folding 
+    During compile:
+      [] special-case compilation of conditions (if/while)
+      [] "compile to" given register (reduce movs)
+    Post-compile:
+      [] eliminate redundant instrs
+        [] sts a, 1; lds 1, a ==> sts a, 1 (for instance)
+      [] replace addi 1, _ / subi 1, _ with inr/dcr
+      [] remove addi 0, subi 0, etc (no effect)
 
 Emulator
   [x] fix emulation of 8-bit integers
