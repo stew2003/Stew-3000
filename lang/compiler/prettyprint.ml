@@ -4,23 +4,28 @@ open Printf
 (* [indent] indents with spaces at a given level *)
 let rec indent (lvl : int) = if lvl = 0 then "" else "  " ^ indent (lvl - 1)
 
-let rec pretty_print_expr (exp : expr) : string =
+let rec pretty_print_expr (exp : expr) (is_sub_expr : bool) : string =
   match exp with
   | Num (n, _) -> sprintf "%d" n
   | Var (name, _) -> name
-  | UnOp (op, operand, _) -> pretty_print_un_op op (pretty_print_expr operand)
+  | UnOp (op, operand, _) ->
+      pretty_print_un_op op (pretty_print_expr operand true)
   | BinOp (op, left, right, _) ->
-      pretty_print_bin_op op (pretty_print_expr left) (pretty_print_expr right)
-  | LogOp (op, _) -> pretty_print_log_op op
+      pretty_print_bin_op op
+        (pretty_print_expr left true)
+        (pretty_print_expr right true)
+        is_sub_expr
+  | LogOp (op, _) -> pretty_print_log_op op is_sub_expr
   | Call (name, args, _) ->
       sprintf "%s(%s)" name
-        (List.map pretty_print_expr args |> String.concat ", ")
+        (List.map (fun arg -> pretty_print_expr arg false) args
+        |> String.concat ", ")
 
 and pretty_print_un_op (op : un_op) (pretty_operand : string) : string =
   match op with BNot -> sprintf "~%s" pretty_operand
 
 and pretty_print_bin_op (op : bin_op) (pretty_left : string)
-    (pretty_right : string) : string =
+    (pretty_right : string) (is_sub_expr : bool) : string =
   let pretty_bin_op = function
     | Plus -> "+"
     | Minus -> "-"
@@ -37,43 +42,60 @@ and pretty_print_bin_op (op : bin_op) (pretty_left : string)
     | Eq -> "=="
     | Neq -> "!="
   in
-  sprintf "(%s %s %s)" pretty_left (pretty_bin_op op) pretty_right
+  let pretty_body =
+    sprintf "%s %s %s" pretty_left (pretty_bin_op op) pretty_right
+  in
+  if is_sub_expr then "(" ^ pretty_body ^ ")" else pretty_body
 
-and pretty_print_log_op (op : log_op) : string =
+and pretty_print_log_op (op : log_op) (is_sub_expr : bool) : string =
   match op with
-  | LNot expr -> sprintf "!%s" (pretty_print_expr expr)
+  | LNot expr -> sprintf "!%s" (pretty_print_expr expr true)
   | LAnd (left, right) ->
-      sprintf "(%s && %s)" (pretty_print_expr left) (pretty_print_expr right)
+      let pretty_land =
+        sprintf "%s && %s"
+          (pretty_print_expr left true)
+          (pretty_print_expr right true)
+      in
+      if is_sub_expr then "(" ^ pretty_land ^ ")" else pretty_land
   | LOr (left, right) ->
-      sprintf "(%s || %s)" (pretty_print_expr left) (pretty_print_expr right)
+      let pretty_lor =
+        sprintf "%s || %s"
+          (pretty_print_expr left true)
+          (pretty_print_expr right true)
+      in
+      if is_sub_expr then "(" ^ pretty_lor ^ ")" else pretty_lor
 
 and pretty_print_stmt (stmt : stmt) (indent_level : int) : string =
   match stmt with
   | Let (name, typ, expr, scope, _) ->
       sprintf "%s %s = %s;\n%s" (pretty_print_type typ) name
-        (pretty_print_expr expr)
+        (pretty_print_expr expr false)
         (pretty_print_stmt_list scope indent_level)
-  | Assign (name, expr, _) -> sprintf "%s = %s;" name (pretty_print_expr expr)
+  | Assign (name, expr, _) ->
+      sprintf "%s = %s;" name (pretty_print_expr expr false)
   | If (cond, thn, _) ->
-      sprintf "if (%s) %s" (pretty_print_expr cond)
+      sprintf "if (%s) %s"
+        (pretty_print_expr cond false)
         (pretty_print_block thn indent_level)
   | IfElse (cond, thn, els, _) ->
-      sprintf "if (%s) %s else %s" (pretty_print_expr cond)
+      sprintf "if (%s) %s else %s"
+        (pretty_print_expr cond false)
         (pretty_print_block thn indent_level)
         (pretty_print_block els indent_level)
   | While (cond, body, _) ->
-      sprintf "while (%s) %s" (pretty_print_expr cond)
+      sprintf "while (%s) %s"
+        (pretty_print_expr cond false)
         (pretty_print_block body indent_level)
   | Block (body, _) -> pretty_print_block body indent_level
-  | Return (Some expr, _) -> sprintf "return %s;" (pretty_print_expr expr)
+  | Return (Some expr, _) -> sprintf "return %s;" (pretty_print_expr expr false)
   | Return (None, _) -> "return;"
-  | Exit (Some expr, _) -> sprintf "exit(%s);" (pretty_print_expr expr)
+  | Exit (Some expr, _) -> sprintf "exit(%s);" (pretty_print_expr expr false)
   | Exit (None, _) -> "exit();"
-  | ExprStmt (expr, _) -> sprintf "%s;" (pretty_print_expr expr)
-  | PrintDec (expr, _) -> sprintf "print(%s);" (pretty_print_expr expr)
+  | ExprStmt (expr, _) -> sprintf "%s;" (pretty_print_expr expr false)
+  | PrintDec (expr, _) -> sprintf "print(%s);" (pretty_print_expr expr false)
   | Inr (name, _) -> sprintf "%s++;" name
   | Dcr (name, _) -> sprintf "%s--;" name
-  | Assert (expr, _) -> sprintf "assert(%s);" (pretty_print_expr expr)
+  | Assert (expr, _) -> sprintf "assert(%s);" (pretty_print_expr expr false)
 
 and pretty_print_stmt_list (stmts : stmt list) (indent_level : int) : string =
   stmts
@@ -106,7 +128,7 @@ and pretty_print_func_defn (defn : func_defn) : string =
     (pretty_print_block defn.body 0)
 
 and pretty_print_define (define : pp_define) : string =
-  sprintf "#define %s %s" define.var (pretty_print_expr define.expression)
+  sprintf "#define %s %s" define.var (pretty_print_expr define.expression false)
 
 (* [pretty_print] takes a program and produces a string that is 
   the program's text formatted nicely.  *)
