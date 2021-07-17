@@ -308,6 +308,8 @@ const uint32_t PROGMEM conditional_microcode[NUM_CONDITIONAL_INSTRUCTIONS][FLAG_
     { 0x76, PCO|MI, RO|PCI, RST, 0, 0, 0 }, // 110
     { 0x76, PCO|MI, RO|PCI, RST, 0, 0, 0 }, // 111
   },
+
+  
 };
 
 // reverse all bits in a byte
