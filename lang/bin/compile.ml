@@ -2,6 +2,7 @@ open Core
 open Compiler
 open Asm.Isa
 open Asm.Assemble
+open Optimizations
 open Err
 
 (* command-line interface for compiler *)
@@ -21,10 +22,12 @@ let command =
           let pgrm = Parser.parse source_text in
           let pgrm = Preprocess.preprocess pgrm in
 
+          Check.check pgrm;
+          let pgrm = Constant_fold.constant_fold pgrm in
+
           (* TEMP: pretty print the ast after preprocessing as sanity check *)
           Printf.printf "%s\n" (Prettyprint.pretty_print pgrm);
 
-          Check.check pgrm;
           let instrs = Compile.compile pgrm in
 
           (* write generated asm to target file *)
