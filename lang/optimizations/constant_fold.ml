@@ -1,5 +1,6 @@
 open Compiler.Ast
 
+(* [fold_expr] performs constant folding on a given expression. *)
 let rec fold_expr (exp : expr) : expr =
   match exp with
   | UnOp (op, expr, loc) -> (
@@ -50,6 +51,7 @@ let rec fold_expr (exp : expr) : expr =
   | Call (name, args, loc) -> Call (name, List.map fold_expr args, loc)
   | _ -> exp
 
+(* [fold_stmt] performs constant folding on a single statement. *)
 and fold_stmt (stmt : stmt) : stmt =
   match stmt with
   | Let (name, typ, expr, scope, loc) ->
@@ -80,11 +82,15 @@ and fold_stmt (stmt : stmt) : stmt =
   | Assert (expr, loc) -> Assert (fold_expr expr, loc)
   | _ -> stmt
 
+(* [fold_stmt_list] performs constant folding on a list of statements. *)
 and fold_stmt_list (stmts : stmt list) : stmt list = List.map fold_stmt stmts
 
+(* [fold_func_defn] performs constant folding on a function definition. *)
 and fold_func_defn (defn : func_defn) : func_defn =
   { defn with body = fold_stmt_list defn.body }
 
+(* [constant_fold] replaces any constant expression in the given program
+    with the constant it evaluates to.  *)
 and constant_fold (pgrm : prog) : prog =
   {
     pgrm with

@@ -1,9 +1,10 @@
 open Ast
 open Printf
 
-(* [indent] indents with spaces at a given level *)
+(* [indent] returns a string representing the given level of indentation. *)
 let rec indent (lvl : int) = if lvl = 0 then "" else "  " ^ indent (lvl - 1)
 
+(* [pretty_print_expr] converts an expression into a pretty-printed string. *)
 let rec pretty_print_expr (exp : expr) (is_sub_expr : bool) : string =
   match exp with
   | Num (n, _) -> sprintf "%d" n
@@ -21,9 +22,11 @@ let rec pretty_print_expr (exp : expr) (is_sub_expr : bool) : string =
         (List.map (fun arg -> pretty_print_expr arg false) args
         |> String.concat ", ")
 
+(* [pretty_print_un_op] converts a unary operator into a pretty-printed string. *)
 and pretty_print_un_op (op : un_op) (pretty_operand : string) : string =
   match op with BNot -> sprintf "~%s" pretty_operand
 
+(* [pretty_print_bin_op] converts a binary operator into a pretty-printed string. *)
 and pretty_print_bin_op (op : bin_op) (pretty_left : string)
     (pretty_right : string) (is_sub_expr : bool) : string =
   let pretty_bin_op = function
@@ -47,6 +50,7 @@ and pretty_print_bin_op (op : bin_op) (pretty_left : string)
   in
   if is_sub_expr then "(" ^ pretty_body ^ ")" else pretty_body
 
+(* [pretty_print_log_op] converts a logical operator into a pretty-printed string. *)
 and pretty_print_log_op (op : log_op) (is_sub_expr : bool) : string =
   match op with
   | LNot expr -> sprintf "!%s" (pretty_print_expr expr true)
@@ -65,6 +69,7 @@ and pretty_print_log_op (op : log_op) (is_sub_expr : bool) : string =
       in
       if is_sub_expr then "(" ^ pretty_lor ^ ")" else pretty_lor
 
+(* [pretty_print_stmt] converts a single statement into a pretty-printed string. *)
 and pretty_print_stmt (stmt : stmt) (indent_level : int) : string =
   match stmt with
   | Let (name, typ, expr, scope, _) ->
@@ -97,6 +102,7 @@ and pretty_print_stmt (stmt : stmt) (indent_level : int) : string =
   | Dcr (name, _) -> sprintf "%s--;" name
   | Assert (expr, _) -> sprintf "assert(%s);" (pretty_print_expr expr false)
 
+(* [pretty_print_stmt_list] converts a statement list into a pretty-printed string. *)
 and pretty_print_stmt_list (stmts : stmt list) (indent_level : int) : string =
   stmts
   |> List.map (fun stmt ->
@@ -104,6 +110,8 @@ and pretty_print_stmt_list (stmts : stmt list) (indent_level : int) : string =
            (pretty_print_stmt stmt indent_level))
   |> String.concat "\n"
 
+(* [pretty_print_block] converts a block (statement list that is curly-brace 
+  delimited) into a pretty-printed string. *)
 and pretty_print_block (block : stmt list) (indent_level : int) : string =
   match block with
   | [] -> "{}"
@@ -112,9 +120,11 @@ and pretty_print_block (block : stmt list) (indent_level : int) : string =
         (pretty_print_stmt_list block (indent_level + 1))
         (indent indent_level)
 
+(* [pretty_print_type] converts a type into a pretty-printed string. *)
 and pretty_print_type (typ : ty) : string =
   match typ with Void -> "void" | Int -> "int"
 
+(* [pretty_print_func_defn] converts a function definition into a pretty-printed string. *)
 and pretty_print_func_defn (defn : func_defn) : string =
   let printed_params =
     List.map
@@ -127,6 +137,7 @@ and pretty_print_func_defn (defn : func_defn) : string =
     defn.name printed_params
     (pretty_print_block defn.body 0)
 
+(* [pretty_print_define] converts a #define directive into a pretty-printed string. *)
 and pretty_print_define (define : pp_define) : string =
   sprintf "#define %s %s" define.var (pretty_print_expr define.expression false)
 

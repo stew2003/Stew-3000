@@ -1,6 +1,14 @@
 (tests 
-  (names test_assembler test_emulator test_compiler test_parser test_runtime test_checker)
-  (libraries ounit2 asm emulator compiler util))
+  (names 
+    test_assembler 
+    test_emulator 
+    test_compiler 
+    test_parser 
+    test_runtime 
+    test_checker 
+    test_preprocessor 
+    test_constant_folding)
+  (libraries ounit2 asm emulator compiler util optimizations))
 
 (env
   (dev

@@ -30,7 +30,7 @@ Compiler
   [x] preprocessor
   [] implement optimizations for smol code
     Pre-compile: 
-      [] constant folding 
+      [x] constant folding 
     During compile:
       [] special-case compilation of conditions (if/while)
       [] "compile to" given register (reduce movs)

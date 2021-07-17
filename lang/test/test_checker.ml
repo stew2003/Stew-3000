@@ -1,7 +1,7 @@
 open OUnit2
 open Compiler
 open Compiler.Check
-open Util
+open Testing_utils
 
 (* [check] parses a source program and passes it through the checker. *)
 let check (source : string) =

@@ -1,7 +1,9 @@
 open Compiler.Ast
+open Compiler.Prettyprint
+open OUnit2
 
 (* [norm_expr_locs] normalizes source locations in an expression *)
-let rec norm_expr_locs (exp : expr) =
+let rec norm_expr_locs (exp : expr) : expr =
   match exp with
   | Num (n, _) -> Num (n, None)
   | Var (id, _) -> Var (id, None)
@@ -15,7 +17,7 @@ let rec norm_expr_locs (exp : expr) =
   | Call (fn, args, _) -> Call (fn, List.map norm_expr_locs args, None)
 
 (* [norm_stmt_locs] normalizes source locations in a statement *)
-and norm_stmt_locs (stmt : stmt) =
+and norm_stmt_locs (stmt : stmt) : stmt =
   match stmt with
   | Let (id, typ, value, body, _) ->
       Let (id, typ, norm_expr_locs value, norm_stmt_list_locs body, None)
@@ -41,20 +43,31 @@ and norm_stmt_locs (stmt : stmt) =
   | Assert (e, _) -> Assert (e, None)
 
 (* [norm_stmt_list_locs] normalizes source locations in a statement list *)
-and norm_stmt_list_locs (stmts : stmt list) = List.map norm_stmt_locs stmts
+and norm_stmt_list_locs (stmts : stmt list) : stmt list =
+  List.map norm_stmt_locs stmts
 
 (* [norm_func_locs] normalizes source locations in a function definition *)
-and norm_func_locs (func : func_defn) =
+and norm_func_locs (func : func_defn) : func_defn =
   { func with body = norm_stmt_list_locs func.body; loc = None }
 
-and norm_define_locs (define : pp_define) =
+and norm_define_locs (define : pp_define) : pp_define =
   { define with expression = norm_expr_locs define.expression; loc = None }
 
 (* [norm_prog_locs] replaces all source locations in a program with None *)
-and norm_prog_locs (pgrm : prog) =
+and norm_prog_locs (pgrm : prog) : prog =
   let { defines; funcs; main } = pgrm in
   {
     defines = List.map norm_define_locs defines;
     funcs = List.map norm_func_locs funcs;
     main = norm_func_locs main;
   }
+
+(* [assert_prog_eq] asserts that an actual program equals an expected program,
+  and uses pretty printing to display a message if they are not. *)
+let assert_prog_eq (expected : prog) (actual : prog) =
+  assert_equal expected actual ~printer:pretty_print
+
+(* [parse_norm] is a wrapper around parsing a source string and normalizing its 
+  source locations. *)
+let parse_norm (source : string) : prog =
+  source |> Compiler.Parser.parse |> norm_prog_locs

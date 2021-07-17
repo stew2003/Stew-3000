@@ -1,5 +1,6 @@
 open Ast
 
+(* [expand_in_expr] expands a #define directive in an expression. *)
 let rec expand_in_expr (define : pp_define) (exp : expr) : expr =
   match exp with
   (* check if this var is the same as that of the define *)
@@ -17,6 +18,7 @@ let rec expand_in_expr (define : pp_define) (exp : expr) : expr =
   | Call (name, args, loc) ->
       Call (name, List.map (fun arg -> expand_in_expr define arg) args, loc)
 
+(* [expand_in_stmt] expands a #define directive in a single statement. *)
 and expand_in_stmt (define : pp_define) (stmt : stmt) : stmt =
   match stmt with
   | Let (name, typ, expr, body, loc) ->
@@ -45,12 +47,17 @@ and expand_in_stmt (define : pp_define) (stmt : stmt) : stmt =
   | Assert (expr, loc) -> Assert (expand_in_expr define expr, loc)
   | _ -> stmt
 
+(* [expand_in_stmt_list] expands a #define directive in every statement
+  in a list. *)
 and expand_in_stmt_list (define : pp_define) (stmts : stmt list) : stmt list =
   List.map (fun stmt -> expand_in_stmt define stmt) stmts
 
+(* [expand_in_defn] expands a #define directive in a function definition. *)
 and expand_in_defn (define : pp_define) (defn : func_defn) : func_defn =
   { defn with body = expand_in_stmt_list define defn.body }
 
+(* [expand_in_defines] expands a #define directive in a list of other
+  #define directives. *)
 and expand_in_defines (define : pp_define) (defines : pp_define list) :
     pp_define list =
   match defines with

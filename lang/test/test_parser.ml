@@ -1,7 +1,7 @@
 open OUnit2
 open Compiler.Parser
 open Compiler.Ast
-open Util
+open Testing_utils
 
 (* [main_from_body] constructs an ast function defn that conforms
   to what main functions must look like, with the given body filled in. *)
