@@ -14,7 +14,13 @@
     runtime 
     optimizations
     constant_fold)
-  (libraries util asm core))
+  (libraries util asm core)
+  (preprocess (pps ppx_blob))
+  (preprocessor_deps 
+    (file runtime/multiply.3000.s)
+    (file runtime/divide.3000.s)
+    (file runtime/sign_utils.3000.s)
+    (file runtime/assert.3000.s)))
 
 (env
   (dev
