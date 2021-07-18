@@ -13,9 +13,7 @@ jobs:
       fail-fast: false
       matrix:
         os:
-          - macos-latest
           - ubuntu-latest
-          - windows-latest
         ocaml-compiler:
           - 4.11.x
 
@@ -30,10 +28,8 @@ jobs:
         with:
           ocaml-compiler: ${{ matrix.ocaml-compiler }}
 
+      - run: opam install dune
       - run: eval $(opam env)
-
       - run: opam install . --deps-only --with-test
-
       - run: opam exec -- dune build
-
-      - run: opam exec -- dune runtest
+      - run: opam exec -- dune runtest -f
