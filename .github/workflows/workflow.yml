@@ -8,7 +8,7 @@ on:
     - cron: 0 1 * * MON
 
 jobs:
-  build:
+  build_and_test:
     strategy:
       fail-fast: false
       matrix:
@@ -31,6 +31,6 @@ jobs:
       - run: opam install dune
       - run: eval $(opam env)
       - run: opam install . --deps-only --with-test
-      - run: opam exec -- dune external-lib-deps --missing @@default
+      - run: opam install core ounit2 ppx_blob ppx_let menhir ocamllex
       - run: opam exec -- dune build
       - run: opam exec -- dune runtest -f
