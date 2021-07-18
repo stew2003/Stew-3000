@@ -1,11 +1,17 @@
-(ocamllex
- (modules lex))
-
-(menhir
- (modules parse))
+(include_subdirs unqualified)
 
 (library
   (name emulator)
+  (modules
+    ast
+    command
+    emulator
+    logging
+    machine
+    numbers
+    cmd_parser
+    lex
+    parse)
   (libraries asm util core))
 
 (env

@@ -8,7 +8,7 @@
     test_checker 
     test_preprocessor 
     test_constant_folding)
-  (libraries ounit2 asm emulator compiler util optimizations))
+  (libraries ounit2 asm emulator compiler util))
 
 (env
   (dev

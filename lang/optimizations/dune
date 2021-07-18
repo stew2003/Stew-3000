@@ -1,7 +1,0 @@
-(library
-  (name optimizations)
-  (libraries compiler asm))
-
-(env
-  (dev
-    (flags (:standard -warn-error -A))))

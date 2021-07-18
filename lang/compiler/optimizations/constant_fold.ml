@@ -1,4 +1,4 @@
-open Compiler.Ast
+open Ast
 
 (* [fold_expr] performs constant folding on a given expression. *)
 let rec fold_expr (exp : expr) : expr =
@@ -55,7 +55,7 @@ let rec fold_expr (exp : expr) : expr =
 and fold_stmt (stmt : stmt) : stmt =
   match stmt with
   | Let (name, typ, expr, scope, loc) ->
-      Let (name, typ, fold_expr expr, scope, loc)
+      Let (name, typ, fold_expr expr, fold_stmt_list scope, loc)
   | Assign (name, expr, loc) -> Assign (name, fold_expr expr, loc)
   | If (cond, body, loc) -> (
       match fold_expr cond with

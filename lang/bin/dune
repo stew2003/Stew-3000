@@ -17,7 +17,7 @@
   (modules compile)
   (preprocess
     (pps ppx_let))
-  (libraries core asm util compiler optimizations err))
+  (libraries core asm util compiler err))
 
 (library
   (name err)

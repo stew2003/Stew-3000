@@ -1,11 +1,14 @@
-(ocamllex
- (modules lex))
-
-(menhir
- (modules parse))
+(include_subdirs unqualified)
 
 (library
   (name asm)
+  (modules
+    assemble
+    isa
+    validate
+    lex
+    parse
+    parser)
   (libraries util))
 
 (env

@@ -5,9 +5,9 @@ open Util.Srcloc
 
 exception CompilerParseError of string * maybe_loc
 
-(* [prog_from_defns] converts a list of function definitions
-  into a program, by extracting out the main function *)
-let prog_from_defns (defines : pp_define list) (defns : func_defn list) : prog =
+(* [prog_from_parts] constructs a full program type given a list of preprocessor
+  #defines and a list of function definitions. *)
+let prog_from_parts (defines : pp_define list) (defns : func_defn list) : prog =
   match List.partition (fun defn -> defn.name = "main") defns with
   | [ main ], funcs -> { defines; main; funcs }
   | _ ->
@@ -19,7 +19,7 @@ let prog_from_defns (defines : pp_define list) (defns : func_defn list) : prog =
 let parse (s : string) : prog =
   let buf = Lexing.from_string s in
   match Parse.program Lex.token buf with
-  | defines, funcs -> prog_from_defns defines funcs
+  | defines, funcs -> prog_from_parts defines funcs
   | exception Lex.Error (msg, loc) -> raise (CompilerParseError (msg, Some loc))
   | exception Parse.Error ->
       let pos = Lexing.lexeme_start_p buf in

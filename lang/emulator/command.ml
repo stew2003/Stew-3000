@@ -1,7 +1,6 @@
 open Machine
 open Asm.Isa
 open Ast
-open Parser
 open Util
 
 (* [clear_screen] clears the screen and moves the cursor to home position *)
@@ -101,8 +100,8 @@ let loop_for_commands =
     let rec loop _ =
       let cmd =
         print_string prompt;
-        try Some (parse (read_line ()))
-        with CmdParseError msg ->
+        try Some (Cmd_parser.parse (read_line ()))
+        with Cmd_parser.CmdParseError msg ->
           print_endline (Printf.sprintf "command parse error: %s" msg);
           (* clear cached last command *)
           last_cmd := None;

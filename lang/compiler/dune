@@ -1,11 +1,19 @@
-(ocamllex
- (modules lex))
-
-(menhir
- (modules parse))
+(include_subdirs unqualified)
 
 (library
   (name compiler)
+  (modules 
+    ast 
+    check 
+    compile 
+    lex
+    parse
+    parser 
+    preprocess 
+    prettyprint 
+    runtime 
+    optimizations
+    constant_fold)
   (libraries util asm core))
 
 (env

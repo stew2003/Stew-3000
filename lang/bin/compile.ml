@@ -2,7 +2,7 @@ open Core
 open Compiler
 open Asm.Isa
 open Asm.Assemble
-open Optimizations
+open Compiler.Optimizations
 open Err
 
 (* command-line interface for compiler *)

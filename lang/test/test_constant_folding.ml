@@ -1,5 +1,5 @@
 open OUnit2
-open Optimizations.Constant_fold
+open Compiler.Optimizations.Constant_fold
 open Testing_utils
 
 let assert_const_folds_to (before : string) (after : string) =
