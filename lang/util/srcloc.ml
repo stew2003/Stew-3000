@@ -33,7 +33,8 @@ let periphery = 2
 
 (* [string_of_src_loc] converts a source location and a source file 
   contents into a message indicating the position in the source file *)
-let string_of_src_loc (loc : src_loc) (source : string) : string =
+let string_of_src_loc (loc : src_loc) (source : string)
+    (source_filename : string) : string =
   let lines_with_color lines colorize =
     List.map
       (fun (i, line) ->
@@ -55,8 +56,12 @@ let string_of_src_loc (loc : src_loc) (source : string) : string =
   let after_loc =
     lines_by_idx (fun i -> i - loc.endl <= periphery && i - loc.endl > 0)
   in
+  let line_range_as_string =
+    if loc.startl = loc.endl then string_of_int loc.startl
+    else sprintf "%d-%d" loc.startl loc.endl
+  in
   (* get lines at & around src loc, colorized appropriately *)
-  [ "At location:" ]
+  [ sprintf "--> %s:%s" source_filename line_range_as_string ]
   @ lines_with_color before_loc (fun line -> Colors.br_black line)
   @ lines_with_color at_loc (fun line -> line)
   @ lines_with_color after_loc (fun line -> Colors.br_black line)
@@ -64,5 +69,8 @@ let string_of_src_loc (loc : src_loc) (source : string) : string =
 
 (* [string_of_maybe_loc] is a wrapper for string of src loc that handles 
   optional locations *)
-let string_of_maybe_loc (loc : src_loc option) (source : string) : string =
-  match loc with None -> "" | Some loc -> string_of_src_loc loc source
+let string_of_maybe_loc (loc : src_loc option) (source : string)
+    (source_filename : string) : string =
+  match loc with
+  | None -> ""
+  | Some loc -> string_of_src_loc loc source source_filename

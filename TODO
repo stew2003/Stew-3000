@@ -28,9 +28,13 @@ Compiler
     [x] add checking to bin/compile + handle errors in bin/err
     [x] type check logical operators
   [x] preprocessor
+  [] warnings
   [] implement optimizations for smol code
     Pre-compile: 
       [x] constant folding 
+        [] consider what happens on overflow
+      [] omit (+warn) unused vars and functions
+      [] omit (+warn) dead code
     During compile:
       [] special-case compilation of conditions (if/while)
       [] "compile to" given register (reduce movs)
@@ -52,4 +56,5 @@ Emulator
     [x] `continue` command
   [x] better printing of decimal display
 
-[] document everything
+Docs
+  [] document everything

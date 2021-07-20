@@ -42,6 +42,6 @@ let command =
               let bin_out = Out_channel.create bin_file in
               Out_channel.output_bytes bin_out assembled;
               Out_channel.close bin_out
-        with err -> handle_err err source_text)
+        with err -> handle_err err source_text src_file)
 
 let () = Command.run ~version:"1.0" command

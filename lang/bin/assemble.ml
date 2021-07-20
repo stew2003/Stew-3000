@@ -73,6 +73,6 @@ let command =
             Printf.printf "%s\n" (Colors.br_cyan "Side by side:");
             display_side_by_side instrs unflattened)
           else ()
-        with err -> handle_err err source_text)
+        with err -> handle_err err source_text asm_filename)
 
 let () = Command.run ~version:"1.0" command

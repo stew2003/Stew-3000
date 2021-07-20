@@ -3,7 +3,8 @@ open Util
 (* [print_err] prints an error to stderr, given a type, message,
     and source location string *)
 let print_err (err_type : string) (msg : string) (loc : string option) =
-  Printf.eprintf "%s: %s\n%s" (Colors.error err_type) msg
+  Printf.eprintf "%s: %s\n%s" (Colors.error err_type)
+    (Colors.bold (Colors.white msg))
     (match loc with None -> "" | Some loc -> Printf.sprintf "%s\n" loc)
 
 (* [print_arbitrary_err] prints an arbitrary exception type 
@@ -22,25 +23,25 @@ let try_read_source (filename : string) : string =
 (* [handle_err] handles an arbitrary error (via printing) that might have 
   originated in parsing, assembling, emulating, compiling, etc. It could also 
   be a system error or otherwise that was not thrown by our code. *)
-let handle_err (error : exn) (source_text : string) =
+let handle_err (error : exn) (source_text : string) (source_filename : string) =
   match error with
   | Asm.Parser.AsmParseError (msg, loc) ->
       print_err "Asm Parse Error" msg
-        (Some (Srcloc.string_of_src_loc loc source_text))
+        (Some (Srcloc.string_of_src_loc loc source_text source_filename))
   | Asm.Assemble.AssembleError (err, maybe_loc) ->
       print_err "Assembler Error"
         (Asm.Assemble.string_of_asm_err err)
-        (Some (Srcloc.string_of_maybe_loc maybe_loc source_text))
+        (Some (Srcloc.string_of_maybe_loc maybe_loc source_text source_filename))
   | Compiler.Parser.CompilerParseError (msg, loc) ->
       print_err "Parse Error" msg
-        (Some (Srcloc.string_of_maybe_loc loc source_text))
+        (Some (Srcloc.string_of_maybe_loc loc source_text source_filename))
   | Compiler.Check.CheckError (err, maybe_loc) ->
       print_err "Check Error"
         (Compiler.Check.string_of_check_err err)
-        (Some (Srcloc.string_of_maybe_loc maybe_loc source_text))
+        (Some (Srcloc.string_of_maybe_loc maybe_loc source_text source_filename))
   | Emulator.EmulatorError (err, maybe_loc) ->
       print_err "Emulator Error"
         (Emulator.string_of_emu_err err)
-        (Some (Srcloc.string_of_maybe_loc maybe_loc source_text))
+        (Some (Srcloc.string_of_maybe_loc maybe_loc source_text source_filename))
   | Err.InternalError msg -> print_err "Internal Error" msg None
   | err -> print_arbitrary_err err
