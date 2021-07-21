@@ -9,11 +9,6 @@ let rec norm_expr_locs (exp : expr) : expr =
   | Var (id, _) -> Var (id, None)
   | UnOp (op, e, _) -> UnOp (op, norm_expr_locs e, None)
   | BinOp (op, l, r, _) -> BinOp (op, norm_expr_locs l, norm_expr_locs r, None)
-  | LogOp (LNot e, _) -> LogOp (LNot (norm_expr_locs e), None)
-  | LogOp (LAnd (l, r), _) ->
-      LogOp (LAnd (norm_expr_locs l, norm_expr_locs r), None)
-  | LogOp (LOr (l, r), _) ->
-      LogOp (LOr (norm_expr_locs l, norm_expr_locs r), None)
   | Call (fn, args, _) -> Call (fn, List.map norm_expr_locs args, None)
 
 (* [norm_stmt_locs] normalizes source locations in a statement *)

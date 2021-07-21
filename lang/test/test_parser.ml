@@ -91,32 +91,32 @@ let test_bin_op _ =
 
 let test_log_op _ =
   assert_body_parses_to "1 && 0;"
-    [ ExprStmt (LogOp (LAnd (Num (1, None), Num (0, None)), None), None) ];
+    [ ExprStmt (BinOp (LAnd, Num (1, None), Num (0, None), None), None) ];
   assert_body_parses_to "5 || 7;"
-    [ ExprStmt (LogOp (LOr (Num (5, None), Num (7, None)), None), None) ];
+    [ ExprStmt (BinOp (LOr, Num (5, None), Num (7, None), None), None) ];
   assert_body_parses_to "!17;"
-    [ ExprStmt (LogOp (LNot (Num (17, None)), None), None) ]
+    [ ExprStmt (UnOp (LNot, Num (17, None), None), None) ]
 
 let test_precedence _ =
   assert_body_parses_to "1 + 2 * 8 < (100 ^ 3) && ~7 == (40 & 18);"
     [
       ExprStmt
-        ( LogOp
-            ( LAnd
-                ( BinOp
-                    ( Lt,
-                      BinOp
-                        ( Plus,
-                          Num (1, None),
-                          BinOp (Mult, Num (2, None), Num (8, None), None),
-                          None ),
-                      BinOp (BXor, Num (100, None), Num (3, None), None),
-                      None ),
+        ( BinOp
+            ( LAnd,
+              BinOp
+                ( Lt,
                   BinOp
-                    ( Eq,
-                      UnOp (BNot, Num (7, None), None),
-                      BinOp (BAnd, Num (40, None), Num (18, None), None),
-                      None ) ),
+                    ( Plus,
+                      Num (1, None),
+                      BinOp (Mult, Num (2, None), Num (8, None), None),
+                      None ),
+                  BinOp (BXor, Num (100, None), Num (3, None), None),
+                  None ),
+              BinOp
+                ( Eq,
+                  UnOp (BNot, Num (7, None), None),
+                  BinOp (BAnd, Num (40, None), Num (18, None), None),
+                  None ),
               None ),
           None );
     ];
@@ -124,14 +124,11 @@ let test_precedence _ =
   assert_body_parses_to "!4 && 7 || !(6 && 23);"
     [
       ExprStmt
-        ( LogOp
-            ( LOr
-                ( LogOp
-                    ( LAnd (LogOp (LNot (Num (4, None)), None), Num (7, None)),
-                      None ),
-                  LogOp
-                    ( LNot (LogOp (LAnd (Num (6, None), Num (23, None)), None)),
-                      None ) ),
+        ( BinOp
+            ( LOr,
+              BinOp (LAnd, UnOp (LNot, Num (4, None), None), Num (7, None), None),
+              UnOp
+                (LNot, BinOp (LAnd, Num (6, None), Num (23, None), None), None),
               None ),
           None );
     ]

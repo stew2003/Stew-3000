@@ -78,8 +78,12 @@ let ctrl_reaches_end (defn : func_defn) : bool =
     | IfElse (_, thn, els, _) ->
         ctrl_reaches_end_stmt_list thn || ctrl_reaches_end_stmt_list els
     | Block (scope, _) -> ctrl_reaches_end_stmt_list scope
+    (* Return and exit *cannot* be passed. *)
     | Return _ | Exit _ -> false
-    | _ -> true
+    (* All of the following statements can be passed. *)
+    | Assign _ | If _ | ExprStmt _ | While _ | PrintDec _ | Inr _ | Dcr _
+    | Assert _ ->
+        true
   and ctrl_reaches_end_stmt_list (stmts : stmt list) : bool =
     match stmts with
     | [] -> true
@@ -113,11 +117,25 @@ let type_check (defn : func_defn) (defns : func_defn list) =
     match exp with
     | Num _ -> Int
     | Var (name, loc) -> lookup_var name env loc
+    | UnOp (LNot, expr, _) ->
+        (* expression needs to be type checked and cannot be void *)
+        expect_non_void expr (type_check_expr expr env);
+        (* log ops are always ints *)
+        Int
     | UnOp (_, expr, _) ->
         (* operand can be any non-void type *)
         let expr_ty = type_check_expr expr env in
         expect_non_void expr expr_ty;
         expr_ty
+    | BinOp (LAnd, left, right, _) | BinOp (LOr, left, right, _) ->
+        (* left and right should type check internally *)
+        let left_expr_ty = type_check_expr left env in
+        let right_expr_ty = type_check_expr right env in
+        (* neither left nor right can be void *)
+        expect_non_void left left_expr_ty;
+        expect_non_void right right_expr_ty;
+        (* log ops are always ints *)
+        Int
     | BinOp (op, left, right, loc) -> (
         (* left and right should type check internally *)
         let left_expr_ty = type_check_expr left env in
@@ -136,23 +154,12 @@ let type_check (defn : func_defn) (defns : func_defn list) =
            to same type as the operands *)
         match op with
         | Gt | Lt | Gte | Lte | Eq | Neq -> Int
-        | _ -> left_expr_ty)
-    | LogOp (log_op, _) -> (
-        match log_op with
-        | LNot expr ->
-            (* expression needs to be type checked and cannot be void *)
-            expect_non_void expr (type_check_expr expr env);
-            (* log ops are always ints *)
-            Int
-        | LAnd (left, right) | LOr (left, right) ->
-            (* left and right should type check internally *)
-            let left_expr_ty = type_check_expr left env in
-            let right_expr_ty = type_check_expr right env in
-            (* neither left nor right can be void *)
-            expect_non_void left left_expr_ty;
-            expect_non_void right right_expr_ty;
-            (* log ops are always ints *)
-            Int)
+        | Plus | Minus | Mult | Div | Mod | BAnd | BOr | BXor -> left_expr_ty
+        | LAnd | LOr ->
+            raise
+              (InternalError
+                 "unreachable match arm in checker reached with logical and/or")
+        )
     | Call (name, args, loc) -> (
         match lookup name defns with
         | Some called_defn -> (

@@ -16,7 +16,10 @@ let norm_check_err (err : Check.check_err) =
   | InvalidTypeError (e, act) -> InvalidTypeError (norm_expr_locs e, act)
   | TypeMismatch (name, op1, ty1, op2, ty2) ->
       TypeMismatch (name, norm_expr_locs op1, ty1, norm_expr_locs op2, ty2)
-  | _ -> err
+  | NonVoidMain | ReturnInMain | CtrlReachesEndOfNonVoid _ | MismatchedReturn _
+  | UnboundVariable _ | UndefinedFunction _ | NonFunctionAnnotatedAsVoid _
+  | ArityMismatch _ | MultipleDefinitions _ ->
+      err
 
 (* [assert_raises_check_err] runs a thunk and checks if it
   raises the indicated CheckError *)

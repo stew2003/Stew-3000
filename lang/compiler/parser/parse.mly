@@ -211,6 +211,10 @@ expr:
   { let (e, end_loc) = e in 
     let loc = span start_loc end_loc in 
     (UnOp (BNot, e, Some loc), loc) }
+| start_loc = LNOT e = expr 
+  { let (e, end_loc) = e in 
+    let loc = span start_loc end_loc in 
+    (UnOp (LNot, e, Some loc), loc) }
 | l = expr PLUS r = expr 
   { let (l, start_loc) = l in 
     let (r, end_loc) = r in 
@@ -251,6 +255,16 @@ expr:
     let (r, end_loc) = r in 
     let loc = span start_loc end_loc in 
     (BinOp (BXor, l, r, Some loc), loc) }
+| l = expr LAND r = expr 
+  { let (l, start_loc) = l in 
+    let (r, end_loc) = r in 
+    let loc = span start_loc end_loc in 
+    (BinOp (LAnd, l, r, Some loc), loc) }
+| l = expr LOR r = expr 
+  { let (l, start_loc) = l in 
+    let (r, end_loc) = r in 
+    let loc = span start_loc end_loc in 
+    (BinOp (LOr, l, r, Some loc), loc) }
 | l = expr GT r = expr 
   { let (l, start_loc) = l in 
     let (r, end_loc) = r in 
@@ -281,20 +295,6 @@ expr:
     let (r, end_loc) = r in 
     let loc = span start_loc end_loc in 
     (BinOp (Neq, l, r, Some loc), loc) }
-| l = expr LAND r = expr 
-  { let (l, start_loc) = l in 
-    let (r, end_loc) = r in 
-    let loc = span start_loc end_loc in 
-    ((LogOp ((LAnd (l, r)), Some loc)), loc) }
-| l = expr LOR r = expr 
-  { let (l, start_loc) = l in 
-    let (r, end_loc) = r in 
-    let loc = span start_loc end_loc in 
-    ((LogOp ((LOr (l, r)), Some loc)), loc) }
-| start_loc = LNOT e = expr 
-  { let (e, end_loc) = e in 
-    let loc = span start_loc end_loc in 
-    ((LogOp ((LNot e), Some loc)), loc) }
 
 // argument list of expressions for function calls
 arg_list:
