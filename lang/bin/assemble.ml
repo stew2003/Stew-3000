@@ -56,12 +56,8 @@ let command =
           (* parse and assemble input program *)
           let instrs = Parser.parse source_text in
           let _, unflattened, assembled =
-            Assemble.assemble_with_rich_info instrs
-              ~emit_warning:(fun (inner, loc) ->
-                print_warning
-                  (string_of_asm_warn_inner inner)
-                  (Some
-                     (Srcloc.string_of_maybe_loc loc source_text asm_filename)))
+            Assemble.assemble_with_rich_info instrs ~emit_warning:(fun w ->
+                print_warning (string_of_asm_warn w))
           in
           (* write assembled binary to out file *)
           let out = Out_channel.create binary_filename in

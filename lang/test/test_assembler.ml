@@ -71,7 +71,7 @@ let test_pgrm_too_large _ =
   in
   let big = 257 in
   assemble (pgrm big) ~emit_warning:warn_handler |> ignore;
-  assert_equal [ (ProgramTooLarge big, None) ] !warning_list
+  assert_equal [ ProgramTooLarge big ] !warning_list
 
 let test_out_of_bounds _ =
   let program =

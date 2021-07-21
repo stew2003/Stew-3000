@@ -1,17 +1,21 @@
 open Printf
-open Util.Srcloc
 
 (* Warnings that may be emitted by the assembler. *)
-type asm_warn_inner = ProgramTooLarge of int
-
-type asm_warn = asm_warn_inner with_loc_opt
+type asm_warn = ProgramTooLarge of int
 
 (* Type for a function that is passed into the assembler
     to handle warnings. *)
 type asm_warn_handler = asm_warn -> unit
 
-(* [string_of_asm_warn_inner] converts an assembler warning into a printable string. *)
-let string_of_asm_warn_inner (warning : asm_warn_inner) : string =
+(* [string_of_asm_warn] converts an assembler warning into a tuple of 
+    strings (message, extra, help). The message is a short sentence 
+    describing the nature of the warning. The extra and help are both optional
+    and contain extra info to be printed (such as src locs) and a help 
+    suggestion, respectively. *)
+let string_of_asm_warn (warning : asm_warn) :
+    string * string option * string option =
   match warning with
   | ProgramTooLarge size ->
-      sprintf "assembled program exceeds maximum binary size (%d bytes)" size
+      ( sprintf "assembled program exceeds maximum binary size (%d bytes)" size,
+        None,
+        Some "consider reducing program size" )

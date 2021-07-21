@@ -1,18 +1,22 @@
 open Util
+open Printf
 
-(* [print_warning] displays a warning to stderr given its message 
-  and any location info (as strings). *)
-let print_warning (warning_msg : string) (loc : string option) =
-  Printf.eprintf "%s: %s\n%s" (Colors.warn "Warning")
-    (Colors.bold (Colors.white warning_msg))
-    (match loc with None -> "" | Some loc -> Printf.sprintf "%s\n" loc)
+(* [print_warning] displays a warning to stderr given its message. *)
+let print_warning
+    ((message, extra, help) : string * string option * string option) =
+  eprintf "%s: %s\n%s%s" (Colors.warn "Warning")
+    (Colors.bold (Colors.white message))
+    (match extra with None -> "" | Some extra -> sprintf "%s\n" extra)
+    (match help with
+    | None -> ""
+    | Some help -> Colors.bold (Colors.white (sprintf "  = help: %s\n" help)))
 
 (* [print_err] prints an error to stderr, given a type, message,
     and source location string *)
 let print_err (err_type : string) (msg : string) (loc : string option) =
-  Printf.eprintf "%s: %s\n%s" (Colors.error err_type)
+  eprintf "%s: %s\n%s" (Colors.error err_type)
     (Colors.bold (Colors.white msg))
-    (match loc with None -> "" | Some loc -> Printf.sprintf "%s\n" loc)
+    (match loc with None -> "" | Some loc -> sprintf "%s\n" loc)
 
 (* [print_arbitrary_err] prints an arbitrary exception type 
     as a string error message to stderr *)
@@ -39,9 +43,9 @@ let handle_err (error : exn) (source_text : string) (source_filename : string) =
       print_err "Assembler Error"
         (Asm.Assemble.string_of_asm_err err)
         (Some (Srcloc.string_of_maybe_loc maybe_loc source_text source_filename))
-  | Compiler.Parser.CompilerParseError (msg, loc) ->
+  | Compiler.Parser.CompilerParseError (msg, maybe_loc) ->
       print_err "Parse Error" msg
-        (Some (Srcloc.string_of_maybe_loc loc source_text source_filename))
+        (Some (Srcloc.string_of_maybe_loc maybe_loc source_text source_filename))
   | Compiler.Check.CheckError (err, maybe_loc) ->
       print_err "Check Error"
         (Compiler.Check.string_of_check_err err)

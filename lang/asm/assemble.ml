@@ -268,7 +268,7 @@ let assemble_with_rich_info ?(emit_warning : asm_warn_handler = fun _ -> ())
   let bytes = bytes_from_list (unflattened_bytes |> List.concat) in
   (* check assembled program size (in bytes) to ensure it can fit *)
   let size = Bytes.length bytes in
-  if size > max_pgrm_size then emit_warning (ProgramTooLarge size, None) else ();
+  if size > max_pgrm_size then emit_warning (ProgramTooLarge size);
   (label_map, unflattened_bytes, bytes)
 
 (* [assemble] processes a list of asm instructions and 
