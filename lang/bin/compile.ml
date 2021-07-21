@@ -14,6 +14,8 @@ let command =
       and emit_binary =
         flag "-bin" (optional string)
           ~doc:"binary_file emit compiled binary to file"
+      and ignore_asserts =
+        flag "-ignore-asserts" no_arg ~doc:"do not generate code for asserts"
       in
       fun () ->
         (* read input file into string *)
@@ -28,7 +30,7 @@ let command =
           (* TEMP: pretty print the ast after preprocessing as sanity check *)
           Printf.printf "%s\n" (Prettyprint.pretty_print pgrm);
 
-          let instrs = Compile.compile pgrm in
+          let instrs = Compile.compile pgrm ~ignore_asserts in
 
           (* write generated asm to target file *)
           Out_channel.write_all target_file ~data:(string_of_instr_list instrs);

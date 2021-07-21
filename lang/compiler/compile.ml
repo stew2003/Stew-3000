@@ -119,19 +119,20 @@ let rec compile_expr (expression : expr) (bindings : int env) (si : int)
 (* [compile_stmt] generates instructions for a single statement,  
   in a given environment and stack index *)
 and compile_stmt (statement : stmt) (bindings : int env) (si : int)
-    (defns : func_defn list) : instr list =
+    (defns : func_defn list) (ignore_asserts : bool) : instr list =
   match statement with
   | Let (name, _, value, scope, _) ->
       let ext_env = Env.add name si bindings in
       compile_expr value bindings si defns
       @ [ Sts (A, si, None) ]
-      @ compile_stmt_list scope ext_env (si + 1) defns
+      @ compile_stmt_list scope ext_env (si + 1) defns ignore_asserts
   | Assign (name, expr, _) -> (
       match Env.find_opt name bindings with
       | Some name_si ->
           compile_expr expr bindings si defns @ [ Sts (A, name_si, None) ]
       | None -> raise (InternalError "compiler: assign before initialize"))
-  | Block (stmt_list, _) -> compile_stmt_list stmt_list bindings si defns
+  | Block (stmt_list, _) ->
+      compile_stmt_list stmt_list bindings si defns ignore_asserts
   | ExprStmt (expr, _) -> compile_expr expr bindings si defns
   | Exit (expr, _) ->
       (match expr with
@@ -155,22 +156,23 @@ and compile_stmt (statement : stmt) (bindings : int env) (si : int)
       | Some name_si ->
           [ Lds (name_si, A, None); Dcr (A, None); Sts (A, name_si, None) ]
       | None -> raise (InternalError "compiler: decrement before initialize"))
+  | Assert _ when ignore_asserts -> []
   | Assert (expr, _) ->
       compile_expr expr bindings si defns @ call_runtime "runtime_assert" si
   | If (cond, thn, _) ->
       let condition_failed = gensym "condition_failed" in
       compile_expr cond bindings si defns
       @ [ Cmpi (Reg A, Imm 0, None); Je (condition_failed, None) ]
-      @ compile_stmt_list thn bindings si defns
+      @ compile_stmt_list thn bindings si defns ignore_asserts
       @ [ Label (condition_failed, None) ]
   | IfElse (cond, thn, els, _) ->
       let condition_failed = gensym "condition_failed" in
       let end_else = gensym "end_else" in
       compile_expr cond bindings si defns
       @ [ Cmpi (Reg A, Imm 0, None); Je (condition_failed, None) ]
-      @ compile_stmt_list thn bindings si defns
+      @ compile_stmt_list thn bindings si defns ignore_asserts
       @ [ Jmp (end_else, None); Label (condition_failed, None) ]
-      @ compile_stmt_list els bindings si defns
+      @ compile_stmt_list els bindings si defns ignore_asserts
       @ [ Label (end_else, None) ]
   | While (cond, body, _) ->
       let start_while = gensym "start_while" in
@@ -178,18 +180,20 @@ and compile_stmt (statement : stmt) (bindings : int env) (si : int)
       [ Label (start_while, None) ]
       @ compile_expr cond bindings si defns
       @ [ Cmpi (Reg A, Imm 0, None); Je (condition_failed, None) ]
-      @ compile_stmt_list body bindings si defns
+      @ compile_stmt_list body bindings si defns ignore_asserts
       @ [ Jmp (start_while, None); Label (condition_failed, None) ]
 
 (* [compile_stmt_list] generates instructions for a list of statements,
   in an environment and stack index *)
 and compile_stmt_list (statements : stmt list) (bindings : int env) (si : int)
-    (defns : func_defn list) : instr list =
+    (defns : func_defn list) (ignore_asserts : bool) : instr list =
   statements
-  |> List.concat_map (fun stmt -> compile_stmt stmt bindings si defns)
+  |> List.concat_map (fun stmt ->
+         compile_stmt stmt bindings si defns ignore_asserts)
 
 (* [compile_func_defn] generates instructions for a function definition *)
-and compile_func_defn (defn : func_defn) (defns : func_defn list) : instr list =
+and compile_func_defn (defn : func_defn) (defns : func_defn list)
+    (ignore_asserts : bool) : instr list =
   (*
      | ...       |
      | arg 2     | si=3
@@ -203,7 +207,7 @@ and compile_func_defn (defn : func_defn) (defns : func_defn list) : instr list =
       (Env.empty, 1) defn.params
   in
   [ Label (function_label defn.name, None) ]
-  @ compile_stmt_list defn.body bindings si defns
+  @ compile_stmt_list defn.body bindings si defns ignore_asserts
   @
   match defn.ctrl_reaches_end with
   | Some reaches_end ->
@@ -219,8 +223,8 @@ and compile_func_defn (defn : func_defn) (defns : func_defn list) : instr list =
             its end")
 
 (* [compile] generates instructions for a complete program *)
-and compile (program : prog) : instr list =
-  compile_stmt_list program.main.body Env.empty 1 program.funcs
+and compile ?(ignore_asserts = false) (program : prog) : instr list =
+  compile_stmt_list program.main.body Env.empty 1 program.funcs ignore_asserts
   @ (match program.main.ctrl_reaches_end with
     | Some reaches_end -> if reaches_end then [ Hlt None ] else []
     | None ->
@@ -229,6 +233,6 @@ and compile (program : prog) : instr list =
              "tried to compile main without checking if control can reach its \
               end"))
   @ List.concat_map
-      (fun defn -> compile_func_defn defn program.funcs)
+      (fun defn -> compile_func_defn defn program.funcs ignore_asserts)
       program.funcs
-  @ Runtime.runtime program
+  @ Runtime.runtime program ~ignore_asserts
