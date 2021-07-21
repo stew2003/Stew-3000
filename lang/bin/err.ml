@@ -1,5 +1,12 @@
 open Util
 
+(* [print_warning] displays a warning to stderr given its message 
+  and any location info (as strings). *)
+let print_warning (warning_msg : string) (loc : string option) =
+  Printf.eprintf "%s: %s\n%s" (Colors.warn "Warning")
+    (Colors.bold (Colors.white warning_msg))
+    (match loc with None -> "" | Some loc -> Printf.sprintf "%s\n" loc)
+
 (* [print_err] prints an error to stderr, given a type, message,
     and source location string *)
 let print_err (err_type : string) (msg : string) (loc : string option) =

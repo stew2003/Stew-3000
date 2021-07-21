@@ -1,11 +1,11 @@
 open Isa
 open Printf
+open Warnings
 open Validate
 open Util.Env
 open Util.Srcloc
 
 type asm_err =
-  | ProgramTooLarge of int
   | DuplicateLabel of string
   | InvalidInstr of instr
   | InvalidImm of immediate
@@ -16,8 +16,6 @@ exception AssembleError of asm_err with_loc_opt
 
 (* [string_of_asm_err] converts an assemble error internal into a printable message *)
 let string_of_asm_err = function
-  | ProgramTooLarge size ->
-      sprintf "assembled program was too large (%d bytes)" size
   | DuplicateLabel label -> sprintf "label `%s` appears more than once" label
   | InvalidInstr ins -> sprintf "invalid instruction: %s" (string_of_instr ins)
   | InvalidImm imm -> sprintf "invalid immediate value: %s" (string_of_imm imm)
@@ -258,8 +256,8 @@ let bytes_from_list (l : int list) : bytes =
     - a list of list of bytes, one inner list per instruction, which 
       encodes which instructions assembled to which bytes
     - a byte array containing the bytes of the assembled program *)
-let assemble_with_rich_info (instrs : instr list) :
-    int env * int list list * bytes =
+let assemble_with_rich_info ?(emit_warning : asm_warn_handler = fun _ -> ())
+    (instrs : instr list) : int env * int list list * bytes =
   let label_map = map_labels instrs in
   (* assemble instructions to list of list of bytes (preserving
      which bytes constitute which instructions) *)
@@ -270,13 +268,12 @@ let assemble_with_rich_info (instrs : instr list) :
   let bytes = bytes_from_list (unflattened_bytes |> List.concat) in
   (* check assembled program size (in bytes) to ensure it can fit *)
   let size = Bytes.length bytes in
-  if size > max_pgrm_size then
-    raise (AssembleError (ProgramTooLarge size, None))
-  else ();
+  if size > max_pgrm_size then emit_warning (ProgramTooLarge size, None) else ();
   (label_map, unflattened_bytes, bytes)
 
 (* [assemble] processes a list of asm instructions and 
   produces a byte sequence representing the program in binary form *)
-let assemble (instrs : instr list) : bytes =
-  let _, _, bytes = assemble_with_rich_info instrs in
+let assemble ?(emit_warning : asm_warn_handler = fun _ -> ())
+    (instrs : instr list) : bytes =
+  let _, _, bytes = assemble_with_rich_info instrs ~emit_warning in
   bytes
