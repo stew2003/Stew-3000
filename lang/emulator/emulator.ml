@@ -246,7 +246,7 @@ let emulate_instr (ins : instr) (machine : stew_3000) (label_to_addr : int env)
   | Label _ | Nop _ -> inc_pc ()
   (* XXX: Dic and Did not currently supported *)
   | Dic _ | Did _ -> inc_pc ()
-  | _ ->
+  | Cmpi (Imm _, Imm _, _) | Cmpi (Reg _, Reg _, _) ->
       raise
         (InternalError
            (sprintf "emulator: invalid instruction: %s" (string_of_instr ins)))

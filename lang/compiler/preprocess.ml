@@ -10,11 +10,6 @@ let rec expand_in_expr (define : pp_define) (exp : expr) : expr =
   | UnOp (op, expr, loc) -> UnOp (op, expand_in_expr define expr, loc)
   | BinOp (op, left, right, loc) ->
       BinOp (op, expand_in_expr define left, expand_in_expr define right, loc)
-  | LogOp (LNot expr, loc) -> LogOp (LNot (expand_in_expr define expr), loc)
-  | LogOp (LAnd (left, right), loc) ->
-      LogOp (LAnd (expand_in_expr define left, expand_in_expr define right), loc)
-  | LogOp (LOr (left, right), loc) ->
-      LogOp (LOr (expand_in_expr define left, expand_in_expr define right), loc)
   | Call (name, args, loc) ->
       Call (name, List.map (fun arg -> expand_in_expr define arg) args, loc)
 
@@ -45,7 +40,7 @@ and expand_in_stmt (define : pp_define) (stmt : stmt) : stmt =
   | PrintDec (expr, loc) -> PrintDec (expand_in_expr define expr, loc)
   | Exit (Some expr, loc) -> Exit (Some (expand_in_expr define expr), loc)
   | Assert (expr, loc) -> Assert (expand_in_expr define expr, loc)
-  | _ -> stmt
+  | Return _ | Exit _ | Inr _ | Dcr _ -> stmt
 
 (* [expand_in_stmt_list] expands a #define directive in every statement
   in a list. *)

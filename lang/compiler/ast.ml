@@ -2,7 +2,7 @@ open Util.Srcloc
 
 type ty = Void | Int
 
-type un_op = BNot
+type un_op = BNot | LNot
 
 type bin_op =
   | Plus
@@ -13,6 +13,8 @@ type bin_op =
   | BAnd
   | BOr
   | BXor
+  | LAnd
+  | LOr
   | Gt
   | Lt
   | Gte
@@ -20,14 +22,11 @@ type bin_op =
   | Eq
   | Neq
 
-type log_op = LNot of expr | LAnd of expr * expr | LOr of expr * expr
-
-and expr =
+type expr =
   | Num of int * maybe_loc
   | Var of string * maybe_loc
   | UnOp of un_op * expr * maybe_loc
   | BinOp of bin_op * expr * expr * maybe_loc
-  | LogOp of log_op * maybe_loc
   | Call of string * expr list * maybe_loc
 
 type stmt =
@@ -89,6 +88,8 @@ let describe_bin_op (op : bin_op) : string =
   | BAnd -> "bitwise and"
   | BOr -> "bitwise or"
   | BXor -> "bitwise xor"
+  | LAnd -> "logical and"
+  | LOr -> "logical or"
   | Gt -> "greater than"
   | Lt -> "less than"
   | Gte -> "greater than or equal"
@@ -97,14 +98,8 @@ let describe_bin_op (op : bin_op) : string =
   | Neq -> "inequality"
 
 (* [describe_un_op] returns a description of a unary operator *)
-let describe_un_op (op : un_op) : string = match op with BNot -> "bitwise not"
-
-(* [describe_log_op] returns a description of a logical operator *)
-let describe_log_op (op : log_op) : string =
-  match op with
-  | LNot _ -> "logical not"
-  | LAnd _ -> "logical and"
-  | LOr _ -> "logical or"
+let describe_un_op (op : un_op) : string =
+  match op with BNot -> "bitwise not" | LNot -> "logical not"
 
 (* [describe_expr] returns an abstract description of a given expression. *)
 let describe_expr (e : expr) : string =
@@ -113,7 +108,6 @@ let describe_expr (e : expr) : string =
   | Var _ -> "variable"
   | UnOp (op, _, _) -> describe_un_op op
   | BinOp (op, _, _, _) -> describe_bin_op op
-  | LogOp (op, _) -> describe_log_op op
   | Call _ -> "function call"
 
 (* [loc_from_expr] extracts the source location from an expression *)
@@ -123,7 +117,6 @@ let loc_from_expr (exp : expr) : maybe_loc =
   | Var (_, loc)
   | UnOp (_, _, loc)
   | BinOp (_, _, _, loc)
-  | LogOp (_, loc)
   | Call (_, _, loc) ->
       loc
 
@@ -137,15 +130,12 @@ let check_for_expr (pgrm : prog) (pred : expr -> bool) : bool =
     pred exp
     ||
     match exp with
-    | UnOp (_, operand, _) | LogOp (LNot operand, _) -> check_expr operand pred
-    | BinOp (_, left, right, _)
-    | LogOp (LAnd (left, right), _)
-    | LogOp (LOr (left, right), _) ->
-        check_expr left pred || check_expr right pred
+    | UnOp (_, operand, _) -> check_expr operand pred
+    | BinOp (_, left, right, _) -> check_expr left pred || check_expr right pred
     | Call (_, args, _) ->
         List.map (fun arg -> check_expr arg pred) args
         |> List.fold_left ( || ) false
-    | _ -> false
+    | Num _ | Var _ -> false
   (* [check_stmt] determines if the given statement contains an
      expression that satisfies the given predicate *)
   and check_stmt (stmt : stmt) (pred : expr -> bool) : bool =
@@ -166,7 +156,7 @@ let check_for_expr (pgrm : prog) (pred : expr -> bool) : bool =
     | PrintDec (value, _) -> check_expr value pred
     | Exit (Some e, _) -> check_expr e pred
     | Assert (e, _) -> check_expr e pred
-    | _ -> false
+    | Return _ | Exit _ | Inr _ | Dcr _ -> false
   (* [check_stmt_list] determines if the given statement list
      contains an expression that satisfies the predicate *)
   and check_stmt_list (stmts : stmt list) (pred : expr -> bool) : bool =
@@ -196,7 +186,9 @@ let check_for_stmt (pgrm : prog) (pred : stmt -> bool) : bool =
         check_stmt_list thn pred || check_stmt_list els pred
     | Block (stmts, _) -> check_stmt_list stmts pred
     | While (_, body, _) -> check_stmt_list body pred
-    | _ -> false
+    | Assign _ | Return _ | ExprStmt _ | PrintDec _ | Inr _ | Dcr _ | Exit _
+    | Assert _ ->
+        false
   (* [check_stmt_list] checks a list of statements for one that satisfies
      the given predicate *)
   and check_stmt_list (stmts : stmt list) (pred : stmt -> bool) : bool =
