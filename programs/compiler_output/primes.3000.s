@@ -1,34 +1,34 @@
 	mvi 2, a
 	sts a, 1
-start_while_24:
+start_while_13:
 	mvi 0, a
 	sts a, 2
 	lds 1, a
 	lds 2, b
 	cmp a, b
-	jg greater_27
+	jg greater_16
 	mvi 0, a
-	jmp continue_28
-greater_27:
+	jmp continue_17
+greater_16:
 	mvi 1, a
-continue_28:
+continue_17:
 	cmpi a, 0
-	je condition_failed_25
+	je condition_failed_14
 	lds 1, a
 	sts a, 3
 	addi 1, sp
 	call function_is_prime
 	subi 1, sp
 	cmpi a, 0
-	je condition_failed_26
+	je condition_failed_15
 	lds 1, a
 	out a
-condition_failed_26:
+condition_failed_15:
 	lds 1, a
 	inr a
 	sts a, 1
-	jmp start_while_24
-condition_failed_25:
+	jmp start_while_13
+condition_failed_14:
 	hlt
 function_is_prime:
 	mvi 0, a
@@ -36,65 +36,51 @@ function_is_prime:
 	lds 1, a
 	lds 2, b
 	cmp a, b
-	jge greater_than_eq_9
+	je equal_4
 	mvi 0, a
-	jmp continue_10
-greater_than_eq_9:
+	jmp continue_5
+equal_4:
 	mvi 1, a
-continue_10:
-	addi 1, sp
-	call runtime_assert
-	subi 1, sp
-	mvi 0, a
-	sts a, 2
-	lds 1, a
-	lds 2, b
-	cmp a, b
-	je equal_15
-	mvi 0, a
-	jmp continue_16
-equal_15:
-	mvi 1, a
-continue_16:
+continue_5:
 	cmpi a, 0
-	jne continue_12
+	jne continue_1
 	mvi 1, a
 	sts a, 2
 	lds 1, a
 	lds 2, b
 	cmp a, b
-	je equal_13
+	je equal_2
 	mvi 0, a
-	jmp continue_14
-equal_13:
+	jmp continue_3
+equal_2:
 	mvi 1, a
-continue_14:
-continue_12:
+continue_3:
+continue_1:
 	cmpi a, 0
-	je condition_failed_11
+	je condition_failed_0
 	mvi 0, a
 	ret
-condition_failed_11:
+condition_failed_0:
 	mvi 1, a
 	sts a, 2
 	lds 1, a
 	lds 2, b
 	sub b, a
 	sts a, 2
-start_while_17:
+start_while_6:
 	mvi 1, a
 	sts a, 3
 	lds 2, a
 	lds 3, b
 	cmp a, b
-	jg greater_22
+	jg greater_11
 	mvi 0, a
-	jmp continue_23
-greater_22:
+	jmp continue_12
+greater_11:
 	mvi 1, a
-continue_23:
+continue_12:
 	cmpi a, 0
-	je condition_failed_18
+	je condition_failed_7
 	mvi 0, a
 	sts a, 3
 	lds 2, a
@@ -106,65 +92,57 @@ continue_23:
 	subi 3, sp
 	lds 3, b
 	cmp a, b
-	je equal_20
+	je equal_9
 	mvi 0, a
-	jmp continue_21
-equal_20:
+	jmp continue_10
+equal_9:
 	mvi 1, a
-continue_21:
+continue_10:
 	cmpi a, 0
-	je condition_failed_19
+	je condition_failed_8
 	mvi 0, a
 	ret
-condition_failed_19:
+condition_failed_8:
 	lds 2, a
 	dcr a
 	sts a, 2
-	jmp start_while_17
-condition_failed_18:
+	jmp start_while_6
+condition_failed_7:
 	mvi 1, a
 	ret
 runtime_normalize_signs:
 	mvi 0, c
-norm_a_4:
+runtime_normalize_signs_norm_a:
 	cmpi a, 0
-	jge norm_b_5
+	jge runtime_normalize_signs_norm_b
 	not a
 	inr a
 	not c
-norm_b_5:
+runtime_normalize_signs_norm_b:
 	cmpi b, 0
-	jge done_6
+	jge runtime_normalize_signs_done
 	not b
 	inr b
 	not c
-done_6:
+runtime_normalize_signs_done:
 	ret
 runtime_set_result_sign:
 	lds 1, b
 	cmpi b, 0
-	je no_change_7
+	je runtime_set_result_sign_no_change
 	not c
 	inr c
-no_change_7:
+runtime_set_result_sign_no_change:
 	ret
 runtime_divide:
 	call runtime_normalize_signs
 	sts c, 1
 	mvi 0, c
-loop_2:
+runtime_divide_loop:
 	cmp a, b
-	jl done_3
+	jl runtime_divide_done
 	sub b, a
 	inr c
-	jmp loop_2
-done_3:
+	jmp runtime_divide_loop
+runtime_divide_done:
 	jmp runtime_set_result_sign
-runtime_assert:
-	cmpi a, 0
-	jne success_8
-	mvi -1, c
-	out c
-	hlt
-success_8:
-	ret

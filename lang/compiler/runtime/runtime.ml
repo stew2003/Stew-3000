@@ -38,7 +38,7 @@ let conditionally_include (code : instr list) (condition : bool) : instr list =
   program. Usually, this will be empty, but if the program requires
   special runtime functionality (multiplication, division, ...) this
   will contribute those subroutines *)
-let runtime (program : prog) : instr list =
+let runtime ?(ignore_asserts = false) (program : prog) : instr list =
   (* multiply has its own implementation, but modulus and division
      use the same division algorithm *)
   let needs_mult_code = uses_mult program in
@@ -48,4 +48,5 @@ let runtime (program : prog) : instr list =
   conditionally_include runtime_sign_utils (needs_mult_code || needs_div_code)
   @ conditionally_include runtime_multiply needs_mult_code
   @ conditionally_include runtime_divide needs_div_code
-  @ conditionally_include runtime_assert (uses_assert program)
+  @ conditionally_include runtime_assert
+      (uses_assert program && not ignore_asserts)
