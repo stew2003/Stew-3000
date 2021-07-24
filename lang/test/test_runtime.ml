@@ -72,6 +72,14 @@ let test_runtime_assert _ =
   assert_bool "assert is not included"
     (not (includes_label rt "runtime_assert"))
 
+let test_runtime_ignore_asserts _ =
+  let rt =
+    Runtime.runtime ~ignore_asserts:true
+      (Parser.parse "void main() { assert(100 == 50); exit(0); assert(0); }")
+  in
+  assert_bool "runtime assert is not included"
+    (not (includes_label rt "runtime_assert"))
+
 let suite =
   "Runtime Tests"
   >::: [
@@ -80,6 +88,7 @@ let suite =
          "test_runtime_multiply" >:: test_runtime_multiply;
          "test_runtime_divide" >:: test_runtime_divide;
          "test_runtime_assert" >:: test_runtime_assert;
+         "test_runtime_ignore_asserts" >:: test_runtime_ignore_asserts;
        ]
 
 let () = run_test_tt_main suite

@@ -1,6 +1,7 @@
 open OUnit2
 open Compiler
 open Emulator__Machine
+open Asm.Isa
 
 (* [run] parses a source program, checks it, compiles it, and runs
   the generated instructions in the emulator, returning
@@ -207,6 +208,18 @@ let test_functions _ =
   in
   assert_equal 9 machine.a
 
+let test_ignore_asserts _ =
+  let compile_with_ignore_asserts (source : string) =
+    let pgrm = Parser.parse source in
+    Check.check pgrm;
+    Compile.compile ~ignore_asserts:true pgrm
+  in
+  assert_equal [ Hlt None ]
+    (compile_with_ignore_asserts "void main() { assert(0); }");
+  assert_equal [ Hlt None ]
+    (compile_with_ignore_asserts
+       "void main() { assert(1 == 2); assert(1); assert(41 - 1 == 40); }")
+
 let suite =
   "Compiler Tests"
   >::: [
@@ -226,6 +239,7 @@ let suite =
          "test_binops" >:: test_binops;
          "test_log_ops" >:: test_log_ops;
          "test_functions" >:: test_functions;
+         "test_ignore_asserts" >:: test_ignore_asserts;
        ]
 
 let () = run_test_tt_main suite
