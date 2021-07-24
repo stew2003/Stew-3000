@@ -36,7 +36,10 @@ Compiler
       [] omit (+warn) unused vars and functions
       [] omit (+warn) dead code
     During compile:
-      [] special-case compilation of conditions (if/while)
+      [x] special-case compilation of conditions (if/while)
+      [] use more immediate instructions to reduce stack instructions
+        [] call-er vs. call-e stacks
+      [] var == 0 is same as !var 
       [] "compile to" given register (reduce movs)
     Post-compile:
       [] eliminate redundant instrs
