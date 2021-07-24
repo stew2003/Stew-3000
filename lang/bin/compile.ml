@@ -3,6 +3,7 @@ open Compiler
 open Asm.Isa
 open Asm.Assemble
 open Compiler.Optimizations
+open Compiler.Warnings
 open Err
 
 (* command-line interface for compiler *)
@@ -22,12 +23,18 @@ let command =
           let pgrm = Parser.parse source_text in
           let pgrm = Preprocess.preprocess pgrm in
 
+          (* On warnings, print them *)
+          let warning_handler (w : compiler_warn) =
+            print_warning (message_of_compiler_warn w source_text src_file)
+          in
+
           Check.check pgrm;
-          let pgrm = Constant_fold.constant_fold pgrm in
+          let pgrm =
+            Constant_fold.constant_fold ~emit_warning:warning_handler pgrm
+          in
 
           (* TEMP: pretty print the ast after preprocessing as sanity check *)
-          Printf.printf "%s\n" (Prettyprint.pretty_print pgrm);
-
+          (* Printf.printf "%s\n" (Prettyprint.pretty_print pgrm); *)
           let instrs = Compile.compile pgrm in
 
           (* write generated asm to target file *)

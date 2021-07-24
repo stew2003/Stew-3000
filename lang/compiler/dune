@@ -12,6 +12,7 @@
     preprocess 
     prettyprint 
     runtime 
+    warnings
     optimizations
     constant_fold)
   (libraries util asm core)

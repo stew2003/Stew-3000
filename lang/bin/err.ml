@@ -1,7 +1,10 @@
 open Util
 open Printf
 
-(* [print_warning] displays a warning to stderr given its message. *)
+(* [print_warning] displays a warning to stderr given a tuple of warning info.
+    The message is a short sentence describing the nature of the warning. The 
+    extra and help are both optional and contain extra info to be printed 
+    (such as src locs) and a help suggestion, respectively. *)
 let print_warning
     ((message, extra, help) : string * string option * string option) =
   eprintf "%s: %s\n%s%s" (Colors.warn "Warning")
