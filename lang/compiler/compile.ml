@@ -116,6 +116,35 @@ let rec compile_expr (expression : expr) (bindings : int env) (si : int)
           Subi (stack_base, SP, None);
         ]
 
+(* [compile_cond] generates instructions for specifically compiling 
+  conditions in ifs and whiles*)
+and compile_cond (cond : expr) (condition_failed : string) (bindings : int env)
+    (si : int) (defns : func_defn list) : instr list =
+  let default_compile_cond _ =
+    compile_expr cond bindings si defns
+    @ [ Cmpi (Reg A, Imm 0, None); Je (condition_failed, None) ]
+  in
+
+  match cond with
+  | BinOp (op, left, right, _) -> (
+      let compile_comparison (make_jump : string -> instr) =
+        compile_expr right bindings si defns
+        @ [ Sts (A, si, None) ]
+        @ compile_expr left bindings (si + 1) defns
+        @ [ Lds (si, B, None) ]
+        @ [ Cmp (A, B, None); make_jump condition_failed ]
+      in
+
+      match op with
+      | Gt -> compile_comparison (fun label -> Jle (label, None))
+      | Gte -> compile_comparison (fun label -> Jl (label, None))
+      | Lt -> compile_comparison (fun label -> Jge (label, None))
+      | Lte -> compile_comparison (fun label -> Jg (label, None))
+      | Eq -> compile_comparison (fun label -> Jne (label, None))
+      | Neq -> compile_comparison (fun label -> Je (label, None))
+      | _ -> default_compile_cond ())
+  | _ -> default_compile_cond ()
+
 (* [compile_stmt] generates instructions for a single statement,  
   in a given environment and stack index *)
 and compile_stmt (statement : stmt) (bindings : int env) (si : int)
@@ -161,15 +190,13 @@ and compile_stmt (statement : stmt) (bindings : int env) (si : int)
       compile_expr expr bindings si defns @ call_runtime "runtime_assert" si
   | If (cond, thn, _) ->
       let condition_failed = gensym "condition_failed" in
-      compile_expr cond bindings si defns
-      @ [ Cmpi (Reg A, Imm 0, None); Je (condition_failed, None) ]
+      compile_cond cond condition_failed bindings si defns
       @ compile_stmt_list thn bindings si defns ignore_asserts
       @ [ Label (condition_failed, None) ]
   | IfElse (cond, thn, els, _) ->
       let condition_failed = gensym "condition_failed" in
       let end_else = gensym "end_else" in
-      compile_expr cond bindings si defns
-      @ [ Cmpi (Reg A, Imm 0, None); Je (condition_failed, None) ]
+      compile_cond cond condition_failed bindings si defns
       @ compile_stmt_list thn bindings si defns ignore_asserts
       @ [ Jmp (end_else, None); Label (condition_failed, None) ]
       @ compile_stmt_list els bindings si defns ignore_asserts
@@ -178,8 +205,7 @@ and compile_stmt (statement : stmt) (bindings : int env) (si : int)
       let start_while = gensym "start_while" in
       let condition_failed = gensym "condition_failed" in
       [ Label (start_while, None) ]
-      @ compile_expr cond bindings si defns
-      @ [ Cmpi (Reg A, Imm 0, None); Je (condition_failed, None) ]
+      @ compile_cond cond condition_failed bindings si defns
       @ compile_stmt_list body bindings si defns ignore_asserts
       @ [ Jmp (start_while, None); Label (condition_failed, None) ]
 
