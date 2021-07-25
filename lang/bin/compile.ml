@@ -30,6 +30,8 @@ let command =
           (* TEMP: pretty print the ast after preprocessing as sanity check *)
           Printf.printf "%s\n" (Prettyprint.pretty_print pgrm);
 
+          (* check again, post-optimization (catch folded unrepresentable values) *)
+          Check.check pgrm;
           let instrs = Compile.compile pgrm ~ignore_asserts in
 
           (* write generated asm to target file *)
