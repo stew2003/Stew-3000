@@ -1,6 +1,7 @@
 open OUnit2
 open Asm.Assemble
 open Asm.Isa
+open Asm.Warnings
 
 (* [assert_assembles_to] asserts that the given program assembles
   to the given list of bytes *)
@@ -64,10 +65,13 @@ let test_invalid_target _ =
 let rec pgrm (size : int) = if size = 0 then [] else Nop None :: pgrm (size - 1)
 
 let test_pgrm_too_large _ =
+  let warning_list = ref [] in
+  let warn_handler (warning : asm_warn) =
+    warning_list := warning :: !warning_list
+  in
   let big = 257 in
-  assert_raises
-    (AssembleError (ProgramTooLarge big, None))
-    (fun _ -> assemble (pgrm big))
+  assemble (pgrm big) ~emit_warning:warn_handler |> ignore;
+  assert_equal [ ProgramTooLarge big ] !warning_list
 
 let test_out_of_bounds _ =
   let program =

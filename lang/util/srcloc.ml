@@ -61,7 +61,7 @@ let string_of_src_loc (loc : src_loc) (source : string)
     else sprintf "%d-%d" loc.startl loc.endl
   in
   (* get lines at & around src loc, colorized appropriately *)
-  [ sprintf "--> %s:%s" source_filename line_range_as_string ]
+  [ sprintf " --> %s:%s" source_filename line_range_as_string ]
   @ lines_with_color before_loc (fun line -> Colors.br_black line)
   @ lines_with_color at_loc (fun line -> line)
   @ lines_with_color after_loc (fun line -> Colors.br_black line)

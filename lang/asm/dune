@@ -8,7 +8,8 @@
     validate
     lex
     parse
-    parser)
+    parser
+    warnings)
   (libraries util))
 
 (env

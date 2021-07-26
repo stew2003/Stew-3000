@@ -3,6 +3,7 @@ open Asm
 open Err
 open Util
 open Asm.Isa
+open Asm.Warnings
 
 (* command-line interface for assembler *)
 let command =
@@ -55,7 +56,8 @@ let command =
           (* parse and assemble input program *)
           let instrs = Parser.parse source_text in
           let _, unflattened, assembled =
-            Assemble.assemble_with_rich_info instrs
+            Assemble.assemble_with_rich_info instrs ~emit_warning:(fun w ->
+                print_warning (message_of_asm_warn w source_text asm_filename))
           in
           (* write assembled binary to out file *)
           let out = Out_channel.create binary_filename in
