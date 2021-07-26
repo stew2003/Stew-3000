@@ -136,8 +136,8 @@ let test_ret_in_main _ =
   assert_raises_check_err ReturnInMain "void main() { while (1) { return; } }"
 
 let test_unrepresentable_number _ =
-  assert_raises_check_err (UnrepresentableNumber 256)
-    "void main() { print(256); }";
+  assert_raises_check_err (UnrepresentableNumber 128)
+    "void main() { print(128); }";
   assert_raises_check_err (UnrepresentableNumber (-129))
     "void main() { if (0 < -129) { exit(-1); } }"
 

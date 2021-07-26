@@ -118,7 +118,8 @@ let type_check (defn : func_defn) (defns : func_defn list) =
   let rec type_check_expr (exp : expr) (env : ty env) : ty =
     match exp with
     | Num (n, loc) ->
-        if n < -128 || n > 255 then
+        (* all numbers are signed 8-bit *)
+        if n < -128 || n > 127 then
           raise (CheckError (UnrepresentableNumber n, loc));
         Int
     | Var (name, loc) -> lookup_var name env loc
