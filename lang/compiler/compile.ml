@@ -120,13 +120,18 @@ let rec compile_expr (expression : expr) (bindings : int env) (si : int)
   conditions in ifs and whiles*)
 and compile_cond (cond : expr) (condition_failed : string) (bindings : int env)
     (si : int) (defns : func_defn list) : instr list =
+  (* For non-comparison expressions in condition-position, we just compile them
+     normally and jump to condition_failed if the expr's value is 0. *)
   let default_compile_cond _ =
     compile_expr cond bindings si defns
     @ [ Cmpi (Reg A, Imm 0, None); Je (condition_failed, None) ]
   in
-
   match cond with
   | BinOp (op, left, right, _) -> (
+      (* When comparison ops are in condition-position, we eliminate the
+         need for two cmps and two jmps by doing a single cmp and choosing
+         the right kind of jmp (for the comparison op) to the condition_failed
+         label. *)
       let compile_comparison (make_jump : string -> instr) =
         compile_expr right bindings si defns
         @ [ Sts (A, si, None) ]
@@ -134,7 +139,6 @@ and compile_cond (cond : expr) (condition_failed : string) (bindings : int env)
         @ [ Lds (si, B, None) ]
         @ [ Cmp (A, B, None); make_jump condition_failed ]
       in
-
       match op with
       | Gt -> compile_comparison (fun label -> Jle (label, None))
       | Gte -> compile_comparison (fun label -> Jl (label, None))
