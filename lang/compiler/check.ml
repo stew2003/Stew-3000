@@ -29,45 +29,47 @@ type check_err =
   | MultipleDefinitions of string
   (* Returned from main *)
   | ReturnInMain
+  (* Program contains a constant value outside the representable range *)
+  | UnrepresentableNumber of int
 
 exception CheckError of check_err with_loc_opt
 
 (* [string_of_check_err] turns a check error into a printable string. *)
 let string_of_check_err = function
   | CtrlReachesEndOfNonVoid name ->
-      sprintf "Control can reach the end of non-void function `%s`." name
+      sprintf "control can reach the end of non-void function `%s`." name
   | MismatchedReturn (name, return_ty) ->
-      sprintf "The %s function `%s` must return %s." (string_of_ty return_ty)
+      sprintf "the %s function `%s` must return %s." (string_of_ty return_ty)
         name
         (if return_ty = Void then "nothing"
         else sprintf "a value of type %s" (string_of_ty return_ty))
-  | UnboundVariable var -> sprintf "The variable `%s` is unbound." var
-  | UndefinedFunction name -> sprintf "The function `%s` is undefined." name
+  | UnboundVariable var -> sprintf "variable `%s` is unbound." var
+  | UndefinedFunction name -> sprintf "function `%s` is undefined." name
   | TypeError (e, expected, actual) ->
       sprintf
-        "The type of this %s expression was expected to be %s, but was %s."
+        "the type of this %s expression was expected to be %s, but was %s."
         (describe_expr e) (string_of_ty expected) (string_of_ty actual)
   | InvalidTypeError (e, actual) ->
-      sprintf "Expected this %s expression to not have type %s."
+      sprintf "expected this %s expression to not have type %s."
         (describe_expr e) (string_of_ty actual)
   | TypeMismatch (op_name, left, left_ty, right, right_ty) ->
       sprintf
-        "Operation %s expected the %s expression (of type %s) to be the same \
+        "operation %s expected the %s expression (of type %s) to be the same \
          type as the %s expression (of type %s)"
         op_name (describe_expr left) (string_of_ty left_ty)
         (describe_expr right) (string_of_ty right_ty)
-  | NonVoidMain -> "The main function must have return type void."
+  | NonVoidMain -> "the `main` function must have return type void."
   | NonFunctionAnnotatedAsVoid name ->
       sprintf "`%s` is not a function and therefore cannot have type void." name
   | ArityMismatch (name, expected, actual) ->
-      sprintf "The function `%s` expects %d argument%s, but got %d." name
-        expected
+      sprintf "function `%s` expects %d argument%s, but got %d." name expected
         (if expected = 1 then "" else "s")
         actual
   | MultipleDefinitions name ->
-      sprintf "The function `%s` has multiple definitions." name
+      sprintf "function `%s` has multiple definitions." name
   | ReturnInMain ->
-      "Cannot return from main function. Consider using exit() instead."
+      "cannot return from main function. Consider using exit() instead."
+  | UnrepresentableNumber n -> sprintf "unrepresentable value: %d" n
 
 (* [ctrl_reaches_end] determines if the control flow of a function's
   body can reach the end of the function without encountering a return. *)
@@ -115,7 +117,11 @@ let type_check (defn : func_defn) (defns : func_defn list) =
      or raises an error if it violates type rules. *)
   let rec type_check_expr (exp : expr) (env : ty env) : ty =
     match exp with
-    | Num _ -> Int
+    | Num (n, loc) ->
+        (* all numbers are signed 8-bit *)
+        if n < -128 || n > 127 then
+          raise (CheckError (UnrepresentableNumber n, loc));
+        Int
     | Var (name, loc) -> lookup_var name env loc
     | UnOp (LNot, expr, _) ->
         (* expression needs to be type checked and cannot be void *)

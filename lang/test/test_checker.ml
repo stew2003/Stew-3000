@@ -18,7 +18,7 @@ let norm_check_err (err : Check.check_err) =
       TypeMismatch (name, norm_expr_locs op1, ty1, norm_expr_locs op2, ty2)
   | NonVoidMain | ReturnInMain | CtrlReachesEndOfNonVoid _ | MismatchedReturn _
   | UnboundVariable _ | UndefinedFunction _ | NonFunctionAnnotatedAsVoid _
-  | ArityMismatch _ | MultipleDefinitions _ ->
+  | ArityMismatch _ | MultipleDefinitions _ | UnrepresentableNumber _ ->
       err
 
 (* [assert_raises_check_err] runs a thunk and checks if it
@@ -135,6 +135,12 @@ let test_ret_in_main _ =
     "void main() { if (10 > 11) { return 5; } else {} }";
   assert_raises_check_err ReturnInMain "void main() { while (1) { return; } }"
 
+let test_unrepresentable_number _ =
+  assert_raises_check_err (UnrepresentableNumber 128)
+    "void main() { print(128); }";
+  assert_raises_check_err (UnrepresentableNumber (-129))
+    "void main() { if (0 < -129) { exit(-1); } }"
+
 let suite =
   "Checker Tests"
   >::: [
@@ -150,6 +156,7 @@ let suite =
          "test_arity_mismatch" >:: test_arity_mismatch;
          "test_mult_defns" >:: test_mult_defns;
          "test_ret_in_main" >:: test_ret_in_main;
+         "test_unrepresentable_number" >:: test_unrepresentable_number;
        ]
 
 let () = run_test_tt_main suite

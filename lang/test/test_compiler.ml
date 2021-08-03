@@ -90,8 +90,8 @@ let test_nums _ =
 
 let test_unops _ =
   (* bitwise not *)
-  assert_a "~0b11111111;" 0b00000000;
-  assert_a "~0b10010111;" 0b01101000
+  assert_a "~0b00001011;" 0b11110100;
+  assert_a "~0b00000110;" 0b011111001
 
 let test_binops _ =
   (* addition *)
@@ -117,11 +117,11 @@ let test_binops _ =
 
   (* bitwise and *)
   assert_a "0b1100 & 0b0101;" 0b0100;
-  assert_a "0b11110010 & 0b11;" 0b10;
+  assert_a "0b0110 & 0b11;" 0b10;
 
   (* bitwise or *)
   assert_a "0b1101 | 0b1010;" 0b1111;
-  assert_a "0b11110000 | 0b00101101;" 0b11111101;
+  assert_a "0b00001111 | 0b00101101;" 0b00101111;
 
   (* bitwise xor *)
   assert_a "0b1011 ^ 0b1110;" 0b0101;
