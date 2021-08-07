@@ -116,7 +116,7 @@ and fold_func_defn ?(emit_warning : compiler_warn_handler = fun _ -> ())
   { defn with body = fold_stmt_list defn.body ~emit_warning }
 
 (* [constant_fold] replaces any constant expression in the given program
-    with the constant it evaluates to.  *)
+    with the constant it evaluates to. *)
 and constant_fold ?(emit_warning : compiler_warn_handler = fun _ -> ())
     (pgrm : prog) : prog =
   {

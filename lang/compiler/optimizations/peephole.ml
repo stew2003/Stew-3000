@@ -12,8 +12,8 @@ let eliminate_nops (instrs : instr list) : instr list =
   *)
   failwith "not implemented!"
 
-(* [replace_with_smaller] replaces single instructions with 
-  equivalent instructions with a smaller byte representation *)
+(* [replace_with_smaller] replaces single instructions with
+   equivalent instructions with a smaller byte representation *)
 let replace_with_smaller (instrs : instr list) : instr list =
   (*
      addi 1, _ --> inr _
