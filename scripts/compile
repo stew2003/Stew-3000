@@ -4,7 +4,7 @@
 # 
 # Expects the name of a file in programs/source/ (though this can
 # include subdirectories). It calls the compiler and emits an assembly 
-# and a binary file of the same name, in programs/asm/compiler_output/
+# and a binary file of the given output name, in programs/asm/compiler_output/
 # and programs/bin/, respectively.
 # 
 # Extra arguments to this script will be passed along to the compiler.
@@ -16,21 +16,19 @@ if [ $(basename $PWD) != "Stew-3000" ]; then
 fi
 
 # check correct number of arguments
-if [ ! "$#" -ge 1 ]; then
-    echo "usage: compile FILENAME [EXTRA_ARGS ...]"
+if [ ! "$#" -ge 2 ]; then
+    echo "usage: compile SRC_NAME OUT_NAME [EXTRA_ARGS ...]"
     exit -1
 fi
 
-FILENAME=$1
-EXTRA_ARGS=${@:2} # rest of arguments
+SRC_NAME=$1
+OUT_NAME=$2
+EXTRA_ARGS=${@:3} # rest of arguments
 
 # use the default locations for source/asm/binary files
-SOURCE_PATH=programs/source/$FILENAME.3000.c
-
-# put asm/binary in compiler_output/ and bin/ even if input was in subdir of source/
-FILE_BASENAME=$(basename $FILENAME)
-ASM_PATH=programs/asm/compiler_output/$FILE_BASENAME.3000.s
-BIN_PATH=programs/bin/$FILE_BASENAME.3000.b
+SOURCE_PATH=programs/source/$SRC_NAME.3000.c
+ASM_PATH=programs/asm/compiler_output/$OUT_NAME.3000.s
+BIN_PATH=programs/bin/$OUT_NAME.3000.b
 
 # ensure source file exists
 if [ ! -f "$SOURCE_PATH" ]; then
@@ -38,7 +36,7 @@ if [ ! -f "$SOURCE_PATH" ]; then
     exit -1
 fi
 
-echo "Compiling $FILENAME.3000.c to $FILE_BASENAME.3000.s & $FILE_BASENAME.3000.b"
+echo "Compiling $SOURCE_PATH to $ASM_PATH & $BIN_PATH"
 cd lang
 dune exec bin/compile.exe ../$SOURCE_PATH ../$ASM_PATH -- -bin ../$BIN_PATH $EXTRA_ARGS
 cd ..

@@ -9,7 +9,7 @@ if [ $(basename $PWD) != "Stew-3000" ]; then
 fi
 
 # check correct number of arguments
-if [ ! "$#" -ge 1 ]; then
+if [ "$#" -ne 1 ]; then
     echo "usage: load FILENAME"
     exit -1
 fi
