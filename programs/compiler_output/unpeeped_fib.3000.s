@@ -9,9 +9,9 @@ start_while_8:
 	jge condition_failed_9
 	lds 1, a
 	sts a, 3
-	inr sp
+	addi 1, sp
 	call function_fib_rec
-	dcr sp
+	subi 1, sp
 	out a
 	lds 1, a
 	inr a
@@ -61,9 +61,9 @@ function_fib_rec:
 greater_than_eq_0:
 	mvi 1, a
 continue_1:
-	inr sp
+	addi 1, sp
 	call runtime_assert
-	dcr sp
+	subi 1, sp
 	mvi 0, a
 	sts a, 2
 	lds 1, a
@@ -100,9 +100,9 @@ condition_failed_2:
 	lds 3, b
 	sub b, a
 	sts a, 3
-	inr sp
+	addi 1, sp
 	call function_fib_rec
-	dcr sp
+	subi 1, sp
 	sts a, 2
 	mvi 1, a
 	sts a, 4

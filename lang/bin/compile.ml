@@ -35,12 +35,12 @@ let command =
             Constant_fold.constant_fold ~emit_warning:warning_handler pgrm
           in
 
-          (* TEMP: pretty print the ast after preprocessing as sanity check *)
-          Printf.printf "%s\n" (Prettyprint.pretty_print pgrm);
-
           (* check again, post-optimization (catch folded unrepresentable values) *)
           Check.check pgrm;
           let instrs = Compile.compile pgrm ~ignore_asserts in
+
+          (* optimize the generated instructions *)
+          let instrs = Peephole.peephole_optimize instrs in
 
           (* write generated asm to target file *)
           Out_channel.write_all target_file ~data:(string_of_instr_list instrs);

@@ -3,6 +3,9 @@ Hardware
   [x] implement sign flag and signed overflow flag (Stewart)
   [x] implement dream instruction set in microcode (Stewart)
   [x] get the RAM loader working (Stewart)
+  [] Fix stack memory
+  [] Fix ram loader
+  [] Add Zero register
 
 Assembler
   [x] model our instr set with OCaml datatypes. will be used by assembler,
@@ -28,7 +31,7 @@ Compiler
     [x] add checking to bin/compile + handle errors in bin/err
     [x] type check logical operators
   [x] preprocessor
-  [] warnings
+  [x] warnings
   [] implement optimizations for smol code
     Pre-compile: 
       [x] constant folding 
@@ -38,14 +41,12 @@ Compiler
     During compile:
       [x] special-case compilation of conditions (if/while)
       [] use more immediate instructions to reduce stack instructions
-        [] call-er vs. call-e stacks
       [] var == 0 is same as !var 
       [] "compile to" given register (reduce movs)
     Post-compile:
-      [] eliminate redundant instrs
-        [] sts a, 1; lds 1, a ==> sts a, 1 (for instance)
-      [] replace addi 1, _ / subi 1, _ with inr/dcr
-      [] remove addi 0, subi 0, etc (no effect)
+      [x] eliminate redundant instrs
+      [x] replace addi 1, _ / subi 1, _ with inr/dcr
+      [x] remove addi 0, subi 0, etc (no effect)
 
 Emulator
   [x] fix emulation of 8-bit integers

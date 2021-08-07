@@ -90,8 +90,8 @@ and pretty_print_stmt_list (stmts : stmt list) (indent_level : int) : string =
            (pretty_print_stmt stmt indent_level))
   |> String.concat "\n"
 
-(* [pretty_print_block] converts a block (statement list that is curly-brace 
-  delimited) into a pretty-printed string. *)
+(* [pretty_print_block] converts a block (statement list that is curly-brace
+   delimited) into a pretty-printed string. *)
 and pretty_print_block (block : stmt list) (indent_level : int) : string =
   match block with
   | [] -> "{}"
@@ -121,8 +121,8 @@ and pretty_print_func_defn (defn : func_defn) : string =
 and pretty_print_define (define : pp_define) : string =
   sprintf "#define %s %s" define.var (pretty_print_expr define.expression)
 
-(* [pretty_print] takes a program and produces a string that is 
-  the program's text formatted nicely.  *)
+(* [pretty_print] takes a program and produces a string that is
+   the program's text formatted nicely. *)
 let pretty_print (pgrm : prog) : string =
   let defines =
     List.map pretty_print_define pgrm.defines |> String.concat "\n"
