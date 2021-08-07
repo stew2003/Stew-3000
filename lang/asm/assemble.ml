@@ -10,7 +10,6 @@ type asm_err =
   | InvalidInstr of instr
   | InvalidImm of immediate
   | InvalidTarget of string
-  | OutOfBoundsLabel of string * int
 
 exception AssembleError of asm_err with_loc_opt
 
@@ -20,11 +19,9 @@ let string_of_asm_err = function
   | InvalidInstr ins -> sprintf "invalid instruction: %s" (string_of_instr ins)
   | InvalidImm imm -> sprintf "invalid immediate value: %s" (string_of_imm imm)
   | InvalidTarget label -> sprintf "invalid target: %s" label
-  | OutOfBoundsLabel (label, addr) ->
-      sprintf "out of bounds label `%s` (at byte 0x%x)" label addr
 
-(* [assemble_instr] generates bytes for a given instruction. Raises 
-  AssembleError InvalidInstr if given an un-assemblable instruction *)
+(* [assemble_instr] generates bytes for a given instruction. Raises
+   AssembleError InvalidInstr if given an un-assemblable instruction *)
 let assemble_instr (ins : instr) (label_map : int env) : int list =
   (* [to_addr] converts a string label to its corresponding address,
      raising an assembler error if the label_map has no mapping *)
@@ -200,8 +197,8 @@ let assemble_instr (ins : instr) (label_map : int env) : int list =
   (* unrecognized instruction *)
   | _ -> raise (AssembleError (InvalidInstr ins, loc_from_instr ins))
 
-(* [assemble_to_list] converts the given instructions to a list of 
-  integers representing the assembled bytes of the program. *)
+(* [assemble_to_list] converts the given instructions to a list of
+   integers representing the assembled bytes of the program. *)
 let assemble_to_list (instrs : instr list) (label_map : int env) : int list =
   instrs |> List.map (fun ins -> assemble_instr ins label_map) |> List.concat
 
@@ -224,7 +221,7 @@ let size_of (ins : instr) : int =
 let max_pgrm_size = 256
 
 (* [map_labels] constructs an environment mapping label names to memory addresses *)
-let map_labels (instrs : instr list) =
+let map_labels (emit_warning : asm_warn_handler) (instrs : instr list) =
   (* accumulate an environment of labels->addresses *)
   let env, _ =
     List.fold_left
@@ -233,32 +230,33 @@ let map_labels (instrs : instr list) =
         | Label (name, loc) ->
             (* if label already mapped, this is an error *)
             if Env.mem name env then
-              raise (AssembleError (DuplicateLabel name, loc))
-            else if addr >= max_pgrm_size then
-              raise (AssembleError (OutOfBoundsLabel (name, addr), loc))
-            else (Env.add name addr env, addr)
+              raise (AssembleError (DuplicateLabel name, loc));
+            (* label is out of bounds (due to pgrm size), warning *)
+            if addr >= max_pgrm_size then
+              emit_warning (OutOfBoundsLabel (name, addr, loc));
+            (Env.add name addr env, addr)
         | _ -> (env, addr + size_of ins))
       (Env.empty, 0) instrs
   in
   env
 
 (* [bytes_from_list] constructs a buffer of raw bytes from
-  the given list of integers *)
+   the given list of integers *)
 let bytes_from_list (l : int list) : bytes =
   let buf = Bytes.create (List.length l) in
   List.mapi (fun i b -> Bytes.set_int8 buf i b) l |> ignore;
   buf
 
 (* [assemble_with_rich_info] assembles the given list of instructions
-  and produces several pieces of information about the program:
-    - a map from label names to physical addresses in the
-      generated binary
-    - a list of list of bytes, one inner list per instruction, which 
-      encodes which instructions assembled to which bytes
-    - a byte array containing the bytes of the assembled program *)
+   and produces several pieces of information about the program:
+     - a map from label names to physical addresses in the
+       generated binary
+     - a list of list of bytes, one inner list per instruction, which
+       encodes which instructions assembled to which bytes
+     - a byte array containing the bytes of the assembled program *)
 let assemble_with_rich_info ?(emit_warning : asm_warn_handler = fun _ -> ())
     (instrs : instr list) : int env * int list list * bytes =
-  let label_map = map_labels instrs in
+  let label_map = map_labels emit_warning instrs in
   (* assemble instructions to list of list of bytes (preserving
      which bytes constitute which instructions) *)
   let unflattened_bytes =
@@ -271,8 +269,8 @@ let assemble_with_rich_info ?(emit_warning : asm_warn_handler = fun _ -> ())
   if size > max_pgrm_size then emit_warning (ProgramTooLarge size);
   (label_map, unflattened_bytes, bytes)
 
-(* [assemble] processes a list of asm instructions and 
-  produces a byte sequence representing the program in binary form *)
+(* [assemble] processes a list of asm instructions and
+   produces a byte sequence representing the program in binary form *)
 let assemble ?(emit_warning : asm_warn_handler = fun _ -> ())
     (instrs : instr list) : bytes =
   let _, _, bytes = assemble_with_rich_info instrs ~emit_warning in

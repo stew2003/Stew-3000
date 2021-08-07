@@ -12,27 +12,27 @@ type 'a with_loc = 'a * src_loc
 (* with_loc_opt describes a type that might have a src location attached *)
 type 'a with_loc_opt = 'a * src_loc option
 
-(* [loc] generates a new src_loc record with 
-  the given start and ending line *)
+(* [loc] generates a new src_loc record with
+   the given start and ending line *)
 let loc (startl : int) (endl : int) = { startl; endl }
 
 (* [loc_from_lexbuf] constructs a src loc from
-  the current line position of the lexing buffer *)
+   the current line position of the lexing buffer *)
 let loc_from_lexbuf (buf : lexbuf) =
   let lno = (lexeme_start_p buf).pos_lnum in
   loc lno lno
 
-(* [span] constructs a new source location representing 
-  the span of two given source locations. *)
+(* [span] constructs a new source location representing
+   the span of two given source locations. *)
 let span (min_loc : src_loc) (max_loc : src_loc) : src_loc =
   loc min_loc.startl max_loc.endl
 
-(* the periphery is how many lines above and below the source 
-  location are printed when the location is printed *)
+(* the periphery is how many lines above and below the source
+   location are printed when the location is printed *)
 let periphery = 2
 
-(* [string_of_src_loc] converts a source location and a source file 
-  contents into a message indicating the position in the source file *)
+(* [string_of_src_loc] converts a source location and a source file
+   contents into a message indicating the position in the source file *)
 let string_of_src_loc (loc : src_loc) (source : string)
     (source_filename : string) : string =
   let lines_with_color lines colorize =
@@ -67,8 +67,8 @@ let string_of_src_loc (loc : src_loc) (source : string)
   @ lines_with_color after_loc (fun line -> Colors.br_black line)
   |> String.concat "\n"
 
-(* [string_of_maybe_loc] is a wrapper for string of src loc that handles 
-  optional locations *)
+(* [string_of_maybe_loc] is a wrapper for string of src loc that handles
+   optional locations *)
 let string_of_maybe_loc (loc : src_loc option) (source : string)
     (source_filename : string) : string =
   match loc with

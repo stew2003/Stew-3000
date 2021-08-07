@@ -4,7 +4,7 @@ open Asm.Isa
 open Asm.Warnings
 
 (* [assert_assembles_to] asserts that the given program assembles
-  to the given list of bytes *)
+   to the given list of bytes *)
 let assert_assembles_to (instrs : instr list) (bin : int list) =
   let bin_as_bytes = bytes_from_list bin in
   assert_equal (assemble instrs) bin_as_bytes
@@ -61,27 +61,34 @@ let test_invalid_target _ =
     (AssembleError (InvalidTarget "nonexistent", None))
     (fun _ -> assemble [ Jle ("nonexistent", None) ])
 
-(* [pgrm] builds a program of size nops *)
-let rec pgrm (size : int) = if size = 0 then [] else Nop None :: pgrm (size - 1)
+(* [make_program] builds a program of size nops *)
+let rec make_program (size : int) =
+  if size = 0 then [] else Nop None :: make_program (size - 1)
 
-let test_pgrm_too_large _ =
+(* [get_warnings] invokes the assembler on a given program and
+   accumulates warnings into a list, which it returns. Earlier
+   warnings occur earlier in the list. *)
+let get_warnings (instrs : instr list) : asm_warn list =
   let warning_list = ref [] in
   let warn_handler (warning : asm_warn) =
     warning_list := warning :: !warning_list
   in
-  let big = 257 in
-  assemble (pgrm big) ~emit_warning:warn_handler |> ignore;
-  assert_equal [ ProgramTooLarge big ] !warning_list
+  assemble instrs ~emit_warning:warn_handler |> ignore;
+  List.rev !warning_list
 
-let test_out_of_bounds _ =
-  let program =
-    [ Jmp ("out_of_bounds", None) ]
-    @ pgrm 254
-    @ [ Label ("out_of_bounds", None) ]
+let test_pgrm_too_large _ =
+  let big = 257 in
+  let warnings = get_warnings (make_program big) in
+  assert_equal [ ProgramTooLarge big ] warnings
+
+let test_out_of_bounds_label _ =
+  let warnings =
+    get_warnings
+      ([ Jmp ("out_of_bounds", None) ]
+      @ make_program 254
+      @ [ Label ("out_of_bounds", None) ])
   in
-  assert_raises
-    (AssembleError (OutOfBoundsLabel ("out_of_bounds", 256), None))
-    (fun _ -> assemble program)
+  assert_equal [ OutOfBoundsLabel ("out_of_bounds", 256, None) ] warnings
 
 let test_overflow_immediates _ =
   assert_equal
@@ -102,7 +109,7 @@ let suite =
          "test_invalid_target" >:: test_invalid_target;
          "test_pgrm_too_large" >:: test_pgrm_too_large;
          "test_overflow_immediates" >:: test_overflow_immediates;
-         "test_out_of_bounds" >:: test_out_of_bounds;
+         "test_out_of_bounds_label" >:: test_out_of_bounds_label;
        ]
 
 let () = run_test_tt_main suite
