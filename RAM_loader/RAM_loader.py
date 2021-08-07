@@ -3,13 +3,19 @@ import time
 import sys
 import os
 
+from serial.serialutil import SerialException
+
 # set up the serial connection to the arduino board
 serial_port = "/dev/cu.usbserial-AR0KL0FJ"
 baud_rate = "9600"
 
 MAX_LOADABLE_BINARY_SIZE = 256
 
-connection = serial.Serial(serial_port, baud_rate, timeout=5)
+try:
+    connection = serial.Serial(serial_port, baud_rate, timeout=5)
+except SerialException:
+    print("Plug in the Arduino!")
+    sys.exit(-1)
 
 time.sleep(2) # wait for arduino
 
@@ -24,13 +30,16 @@ with open(sys.argv[1], "rb") as file:
     while byte:
         connection.flush()
 
-        print("Loader script sent: " + str(bytes(byte)))
+        print(f"Loader script sent: 0x{bytes(byte).hex()}")
         connection.write(bytes(byte))
         
         time.sleep(0.3)
 
-        response = connection.read(connection.inWaiting()) # read all characters in buffer
-        print ("Message from arduino: " + str(response))
+        # read all characters in buffer
+        response = connection.read(connection.inWaiting())
+
+        # message comes back as bytes and it has \r\n which we strip off
+        print (f"Message from arduino: {response.decode('utf-8')[:-2]}")
 
         byte = file.read(1)
 

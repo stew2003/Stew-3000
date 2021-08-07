@@ -1,0 +1,11 @@
+#!/usr/bin/env bash
+
+# Shorthand for invoking the loader.
+
+# check correct number of arguments
+if [ ! "$#" -ge 1 ]; then
+    echo "usage: load FILENAME"
+    exit -1
+fi
+
+python3 RAM_loader/RAM_loader.py programs/bin/$1.3000.b
