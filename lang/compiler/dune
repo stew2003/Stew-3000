@@ -14,7 +14,8 @@
     runtime 
     warnings
     optimizations
-    constant_fold)
+    constant_fold
+    peephole)
   (libraries util asm core)
   (preprocess (pps ppx_blob))
   (preprocessor_deps 
