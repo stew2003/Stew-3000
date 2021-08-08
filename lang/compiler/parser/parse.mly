@@ -15,7 +15,7 @@
 
 %token <Util.Srcloc.src_loc> PLUS
 %token <Util.Srcloc.src_loc> MINUS
-%token <Util.Srcloc.src_loc> TIMES
+%token <Util.Srcloc.src_loc> STAR
 %token <Util.Srcloc.src_loc> DIV
 %token <Util.Srcloc.src_loc> MOD
 %token <Util.Srcloc.src_loc> BAND
@@ -48,6 +48,8 @@
 
 %token <Util.Srcloc.src_loc> INT
 %token <Util.Srcloc.src_loc> VOID
+%token <Util.Srcloc.src_loc> UNSIGNED
+%token <Util.Srcloc.src_loc> CHAR
 
 %token <Util.Srcloc.src_loc> DEFINE
 
@@ -63,7 +65,7 @@
 %left EQ NEQ
 %left LT LTE GT GTE
 %left PLUS MINUS
-%left TIMES DIV MOD
+%left STAR DIV MOD
 %right BNOT LNOT
 
 %%
@@ -106,10 +108,19 @@ params:
   { p }
 
 typ:
-| loc = INT
-  { (Int, loc) }
 | loc = VOID
   { (Void, loc) }
+| loc = INT
+  { (Int, loc) }
+| loc = UNSIGNED
+  { (Unsigned, loc) }
+| loc = CHAR 
+  { (Char, loc) }
+| t = typ STAR
+  {
+    let (t, loc) = t in 
+    (Pointer t, loc)
+  }
 
 // variable declaration, type then name
 decl:
@@ -225,7 +236,7 @@ expr:
     let (r, end_loc) = r in 
     let loc = span start_loc end_loc in 
     (BinOp (Minus, l, r, Some loc), loc) }
-| l = expr TIMES r = expr 
+| l = expr STAR r = expr 
   { let (l, start_loc) = l in 
     let (r, end_loc) = r in 
     let loc = span start_loc end_loc in 

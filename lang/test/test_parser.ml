@@ -4,7 +4,7 @@ open Compiler.Ast
 open Testing_utils
 
 (* [main_from_body] constructs an ast function defn that conforms
-  to what main functions must look like, with the given body filled in. *)
+   to what main functions must look like, with the given body filled in. *)
 let main_from_body (body : stmt list) : func_defn =
   {
     name = "main";
@@ -17,16 +17,16 @@ let main_from_body (body : stmt list) : func_defn =
 
 let empty_main = main_from_body []
 
-(* [assert_parses_to] tests that a given full program parses to 
-  the given program ast. *)
+(* [assert_parses_to] tests that a given full program parses to
+   the given program ast. *)
 let assert_parses_to (pgrm : string) (exp : prog) =
   let parsed = norm_prog_locs (parse pgrm) in
   assert_equal parsed exp
 
-(* [assert_body_parses_to] asserts that the given text for the body 
-  of a main function parses to a program with the given stmt list 
-  as the body of its main function. This removes some of the overhead
-  of constructing full programs when testing individual constructs. *)
+(* [assert_body_parses_to] asserts that the given text for the body
+   of a main function parses to a program with the given stmt list
+   as the body of its main function. This removes some of the overhead
+   of constructing full programs when testing individual constructs. *)
 let assert_body_parses_to (body : string) (exp_body : stmt list) =
   let pgrm = Printf.sprintf "void main() { %s }" body in
   let expected = { defines = []; funcs = []; main = main_from_body exp_body } in

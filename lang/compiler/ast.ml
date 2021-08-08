@@ -1,6 +1,6 @@
 open Util.Srcloc
 
-type ty = Void | Int
+type ty = Void | Int | Unsigned | Char | Pointer of ty
 
 type un_op = BNot | LNot
 
@@ -62,7 +62,7 @@ type func_defn = {
 type pp_define = { var : string; expression : expr; loc : maybe_loc }
 
 (* main is a special function with void return/no args
-  whose body is what is run when the program is run *)
+   whose body is what is run when the program is run *)
 type prog = {
   defines : pp_define list;
   funcs : func_defn list;
@@ -74,8 +74,13 @@ let lookup (name : string) (defns : func_defn list) : func_defn option =
   List.find_opt (fun (defn : func_defn) -> defn.name = name) defns
 
 (* [string_of_ty] turns a type into a string *)
-let string_of_ty (t : ty) : string =
-  match t with Void -> "void" | Int -> "int"
+let rec string_of_ty (t : ty) : string =
+  match t with
+  | Void -> "void"
+  | Int -> "int"
+  | Unsigned -> "unsigned"
+  | Char -> "char"
+  | Pointer typ -> Printf.sprintf "%s *" (string_of_ty typ)
 
 (* [describe_bin_op] returns a description of a binary operator *)
 let describe_bin_op (op : bin_op) : string =
@@ -120,8 +125,8 @@ let loc_from_expr (exp : expr) : maybe_loc =
   | Call (_, _, loc) ->
       loc
 
-(* [check_for_expr] determines if the program contains an 
-  expression that satisfies the given predicate *)
+(* [check_for_expr] determines if the program contains an
+   expression that satisfies the given predicate *)
 let check_for_expr (pgrm : prog) (pred : expr -> bool) : bool =
   (* [check_expr] determines if the given expression contains a
      sub-expression that satisfies the given predicate. *)
@@ -169,8 +174,8 @@ let check_for_expr (pgrm : prog) (pred : expr -> bool) : bool =
     (pgrm.funcs @ [ pgrm.main ])
   |> List.fold_left ( || ) false
 
-(* [check_for_stmt] checks a given program for a statement 
-  that satisfies the given predicate *)
+(* [check_for_stmt] checks a given program for a statement
+   that satisfies the given predicate *)
 let check_for_stmt (pgrm : prog) (pred : stmt -> bool) : bool =
   (* [check_stmt] checks a statement for the presence of a statement
      that satisfies the given predicate *)

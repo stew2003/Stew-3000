@@ -42,7 +42,7 @@ rule token = parse
 | '-'
   { MINUS (loc_from_lexbuf lexbuf) }
 | '*'
-  { TIMES (loc_from_lexbuf lexbuf) }
+  { STAR (loc_from_lexbuf lexbuf) }
 | '/'
   { DIV (loc_from_lexbuf lexbuf) }
 | '%'
@@ -93,10 +93,14 @@ rule token = parse
   { EXIT (loc_from_lexbuf lexbuf) }
 | "assert"
   { ASSERT (loc_from_lexbuf lexbuf) }
-| "int"
-  { INT (loc_from_lexbuf lexbuf) }
 | "void"
   { VOID (loc_from_lexbuf lexbuf) }
+| "int"
+  { INT (loc_from_lexbuf lexbuf) }
+| "unsigned"
+  { UNSIGNED (loc_from_lexbuf lexbuf) }
+| "char"
+  { CHAR (loc_from_lexbuf lexbuf) }
 | "#define"
   { DEFINE (loc_from_lexbuf lexbuf) }
 | ['a'-'z''A'-'Z''_']['a'-'z''A'-'Z''_''0'-'9']* as name

@@ -13,7 +13,7 @@ let call_runtime (func : string) (si : int) =
   ]
 
 (* [compile_un_op] generates code for a unary operator.
-  Note: this assumes the operand value is in the a register. *)
+   Note: this assumes the operand value is in the a register. *)
 let compile_un_op (op : un_op) =
   match op with
   | BNot -> [ Not (A, None) ]
@@ -31,8 +31,8 @@ let compile_un_op (op : un_op) =
       ]
 
 (* [compile_bin_op] generates code for a binary operator
-  Note: assumes left operand is in the a register, right
-  is in the b register *)
+   Note: assumes left operand is in the a register, right
+   is in the b register *)
 let compile_bin_op (op : bin_op) (si : int) =
   (* [comparison] generates code for a binary comparison
      operator, given a function that creates the corresponding
@@ -70,8 +70,8 @@ let compile_bin_op (op : bin_op) (si : int) =
         (InternalError
            "attemped to compile logical and/or as normal binary operator")
 
-(* [compile_expr] generates instructions for the given expression 
-  in a given environment and stack index *)
+(* [compile_expr] generates instructions for the given expression
+   in a given environment and stack index *)
 let rec compile_expr (expression : expr) (bindings : int env) (si : int)
     (defns : func_defn list) : instr list =
   (* [compile_log_bin_op] generates code for logical and/or,
@@ -116,8 +116,8 @@ let rec compile_expr (expression : expr) (bindings : int env) (si : int)
           Subi (stack_base, SP, None);
         ]
 
-(* [compile_cond] generates instructions for specifically compiling 
-  conditions in ifs and whiles*)
+(* [compile_cond] generates instructions for specifically compiling
+   conditions in ifs and whiles*)
 and compile_cond (cond : expr) (condition_failed : string) (bindings : int env)
     (si : int) (defns : func_defn list) : instr list =
   (* For non-comparison expressions in condition-position, we just compile them
@@ -149,8 +149,8 @@ and compile_cond (cond : expr) (condition_failed : string) (bindings : int env)
       | _ -> default_compile_cond ())
   | _ -> default_compile_cond ()
 
-(* [compile_stmt] generates instructions for a single statement,  
-  in a given environment and stack index *)
+(* [compile_stmt] generates instructions for a single statement,
+   in a given environment and stack index *)
 and compile_stmt (statement : stmt) (bindings : int env) (si : int)
     (defns : func_defn list) (ignore_asserts : bool) : instr list =
   match statement with
@@ -214,7 +214,7 @@ and compile_stmt (statement : stmt) (bindings : int env) (si : int)
       @ [ Jmp (start_while, None); Label (condition_failed, None) ]
 
 (* [compile_stmt_list] generates instructions for a list of statements,
-  in an environment and stack index *)
+   in an environment and stack index *)
 and compile_stmt_list (statements : stmt list) (bindings : int env) (si : int)
     (defns : func_defn list) (ignore_asserts : bool) : instr list =
   statements

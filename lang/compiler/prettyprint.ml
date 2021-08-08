@@ -101,8 +101,7 @@ and pretty_print_block (block : stmt list) (indent_level : int) : string =
         (indent indent_level)
 
 (* [pretty_print_type] converts a type into a pretty-printed string. *)
-and pretty_print_type (typ : ty) : string =
-  match typ with Void -> "void" | Int -> "int"
+and pretty_print_type (typ : ty) : string = string_of_ty typ
 
 (* [pretty_print_func_defn] converts a function definition into a pretty-printed string. *)
 and pretty_print_func_defn (defn : func_defn) : string =
