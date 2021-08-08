@@ -1,37 +1,10 @@
 
 Hardware
-  [x] implement sign flag and signed overflow flag (Stewart)
-  [x] implement dream instruction set in microcode (Stewart)
-  [x] get the RAM loader working (Stewart)
   [] Fix stack memory
   [] Fix ram loader
   [] Add Zero register
 
-Assembler
-  [x] model our instr set with OCaml datatypes. will be used by assembler,
-    compiler, and virtual machine
-  [x] think about how to implement labels
-  [x] implement assembler
-  [x] maybe switch from hashtable to different map
-  [x] reconsider how we validate immediates: currently prevents you
-    from writing an immediate that is a mem loc >127
-  [x] track source locations for error messages
-
 Compiler
-  [x] decide on language constructs
-  [x] parser
-  [x] runtime
-    [x] add assert to runtime
-    [x] test runtime
-  [x] add compiler binary
-  [x] compiler tests using parser
-  [x] implement compiler
-  [x] type checking
-    [x] tests for checking
-    [x] add checking to bin/compile + handle errors in bin/err
-    [x] type check logical operators
-  [x] preprocessor
-  [x] warnings
   [] implement optimizations for smol code
     Pre-compile: 
       [x] constant folding 
@@ -47,18 +20,6 @@ Compiler
       [x] eliminate redundant instrs
       [x] replace addi 1, _ / subi 1, _ with inr/dcr
       [x] remove addi 0, subi 0, etc (no effect)
-
-Emulator
-  [x] fix emulation of 8-bit integers
-  [x] rewrite overflow flag
-  [x] use actual byte addresses as opposed to list indices
-  [x] bin/emulate can now throw assemble errors
-  [x] display registers in decimal/hex/binary
-  [x] "step" mode for emulator for debugging
-    [x] simple command language
-    [x] add shortcuts
-    [x] `continue` command
-  [x] better printing of decimal display
 
 Docs
   [] document everything
