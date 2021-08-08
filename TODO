@@ -20,6 +20,9 @@ Compiler
       [x] eliminate redundant instrs
       [x] replace addi 1, _ / subi 1, _ with inr/dcr
       [x] remove addi 0, subi 0, etc (no effect)
+  [] new types
+    [] pointer types, unsigned (meaning unsigned int), char
+    [] casting operator
 
 Docs
   [] document everything
