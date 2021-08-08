@@ -1,0 +1,40 @@
+#!/usr/bin/env bash
+
+# Shorthand for invoking the assembler CLI.
+# 
+# Expects the name of a file in programs/asm/ (though this can include
+# subdirectories) and a name for the binary output. It calls the assembler 
+# and emits a binary file in programs/bin/. 
+# 
+# Extra arguments to this script will be passed along to the assembler.
+
+# ensure called from root (so paths work out)
+if [ $(basename $PWD) != "Stew-3000" ]; then
+    echo "please invoke assemble from the project root"
+    exit -1
+fi
+
+# check correct number of arguments
+if [ ! "$#" -ge 2 ]; then
+    echo "usage: assemble ASM_NAME BIN_NAME [EXTRA_ARGS ...]"
+    exit -1
+fi
+
+ASM_NAME=$1
+BIN_NAME=$2
+EXTRA_ARGS=${@:3} # rest of arguments
+
+# use the default locations for asm/binary files
+ASM_PATH=programs/asm/$ASM_NAME.3000.s
+BIN_PATH=programs/bin/$BIN_NAME.3000.b
+
+# ensure source file exists
+if [ ! -f "$ASM_PATH" ]; then
+    echo "$ASM_PATH does not exist."
+    exit -1
+fi
+
+echo "Assembling $ASM_PATH to $BIN_PATH"
+cd lang
+dune exec bin/assemble.exe ../$ASM_PATH ../$BIN_PATH -- $EXTRA_ARGS
+cd ..

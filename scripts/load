@@ -2,10 +2,24 @@
 
 # Shorthand for invoking the loader.
 
+# ensure called from root (so paths work out)
+if [ $(basename $PWD) != "Stew-3000" ]; then
+    echo "please invoke load from the project root"
+    exit -1
+fi
+
 # check correct number of arguments
-if [ ! "$#" -ge 1 ]; then
+if [ "$#" -ne 1 ]; then
     echo "usage: load FILENAME"
     exit -1
 fi
 
-python3 RAM_loader/RAM_loader.py programs/bin/$1.3000.b
+BIN_PATH=programs/bin/$1.3000.b
+
+# check binary exists
+if [ ! -f "$BIN_PATH" ]; then 
+    echo "$BIN_PATH does not exist."
+    exit -1
+fi
+
+python3 RAM_loader/RAM_loader.py $BIN_PATH

@@ -1,0 +1,42 @@
+#!/usr/bin/env bash
+
+# Shorthand for invoking the compiler CLI.
+# 
+# Expects the name of a file in programs/source/ (though this can
+# include subdirectories). It calls the compiler and emits an assembly 
+# and a binary file of the given output name, in programs/asm/compiler_output/
+# and programs/bin/, respectively.
+# 
+# Extra arguments to this script will be passed along to the compiler.
+
+# ensure called from root (so paths work out)
+if [ $(basename $PWD) != "Stew-3000" ]; then
+    echo "please invoke compile from the project root"
+    exit -1
+fi
+
+# check correct number of arguments
+if [ ! "$#" -ge 2 ]; then
+    echo "usage: compile SRC_NAME OUT_NAME [EXTRA_ARGS ...]"
+    exit -1
+fi
+
+SRC_NAME=$1
+OUT_NAME=$2
+EXTRA_ARGS=${@:3} # rest of arguments
+
+# use the default locations for source/asm/binary files
+SOURCE_PATH=programs/source/$SRC_NAME.3000.c
+ASM_PATH=programs/asm/compiler_output/$OUT_NAME.3000.s
+BIN_PATH=programs/bin/$OUT_NAME.3000.b
+
+# ensure source file exists
+if [ ! -f "$SOURCE_PATH" ]; then
+    echo "$SOURCE_PATH does not exist."
+    exit -1
+fi
+
+echo "Compiling $SOURCE_PATH to $ASM_PATH & $BIN_PATH"
+cd lang
+dune exec bin/compile.exe ../$SOURCE_PATH ../$ASM_PATH -- -bin ../$BIN_PATH $EXTRA_ARGS
+cd ..
