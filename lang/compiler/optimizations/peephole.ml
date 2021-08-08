@@ -14,6 +14,10 @@ let rec eliminate_nops (instrs : instr list) : instr list =
   | (Sts (reg, imm, _) as store) :: Lds (same_imm, same_reg, _) :: rest
     when reg = same_reg && imm = same_imm ->
       store :: eliminate_nops rest
+  | Inr (reg, _) :: Dcr (same_reg, _) :: rest when reg = same_reg ->
+      eliminate_nops rest
+  | Dcr (reg, _) :: Inr (same_reg, _) :: rest when reg = same_reg ->
+      eliminate_nops rest
   | first :: rest -> first :: eliminate_nops rest
 
 (* [replace_with_smaller] replaces single instructions with

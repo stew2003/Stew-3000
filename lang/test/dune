@@ -7,7 +7,8 @@
     test_runtime 
     test_checker 
     test_preprocessor 
-    test_constant_folding)
+    test_constant_folding
+    test_peephole)
   (libraries ounit2 asm emulator compiler util))
 
 (env
