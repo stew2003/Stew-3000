@@ -37,10 +37,10 @@ let test_empty_main _ = assert_body_parses_to "" []
 let test_num _ =
   assert_body_parses_to "1; -117; 0xc; -0b101;"
     [
-      ExprStmt (Num (1, None), None);
-      ExprStmt (Num (-117, None), None);
-      ExprStmt (Num (0xc, None), None);
-      ExprStmt (Num (-0b101, None), None);
+      ExprStmt (NumLiteral (1, None), None);
+      ExprStmt (NumLiteral (-117, None), None);
+      ExprStmt (NumLiteral (0xc, None), None);
+      ExprStmt (NumLiteral (-0b101, None), None);
     ]
 
 let test_var _ =
@@ -53,49 +53,96 @@ let test_var _ =
 
 let test_un_op _ =
   assert_body_parses_to "~7;"
-    [ ExprStmt (UnOp (BNot, Num (7, None), None), None) ]
+    [ ExprStmt (UnOp (BNot, NumLiteral (7, None), None), None) ]
 
 let test_bin_op _ =
   assert_body_parses_to "4 + 5;"
-    [ ExprStmt (BinOp (Plus, Num (4, None), Num (5, None), None), None) ];
+    [
+      ExprStmt
+        (BinOp (Plus, NumLiteral (4, None), NumLiteral (5, None), None), None);
+    ];
   assert_body_parses_to "16 - 7;"
-    [ ExprStmt (BinOp (Minus, Num (16, None), Num (7, None), None), None) ];
+    [
+      ExprStmt
+        (BinOp (Minus, NumLiteral (16, None), NumLiteral (7, None), None), None);
+    ];
   assert_body_parses_to "100 * 2;"
-    [ ExprStmt (BinOp (Mult, Num (100, None), Num (2, None), None), None) ];
+    [
+      ExprStmt
+        (BinOp (Mult, NumLiteral (100, None), NumLiteral (2, None), None), None);
+    ];
   assert_body_parses_to "0xa / 5;"
-    [ ExprStmt (BinOp (Div, Num (0xa, None), Num (5, None), None), None) ];
+    [
+      ExprStmt
+        (BinOp (Div, NumLiteral (0xa, None), NumLiteral (5, None), None), None);
+    ];
   assert_body_parses_to "120 % 10;"
-    [ ExprStmt (BinOp (Mod, Num (120, None), Num (10, None), None), None) ];
+    [
+      ExprStmt
+        (BinOp (Mod, NumLiteral (120, None), NumLiteral (10, None), None), None);
+    ];
   assert_body_parses_to "0b110 & 0b010;"
     [
-      ExprStmt (BinOp (BAnd, Num (0b110, None), Num (0b010, None), None), None);
+      ExprStmt
+        ( BinOp (BAnd, NumLiteral (0b110, None), NumLiteral (0b010, None), None),
+          None );
     ];
   assert_body_parses_to "0b1111 | 0b1010;"
     [
-      ExprStmt (BinOp (BOr, Num (0b1111, None), Num (0b1010, None), None), None);
+      ExprStmt
+        ( BinOp (BOr, NumLiteral (0b1111, None), NumLiteral (0b1010, None), None),
+          None );
     ];
   assert_body_parses_to "0b01 ^ 0b01;"
-    [ ExprStmt (BinOp (BXor, Num (0b01, None), Num (0b01, None), None), None) ];
+    [
+      ExprStmt
+        ( BinOp (BXor, NumLiteral (0b01, None), NumLiteral (0b01, None), None),
+          None );
+    ];
   assert_body_parses_to "-6 > -10;"
-    [ ExprStmt (BinOp (Gt, Num (-6, None), Num (-10, None), None), None) ];
+    [
+      ExprStmt
+        (BinOp (Gt, NumLiteral (-6, None), NumLiteral (-10, None), None), None);
+    ];
   assert_body_parses_to "100 < 110;"
-    [ ExprStmt (BinOp (Lt, Num (100, None), Num (110, None), None), None) ];
+    [
+      ExprStmt
+        (BinOp (Lt, NumLiteral (100, None), NumLiteral (110, None), None), None);
+    ];
   assert_body_parses_to "81 >= 77;"
-    [ ExprStmt (BinOp (Gte, Num (81, None), Num (77, None), None), None) ];
+    [
+      ExprStmt
+        (BinOp (Gte, NumLiteral (81, None), NumLiteral (77, None), None), None);
+    ];
   assert_body_parses_to "-41 <= 4;"
-    [ ExprStmt (BinOp (Lte, Num (-41, None), Num (4, None), None), None) ];
+    [
+      ExprStmt
+        (BinOp (Lte, NumLiteral (-41, None), NumLiteral (4, None), None), None);
+    ];
   assert_body_parses_to "16 == 48;"
-    [ ExprStmt (BinOp (Eq, Num (16, None), Num (48, None), None), None) ];
+    [
+      ExprStmt
+        (BinOp (Eq, NumLiteral (16, None), NumLiteral (48, None), None), None);
+    ];
   assert_body_parses_to "44 != -44;"
-    [ ExprStmt (BinOp (Neq, Num (44, None), Num (-44, None), None), None) ]
+    [
+      ExprStmt
+        (BinOp (Neq, NumLiteral (44, None), NumLiteral (-44, None), None), None);
+    ]
 
 let test_log_op _ =
   assert_body_parses_to "1 && 0;"
-    [ ExprStmt (BinOp (LAnd, Num (1, None), Num (0, None), None), None) ];
+    [
+      ExprStmt
+        (BinOp (LAnd, NumLiteral (1, None), NumLiteral (0, None), None), None);
+    ];
   assert_body_parses_to "5 || 7;"
-    [ ExprStmt (BinOp (LOr, Num (5, None), Num (7, None), None), None) ];
+    [
+      ExprStmt
+        (BinOp (LOr, NumLiteral (5, None), NumLiteral (7, None), None), None);
+    ];
   assert_body_parses_to "!17;"
-    [ ExprStmt (UnOp (LNot, Num (17, None), None), None) ]
+    [ ExprStmt (UnOp (LNot, NumLiteral (17, None), None), None) ]
 
 let test_precedence _ =
   assert_body_parses_to "1 + 2 * 8 < (100 ^ 3) && ~7 == (40 & 18);"
@@ -107,15 +154,18 @@ let test_precedence _ =
                 ( Lt,
                   BinOp
                     ( Plus,
-                      Num (1, None),
-                      BinOp (Mult, Num (2, None), Num (8, None), None),
+                      NumLiteral (1, None),
+                      BinOp
+                        (Mult, NumLiteral (2, None), NumLiteral (8, None), None),
                       None ),
-                  BinOp (BXor, Num (100, None), Num (3, None), None),
+                  BinOp
+                    (BXor, NumLiteral (100, None), NumLiteral (3, None), None),
                   None ),
               BinOp
                 ( Eq,
-                  UnOp (BNot, Num (7, None), None),
-                  BinOp (BAnd, Num (40, None), Num (18, None), None),
+                  UnOp (BNot, NumLiteral (7, None), None),
+                  BinOp
+                    (BAnd, NumLiteral (40, None), NumLiteral (18, None), None),
                   None ),
               None ),
           None );
@@ -126,9 +176,15 @@ let test_precedence _ =
       ExprStmt
         ( BinOp
             ( LOr,
-              BinOp (LAnd, UnOp (LNot, Num (4, None), None), Num (7, None), None),
+              BinOp
+                ( LAnd,
+                  UnOp (LNot, NumLiteral (4, None), None),
+                  NumLiteral (7, None),
+                  None ),
               UnOp
-                (LNot, BinOp (LAnd, Num (6, None), Num (23, None), None), None),
+                ( LNot,
+                  BinOp (LAnd, NumLiteral (6, None), NumLiteral (23, None), None),
+                  None ),
               None ),
           None );
     ]
@@ -141,35 +197,37 @@ let test_assoc _ =
             ( Plus,
               BinOp
                 ( Plus,
-                  BinOp (Plus, Num (1, None), Num (2, None), None),
-                  Num (3, None),
+                  BinOp (Plus, NumLiteral (1, None), NumLiteral (2, None), None),
+                  NumLiteral (3, None),
                   None ),
-              Num (4, None),
+              NumLiteral (4, None),
               None ),
           None );
     ]
 
 let test_arbitrary_parens _ =
-  assert_body_parses_to "(((40)));" [ ExprStmt (Num (40, None), None) ]
+  assert_body_parses_to "(((40)));" [ ExprStmt (NumLiteral (40, None), None) ]
 
 let test_let _ =
   (* simple *)
   let body = "int x = 70;" in
-  let body_stmts = [ Let ("x", Int, Num (70, None), [], None) ] in
+  let body_stmts =
+    [ Declare ("x", Int, Some (NumLiteral (70, None)), [], None) ]
+  in
   assert_body_parses_to body body_stmts;
   (* nested scope *)
   let body = "int z = 1; int y = 2; z;" in
   let body_stmts =
     [
-      Let
+      Declare
         ( "z",
           Int,
-          Num (1, None),
+          Some (NumLiteral (1, None)),
           [
-            Let
+            Declare
               ( "y",
                 Int,
-                Num (2, None),
+                Some (NumLiteral (2, None)),
                 [ ExprStmt (Var ("z", None), None) ],
                 None );
           ],
@@ -180,18 +238,18 @@ let test_let _ =
   let body = "int first = 12; 1; 2; int second = first; 3;" in
   let body_stmts =
     [
-      Let
+      Declare
         ( "first",
           Int,
-          Num (12, None),
+          Some (NumLiteral (12, None)),
           [
-            ExprStmt (Num (1, None), None);
-            ExprStmt (Num (2, None), None);
-            Let
+            ExprStmt (NumLiteral (1, None), None);
+            ExprStmt (NumLiteral (2, None), None);
+            Declare
               ( "second",
                 Int,
-                Var ("first", None),
-                [ ExprStmt (Num (3, None), None) ],
+                Some (Var ("first", None)),
+                [ ExprStmt (NumLiteral (3, None), None) ],
                 None );
           ],
           None );
@@ -202,13 +260,14 @@ let test_let _ =
   let body = "int x = 10; { int y = x; } 1;" in
   let body_stmts =
     [
-      Let
+      Declare
         ( "x",
           Int,
-          Num (10, None),
+          Some (NumLiteral (10, None)),
           [
-            Block ([ Let ("y", Int, Var ("x", None), [], None) ], None);
-            ExprStmt (Num (1, None), None);
+            Block
+              ([ Declare ("y", Int, Some (Var ("x", None)), [], None) ], None);
+            ExprStmt (NumLiteral (1, None), None);
           ],
           None );
     ]
@@ -218,20 +277,27 @@ let test_let _ =
 let test_assign _ =
   assert_body_parses_to "int x = 0; x = 7;"
     [
-      Let ("x", Int, Num (0, None), [ Assign ("x", Num (7, None), None) ], None);
+      Declare
+        ( "x",
+          Int,
+          Some (NumLiteral (0, None)),
+          [ Assign (LVar ("x", None), NumLiteral (7, None), None) ],
+          None );
     ]
 
 let test_if _ =
   assert_body_parses_to "if (1) { 10; }"
-    [ If (Num (1, None), [ ExprStmt (Num (10, None), None) ], None) ]
+    [
+      If (NumLiteral (1, None), [ ExprStmt (NumLiteral (10, None), None) ], None);
+    ]
 
 let test_if_else _ =
   assert_body_parses_to "if (-5) { 1; } else { 0; }"
     [
       IfElse
-        ( Num (-5, None),
-          [ ExprStmt (Num (1, None), None) ],
-          [ ExprStmt (Num (0, None), None) ],
+        ( NumLiteral (-5, None),
+          [ ExprStmt (NumLiteral (1, None), None) ],
+          [ ExprStmt (NumLiteral (0, None), None) ],
           None );
     ]
 
@@ -240,40 +306,46 @@ let test_block _ =
     [
       Block
         ( [
-            ExprStmt (Num (1, None), None);
-            ExprStmt (Num (2, None), None);
-            Block ([ ExprStmt (Num (3, None), None) ], None);
+            ExprStmt (NumLiteral (1, None), None);
+            ExprStmt (NumLiteral (2, None), None);
+            Block ([ ExprStmt (NumLiteral (3, None), None) ], None);
           ],
           None );
     ]
 
 let test_return _ =
   assert_body_parses_to "return; return 0;"
-    [ Return (None, None); Return (Some (Num (0, None)), None) ]
+    [ Return (None, None); Return (Some (NumLiteral (0, None)), None) ]
 
 let test_exprstmt _ =
   assert_body_parses_to "1 + 2; x;"
     [
-      ExprStmt (BinOp (Plus, Num (1, None), Num (2, None), None), None);
+      ExprStmt
+        (BinOp (Plus, NumLiteral (1, None), NumLiteral (2, None), None), None);
       ExprStmt (Var ("x", None), None);
     ]
 
 let test_while _ =
   assert_body_parses_to "while (1) { 5; }"
-    [ While (Num (1, None), [ ExprStmt (Num (5, None), None) ], None) ]
+    [
+      While
+        (NumLiteral (1, None), [ ExprStmt (NumLiteral (5, None), None) ], None);
+    ]
 
 let test_print_dec _ =
-  assert_body_parses_to "print(7);" [ PrintDec (Num (7, None), None) ]
+  assert_body_parses_to "print(7);" [ PrintDec (NumLiteral (7, None), None) ]
 
 let test_inr _ =
-  assert_body_parses_to "x++; name++;" [ Inr ("x", None); Inr ("name", None) ]
+  assert_body_parses_to "x++; name++;"
+    [ Inr (LVar ("x", None), None); Inr (LVar ("name", None), None) ]
 
 let test_dcr _ =
-  assert_body_parses_to "x--; name--;" [ Dcr ("x", None); Dcr ("name", None) ]
+  assert_body_parses_to "x--; name--;"
+    [ Dcr (LVar ("x", None), None); Dcr (LVar ("name", None), None) ]
 
 let test_exit _ =
   assert_body_parses_to "exit(); exit(-1);"
-    [ Exit (None, None); Exit (Some (Num (-1, None)), None) ]
+    [ Exit (None, None); Exit (Some (NumLiteral (-1, None)), None) ]
 
 let test_fact _ =
   let fact =
@@ -299,8 +371,8 @@ let test_fact _ =
             body =
               [
                 IfElse
-                  ( BinOp (Eq, Var ("n", None), Num (0, None), None),
-                    [ Return (Some (Num (1, None)), None) ],
+                  ( BinOp (Eq, Var ("n", None), NumLiteral (0, None), None),
+                    [ Return (Some (NumLiteral (1, None)), None) ],
                     [
                       Return
                         ( Some
@@ -313,7 +385,7 @@ let test_fact _ =
                                        BinOp
                                          ( Minus,
                                            Var ("n", None),
-                                           Num (1, None),
+                                           NumLiteral (1, None),
                                            None );
                                      ],
                                      None ),
@@ -335,7 +407,7 @@ let test_defines _ =
     {
       defines =
         [
-          { var = "X"; expression = Num (10, None); loc = None };
+          { var = "X"; expression = NumLiteral (10, None); loc = None };
           { var = "Y"; expression = Var ("name", None); loc = None };
         ];
       funcs = [];

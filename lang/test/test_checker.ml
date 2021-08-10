@@ -8,8 +8,8 @@ let check (source : string) =
   let pgrm = Parser.parse source in
   Check.check pgrm
 
-(* [norm_check_err] normalizes the source locations present in any 
-  check errors *)
+(* [norm_check_err] normalizes the source locations present in any
+   check errors *)
 let norm_check_err (err : Check.check_err) =
   match err with
   | TypeError (e, exp, act) -> TypeError (norm_expr_locs e, exp, act)
@@ -22,7 +22,7 @@ let norm_check_err (err : Check.check_err) =
       err
 
 (* [assert_raises_check_err] runs a thunk and checks if it
-  raises the indicated CheckError *)
+   raises the indicated CheckError *)
 let assert_raises_check_err (err : Check.check_err) (source : string) =
   try check source with
   | Check.CheckError (actual_err, _) ->
@@ -102,11 +102,12 @@ let test_invalid_type_err _ =
 
 let test_type_mismatch _ =
   assert_raises_check_err
-    (TypeMismatch ("addition", Num (2, None), Int, Call ("g", [], None), Void))
+    (TypeMismatch
+       ("addition", NumLiteral (2, None), Int, Call ("g", [], None), Void))
     "void main() { 2 + g(); } void g(){}";
   assert_raises_check_err
     (TypeMismatch
-       ("bitwise xor", Call ("f", [], None), Void, Num (0x4, None), Int))
+       ("bitwise xor", Call ("f", [], None), Void, NumLiteral (0x4, None), Int))
     "void main() { f() ^ 0x4; } void f(){}"
 
 let test_non_void_main _ =

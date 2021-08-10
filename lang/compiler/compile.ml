@@ -86,7 +86,7 @@ let rec compile_expr (expression : expr) (bindings : int env) (si : int)
     @ [ Label (continue, None) ]
   in
   match expression with
-  | Num (n, _) -> [ Mvi (n, A, None) ]
+  | NumLiteral (n, _) -> [ Mvi (n, A, None) ]
   | Var (x, _) -> (
       match Env.find_opt x bindings with
       | Some x_si -> [ Lds (x_si, A, None) ]
@@ -154,16 +154,25 @@ and compile_cond (cond : expr) (condition_failed : string) (bindings : int env)
 and compile_stmt (statement : stmt) (bindings : int env) (si : int)
     (defns : func_defn list) (ignore_asserts : bool) : instr list =
   match statement with
-  | Let (name, _, value, scope, _) ->
+  | Declare (name, _, init, scope, _) ->
+      (* if variable is initialized, generate code for that *)
+      let initialization =
+        match init with
+        | None -> []
+        | Some init ->
+            compile_expr init bindings si defns @ [ Sts (A, si, None) ]
+      in
       let ext_env = Env.add name si bindings in
-      compile_expr value bindings si defns
-      @ [ Sts (A, si, None) ]
+      initialization
       @ compile_stmt_list scope ext_env (si + 1) defns ignore_asserts
-  | Assign (name, expr, _) -> (
+  | Assign (lv, expr, _) ->
+      (* TODO: *)
+      failwith "unimplemented!"
+  (* (
       match Env.find_opt name bindings with
       | Some name_si ->
           compile_expr expr bindings si defns @ [ Sts (A, name_si, None) ]
-      | None -> raise (InternalError "compiler: assign before initialize"))
+      | None -> raise (InternalError "compiler: assign before initialize")) *)
   | Block (stmt_list, _) ->
       compile_stmt_list stmt_list bindings si defns ignore_asserts
   | ExprStmt (expr, _) -> compile_expr expr bindings si defns
@@ -179,16 +188,22 @@ and compile_stmt (statement : stmt) (bindings : int env) (si : int)
       @ [ Ret None ]
   | PrintDec (expr, _) ->
       compile_expr expr bindings si defns @ [ Out (A, None) ]
-  | Inr (name, _) -> (
-      match Env.find_opt name bindings with
-      | Some name_si ->
-          [ Lds (name_si, A, None); Inr (A, None); Sts (A, name_si, None) ]
-      | None -> raise (InternalError "compiler: increment before initialize"))
-  | Dcr (name, _) -> (
-      match Env.find_opt name bindings with
-      | Some name_si ->
-          [ Lds (name_si, A, None); Dcr (A, None); Sts (A, name_si, None) ]
-      | None -> raise (InternalError "compiler: decrement before initialize"))
+  | Inr (lv, _) ->
+      (* TODO: *)
+      failwith "unimplemented!"
+  (* (
+     match Env.find_opt name bindings with
+     | Some name_si ->
+         [ Lds (name_si, A, None); Inr (A, None); Sts (A, name_si, None) ]
+     | None -> raise (InternalError "compiler: increment before initialize")) *)
+  | Dcr (lv, _) ->
+      (* TODO: *)
+      failwith "unimplemented!"
+  (* (
+     match Env.find_opt name bindings with
+     | Some name_si ->
+         [ Lds (name_si, A, None); Dcr (A, None); Sts (A, name_si, None) ]
+     | None -> raise (InternalError "compiler: decrement before initialize")) *)
   | Assert _ when ignore_asserts -> []
   | Assert (expr, _) ->
       compile_expr expr bindings si defns @ call_runtime "runtime_assert" si

@@ -3,7 +3,8 @@
   open Util.Srcloc
 %}
 
-%token <int * Util.Srcloc.src_loc> NUM
+%token <int * Util.Srcloc.src_loc> NUMLIT
+%token <char * Util.Srcloc.src_loc> CHARLIT
 %token <string * Util.Srcloc.src_loc> IDENT
 
 %token <Util.Srcloc.src_loc> LPAREN
@@ -18,7 +19,7 @@
 %token <Util.Srcloc.src_loc> STAR
 %token <Util.Srcloc.src_loc> DIV
 %token <Util.Srcloc.src_loc> MOD
-%token <Util.Srcloc.src_loc> BAND
+%token <Util.Srcloc.src_loc> AMPERSAND
 %token <Util.Srcloc.src_loc> BOR
 %token <Util.Srcloc.src_loc> BXOR
 %token <Util.Srcloc.src_loc> LAND
@@ -61,7 +62,7 @@
 %left LAND
 %left BOR
 %left BXOR
-%left BAND
+%left AMPERSAND
 %left EQ NEQ
 %left LT LTE GT GTE
 %left PLUS MINUS
@@ -149,7 +150,12 @@ block_stmt:
   {
     let (name, typ, start_loc) = d in 
     let (e, _) = e in 
-    Let (name, typ, e, scope, Some (span start_loc end_loc))
+    Declare(name, typ, Some e, scope, Some (span start_loc end_loc))
+  }
+| d = decl end_loc = SEMICOLON scope = stmt_list
+  {
+    let (name, typ, start_loc) = d in 
+    Declare (name, typ, None, scope, Some (span start_loc end_loc))
   }
 | start_loc = IF LPAREN cond = expr RPAREN 
   LBRACE thn = stmt_list end_loc = RBRACE
@@ -167,7 +173,7 @@ block_stmt:
 
 // statements that require semicolon termination
 stmt:
-| var = IDENT ASSIGN e = expr
+| var = l_value ASSIGN e = expr
   { 
     let (var, start_loc) = var in 
     let (e, end_loc) = e in 
@@ -186,10 +192,10 @@ stmt:
 | start_loc = PRINT LPAREN arg = expr end_loc = RPAREN
   { let (arg, _) = arg in 
     PrintDec (arg, Some (span start_loc end_loc)) }
-| var = IDENT end_loc = INR
+| var = l_value end_loc = INR
   { let (var, start_loc) = var in 
     Inr (var, Some (span start_loc end_loc)) }
-| var = IDENT end_loc = DCR
+| var = l_value end_loc = DCR
   { let (var, start_loc) = var in 
     Dcr (var, Some (span start_loc end_loc)) }
 | start_loc = EXIT LPAREN arg = expr end_loc = RPAREN
@@ -203,14 +209,39 @@ stmt:
     Assert (e, Some (span start_loc end_loc))
   }
 
+// l-values
+l_value:
+| var = IDENT
+  {
+    let (var, loc) = var in 
+    (LVar (var, Some loc), loc)
+  }
+| start_loc = STAR e = expr
+  {
+    let (e, end_loc) = e in 
+    let loc = span start_loc end_loc in 
+    (LDeref (e, Some loc), loc)
+  }
+| start_loc = LPAREN lv = l_value end_loc = RPAREN
+  {
+    let (lv, _) = lv in 
+    let loc = span start_loc end_loc in 
+    (lv, loc)
+  }
+
 // expressions
 expr:
 | start_loc = LPAREN e = expr end_loc = RPAREN
   { let (e, _) = e in
     (e, span start_loc end_loc) }
-| n = NUM
+| n = NUMLIT
   { let (n, loc) = n in 
-    (Num (n, Some loc), loc) }
+    (NumLiteral (n, Some loc), loc) }
+| c = CHARLIT
+  { 
+    let (c, loc) = c in 
+    (CharLiteral (c, Some loc), loc)
+  }
 | var = IDENT 
   { let (var, loc) = var in 
     (Var (var, Some loc), loc) }
@@ -218,6 +249,25 @@ expr:
   { let (fn, start_loc) = fn in 
     let loc = span start_loc end_loc in 
     (Call (fn, args, Some loc), loc) }
+| start_loc = STAR e = expr
+  {
+    let (e, end_loc) = e in 
+    let loc = span start_loc end_loc in 
+    (Deref (e, Some loc), loc)
+  }
+| start_loc = AMPERSAND lv = l_value
+  {
+    let (lv, end_loc) = lv in 
+    let loc = span start_loc end_loc in 
+    (AddrOf (lv, Some loc), loc)
+  }
+| start_loc = LPAREN t = typ RPAREN e = expr
+  {
+    let (t, _) = t in 
+    let (e, end_loc) = e in 
+    let loc = span start_loc end_loc in 
+    (Cast (t, e, Some loc), loc)
+  }
 | start_loc = BNOT e = expr 
   { let (e, end_loc) = e in 
     let loc = span start_loc end_loc in 
@@ -251,7 +301,7 @@ expr:
     let (r, end_loc) = r in 
     let loc = span start_loc end_loc in 
     (BinOp (Mod, l, r, Some loc), loc) }
-| l = expr BAND r = expr 
+| l = expr AMPERSAND r = expr 
   { let (l, start_loc) = l in 
     let (r, end_loc) = r in 
     let loc = span start_loc end_loc in 

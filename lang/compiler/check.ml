@@ -72,11 +72,11 @@ let string_of_check_err = function
   | UnrepresentableNumber n -> sprintf "unrepresentable value: %d" n
 
 (* [ctrl_reaches_end] determines if the control flow of a function's
-  body can reach the end of the function without encountering a return. *)
+   body can reach the end of the function without encountering a return. *)
 let ctrl_reaches_end (defn : func_defn) : bool =
   let rec can_pass_stmt (stmt : stmt) : bool =
     match stmt with
-    | Let (_, _, _, scope, _) -> ctrl_reaches_end_stmt_list scope
+    | Declare (_, _, _, scope, _) -> ctrl_reaches_end_stmt_list scope
     | IfElse (_, thn, els, _) ->
         ctrl_reaches_end_stmt_list thn || ctrl_reaches_end_stmt_list els
     | Block (scope, _) -> ctrl_reaches_end_stmt_list scope
@@ -94,8 +94,8 @@ let ctrl_reaches_end (defn : func_defn) : bool =
   in
   ctrl_reaches_end_stmt_list defn.body
 
-(* [type_check] checks a function definition for type errors, raising an 
-  error if they are discovered. *)
+(* [type_check] checks a function definition for type errors, raising an
+   error if they are discovered. *)
 let type_check (defn : func_defn) (defns : func_defn list) =
   (* [expect_non_void] checks that an expression is non-void type
      and raises an error if it is. *)
@@ -116,154 +116,159 @@ let type_check (defn : func_defn) (defns : func_defn list) =
   (* [type_check_expr] calculates the type of the given expression,
      or raises an error if it violates type rules. *)
   let rec type_check_expr (exp : expr) (env : ty env) : ty =
-    match exp with
-    | Num (n, loc) ->
-        (* all numbers are signed 8-bit *)
-        if n < -128 || n > 127 then
-          raise (CheckError (UnrepresentableNumber n, loc));
-        Int
-    | Var (name, loc) -> lookup_var name env loc
-    | UnOp (LNot, expr, _) ->
-        (* expression needs to be type checked and cannot be void *)
-        expect_non_void expr (type_check_expr expr env);
-        (* log ops are always ints *)
-        Int
-    | UnOp (_, expr, _) ->
-        (* operand can be any non-void type *)
-        let expr_ty = type_check_expr expr env in
-        expect_non_void expr expr_ty;
-        expr_ty
-    | BinOp (LAnd, left, right, _) | BinOp (LOr, left, right, _) ->
-        (* left and right should type check internally *)
-        let left_expr_ty = type_check_expr left env in
-        let right_expr_ty = type_check_expr right env in
-        (* neither left nor right can be void *)
-        expect_non_void left left_expr_ty;
-        expect_non_void right right_expr_ty;
-        (* log ops are always ints *)
-        Int
-    | BinOp (op, left, right, loc) -> (
-        (* left and right should type check internally *)
-        let left_expr_ty = type_check_expr left env in
-        let right_expr_ty = type_check_expr right env in
-        (* left and right operand types must match *)
-        if left_expr_ty <> right_expr_ty then
-          raise
-            (CheckError
-               ( TypeMismatch
-                   (describe_bin_op op, left, left_expr_ty, right, right_expr_ty),
-                 loc ));
-        (* neither left nor right can be void *)
-        expect_non_void left left_expr_ty;
-        expect_non_void right right_expr_ty;
-        (* comparison operators evaluate to an int, other bin ops evaluate
-           to same type as the operands *)
-        match op with
-        | Gt | Lt | Gte | Lte | Eq | Neq -> Int
-        | Plus | Minus | Mult | Div | Mod | BAnd | BOr | BXor -> left_expr_ty
-        | LAnd | LOr ->
-            raise
-              (InternalError
-                 "unreachable match arm in checker reached with logical and/or")
-        )
-    | Call (name, args, loc) -> (
-        match lookup name defns with
-        | Some called_defn -> (
-            try
-              List.iter2
-                (fun (_, param_ty) arg ->
-                  let arg_ty = type_check_expr arg env in
-                  (* annotated param type and arg type should match *)
-                  if param_ty <> arg_ty then
-                    raise
-                      (CheckError
-                         (TypeError (arg, param_ty, arg_ty), loc_from_expr arg)))
-                called_defn.params args;
-              (* function call has type of function's return type *)
-              called_defn.return_ty
-              (* Invalid_argument here means param/arg list were of different
-                 lengths, which is arity mismatch error. *)
-            with Invalid_argument _ ->
-              raise
-                (CheckError
-                   ( ArityMismatch
-                       ( called_defn.name,
-                         List.length called_defn.params,
-                         List.length args ),
-                     loc )))
-        | None -> raise (CheckError (UndefinedFunction name, loc)))
+    (* match exp with
+       | NumLiteral (n, loc) ->
+           (* all numbers are signed 8-bit *)
+           if n < -128 || n > 127 then
+             raise (CheckError (UnrepresentableNumber n, loc));
+           Int
+       | Var (name, loc) -> lookup_var name env loc
+       | UnOp (LNot, expr, _) ->
+           (* expression needs to be type checked and cannot be void *)
+           expect_non_void expr (type_check_expr expr env);
+           (* log ops are always ints *)
+           Int
+       | UnOp (_, expr, _) ->
+           (* operand can be any non-void type *)
+           let expr_ty = type_check_expr expr env in
+           expect_non_void expr expr_ty;
+           expr_ty
+       | BinOp (LAnd, left, right, _) | BinOp (LOr, left, right, _) ->
+           (* left and right should type check internally *)
+           let left_expr_ty = type_check_expr left env in
+           let right_expr_ty = type_check_expr right env in
+           (* neither left nor right can be void *)
+           expect_non_void left left_expr_ty;
+           expect_non_void right right_expr_ty;
+           (* log ops are always ints *)
+           Int
+       | BinOp (op, left, right, loc) -> (
+           (* left and right should type check internally *)
+           let left_expr_ty = type_check_expr left env in
+           let right_expr_ty = type_check_expr right env in
+           (* left and right operand types must match *)
+           if left_expr_ty <> right_expr_ty then
+             raise
+               (CheckError
+                  ( TypeMismatch
+                      (describe_bin_op op, left, left_expr_ty, right, right_expr_ty),
+                    loc ));
+           (* neither left nor right can be void *)
+           expect_non_void left left_expr_ty;
+           expect_non_void right right_expr_ty;
+           (* comparison operators evaluate to an int, other bin ops evaluate
+              to same type as the operands *)
+           match op with
+           | Gt | Lt | Gte | Lte | Eq | Neq -> Int
+           | Plus | Minus | Mult | Div | Mod | BAnd | BOr | BXor -> left_expr_ty
+           | LAnd | LOr ->
+               raise
+                 (InternalError
+                    "unreachable match arm in checker reached with logical and/or")
+           )
+       | Call (name, args, loc) -> (
+           match lookup name defns with
+           | Some called_defn -> (
+               try
+                 List.iter2
+                   (fun (_, param_ty) arg ->
+                     let arg_ty = type_check_expr arg env in
+                     (* annotated param type and arg type should match *)
+                     if param_ty <> arg_ty then
+                       raise
+                         (CheckError
+                            (TypeError (arg, param_ty, arg_ty), loc_from_expr arg)))
+                   called_defn.params args;
+                 (* function call has type of function's return type *)
+                 called_defn.return_ty
+                 (* Invalid_argument here means param/arg list were of different
+                    lengths, which is arity mismatch error. *)
+               with Invalid_argument _ ->
+                 raise
+                   (CheckError
+                      ( ArityMismatch
+                          ( called_defn.name,
+                            List.length called_defn.params,
+                            List.length args ),
+                        loc )))
+           | None -> raise (CheckError (UndefinedFunction name, loc))) *)
+
+    (* TODO: uncomment this *)
+    failwith "unimplemented!"
   (* [type_check_stmt] checks a single statement for type errors *)
   and type_check_stmt (stmt : stmt) (env : ty env) =
-    match stmt with
-    | Let (name, typ, expr, scope, loc) ->
-        (* cannot annotate a variable as having void type *)
-        if typ = Void then
-          raise (CheckError (NonFunctionAnnotatedAsVoid name, loc));
-        let expr_ty = type_check_expr expr env in
-        (* type of expression must match annotated type *)
-        if expr_ty <> typ then
-          raise (CheckError (TypeError (expr, typ, expr_ty), loc));
-        let ext_env = Env.add name typ env in
-        type_check_stmt_list scope ext_env
-    | Assign (name, expr, loc) ->
-        let typ = lookup_var name env loc in
-        let expr_ty = type_check_expr expr env in
-        if expr_ty <> typ then
-          raise (CheckError (TypeError (expr, typ, expr_ty), loc))
-    | Inr (name, loc) | Dcr (name, loc) ->
-        (* lookup will throw unbound error if var is unbound *)
-        lookup_var name env loc |> ignore
-    | If (cond, thn, _) ->
-        let cond_ty = type_check_expr cond env in
-        expect_non_void cond cond_ty;
-        type_check_stmt_list thn env
-    | IfElse (cond, thn, els, _) ->
-        let cond_ty = type_check_expr cond env in
-        expect_non_void cond cond_ty;
-        type_check_stmt_list thn env;
-        type_check_stmt_list els env
-    | While (cond, body, _) ->
-        let cond_ty = type_check_expr cond env in
-        expect_non_void cond cond_ty;
-        type_check_stmt_list body env
-    | Block (scope, _) -> type_check_stmt_list scope env
-    | Return (maybe_expr, loc) -> (
-        match maybe_expr with
-        | Some expr ->
-            (* returning an expression from a void function: bad *)
-            if defn.return_ty = Void then
-              raise
-                (CheckError (MismatchedReturn (defn.name, defn.return_ty), loc));
-            (* returned expression should match return type of function *)
-            let expr_ty = type_check_expr expr env in
-            if defn.return_ty <> expr_ty then
-              raise
-                (CheckError (TypeError (expr, defn.return_ty, expr_ty), loc))
-        | None ->
-            (* returning nothing from a non-void function: bad *)
-            if defn.return_ty <> Void then
-              raise
-                (CheckError (MismatchedReturn (defn.name, defn.return_ty), loc))
-        )
-    | Exit (maybe_expr, loc) -> (
-        match maybe_expr with
-        | Some expr ->
-            let expr_ty = type_check_expr expr env in
-            (* must exit with integer expression if given *)
-            if expr_ty <> Int then
-              raise (CheckError (TypeError (expr, Int, expr_ty), loc))
-        | None -> ())
-    | PrintDec (expr, loc) ->
-        let expr_ty = type_check_expr expr env in
-        (* must print only integers on decimal display *)
-        if expr_ty <> Int then
-          raise (CheckError (TypeError (expr, Int, expr_ty), loc))
-    | ExprStmt (expr, _) ->
-        (* as long as expression internally type checks, we are good *)
-        type_check_expr expr env |> ignore
-    | Assert (cond, _) ->
-        let cond_ty = type_check_expr cond env in
-        expect_non_void cond cond_ty
+    (* match stmt with
+       | Declare(name, typ, expr, scope, loc) ->
+           (* cannot annotate a variable as having void type *)
+           if typ = Void then
+             raise (CheckError (NonFunctionAnnotatedAsVoid name, loc));
+           let expr_ty = type_check_expr expr env in
+           (* type of expression must match annotated type *)
+           if expr_ty <> typ then
+             raise (CheckError (TypeError (expr, typ, expr_ty), loc));
+           let ext_env = Env.add name typ env in
+           type_check_stmt_list scope ext_env
+       | Assign (name, expr, loc) ->
+           let typ = lookup_var name env loc in
+           let expr_ty = type_check_expr expr env in
+           if expr_ty <> typ then
+             raise (CheckError (TypeError (expr, typ, expr_ty), loc))
+       | Inr (name, loc) | Dcr (name, loc) ->
+           (* lookup will throw unbound error if var is unbound *)
+           lookup_var name env loc |> ignore
+       | If (cond, thn, _) ->
+           let cond_ty = type_check_expr cond env in
+           expect_non_void cond cond_ty;
+           type_check_stmt_list thn env
+       | IfElse (cond, thn, els, _) ->
+           let cond_ty = type_check_expr cond env in
+           expect_non_void cond cond_ty;
+           type_check_stmt_list thn env;
+           type_check_stmt_list els env
+       | While (cond, body, _) ->
+           let cond_ty = type_check_expr cond env in
+           expect_non_void cond cond_ty;
+           type_check_stmt_list body env
+       | Block (scope, _) -> type_check_stmt_list scope env
+       | Return (maybe_expr, loc) -> (
+           match maybe_expr with
+           | Some expr ->
+               (* returning an expression from a void function: bad *)
+               if defn.return_ty = Void then
+                 raise
+                   (CheckError (MismatchedReturn (defn.name, defn.return_ty), loc));
+               (* returned expression should match return type of function *)
+               let expr_ty = type_check_expr expr env in
+               if defn.return_ty <> expr_ty then
+                 raise
+                   (CheckError (TypeError (expr, defn.return_ty, expr_ty), loc))
+           | None ->
+               (* returning nothing from a non-void function: bad *)
+               if defn.return_ty <> Void then
+                 raise
+                   (CheckError (MismatchedReturn (defn.name, defn.return_ty), loc))
+           )
+       | Exit (maybe_expr, loc) -> (
+           match maybe_expr with
+           | Some expr ->
+               let expr_ty = type_check_expr expr env in
+               (* must exit with integer expression if given *)
+               if expr_ty <> Int then
+                 raise (CheckError (TypeError (expr, Int, expr_ty), loc))
+           | None -> ())
+       | PrintDec (expr, loc) ->
+           let expr_ty = type_check_expr expr env in
+           (* must print only integers on decimal display *)
+           if expr_ty <> Int then
+             raise (CheckError (TypeError (expr, Int, expr_ty), loc))
+       | ExprStmt (expr, _) ->
+           (* as long as expression internally type checks, we are good *)
+           type_check_expr expr env |> ignore
+       | Assert (cond, _) ->
+           let cond_ty = type_check_expr cond env in
+           expect_non_void cond cond_ty *)
+    (* TODO: uncomment this *)
+    failwith "unimplemented!"
   and type_check_stmt_list (stmts : stmt list) (env : ty env) =
     List.iter (fun stmt -> type_check_stmt stmt env) stmts
   in
@@ -290,7 +295,7 @@ let rec check_funcs_are_unique (defns : func_defn list) =
       | dup :: _ -> raise (CheckError (MultipleDefinitions dup.name, dup.loc)))
 
 (* [check_for_returns_in_main] checks that there are no return statements
-  within the main function, and errors if there are. *)
+   within the main function, and errors if there are. *)
 let check_for_returns_in_main (main : func_defn) =
   check_for_stmt { defines = []; funcs = []; main } (function
     | Return (_, loc) -> raise (CheckError (ReturnInMain, loc))
@@ -298,7 +303,7 @@ let check_for_returns_in_main (main : func_defn) =
   |> ignore
 
 (* [check] performs all validity checking on the input program,
-  throwing an error if it finds problems. *)
+   throwing an error if it finds problems. *)
 let check (pgrm : prog) =
   (* main must have return type void *)
   if pgrm.main.return_ty <> Void then

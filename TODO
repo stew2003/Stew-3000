@@ -22,7 +22,18 @@ Compiler
       [x] remove addi 0, subi 0, etc (no effect)
   [] new types
     [] pointer types, unsigned (meaning unsigned int), char
-    [] casting operator
+    [] new expressions:
+      [] char literal ('a')
+      [] dereference
+      [] & (address of)
+      [] cast
+    [] new statements:
+      [] assign/inr/dcr
+        [] make lefthand side an l-value (deref or var)
+      [] let: make initializer optional
+    [] update checker to support new types
+      [] checker removes casts but uses them
+      [] ... figure out type rules
 
 Docs
   [] document everything

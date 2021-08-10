@@ -20,11 +20,13 @@ rule token = parse
     token lexbuf }
 | '\n' { Lexing.new_line lexbuf; token lexbuf }
 | '-'?['0'-'9']+ as i
-  { NUM (int_of_string i, loc_from_lexbuf lexbuf) }
+  { NUMLIT (int_of_string i, loc_from_lexbuf lexbuf) }
 | '-'?"0x"['0'-'9''a'-'f''A'-'F']+ as hex
-  { NUM (int_of_string hex, loc_from_lexbuf lexbuf) }
+  { NUMLIT (int_of_string hex, loc_from_lexbuf lexbuf) }
 | '-'?"0b"['0' '1']+ as binary
-  { NUM (int_of_string binary, loc_from_lexbuf lexbuf) }
+  { NUMLIT (int_of_string binary, loc_from_lexbuf lexbuf) }
+| "'"_"'" as character
+  { CHARLIT ((String.get character 1), loc_from_lexbuf lexbuf) }
 | '('
   { LPAREN (loc_from_lexbuf lexbuf) }
 | ')'
@@ -52,7 +54,7 @@ rule token = parse
 | "||"
   { LOR (loc_from_lexbuf lexbuf) }
 | '&'
-  { BAND (loc_from_lexbuf lexbuf) }
+  { AMPERSAND (loc_from_lexbuf lexbuf) }
 | '|'
   { BOR (loc_from_lexbuf lexbuf) }
 | '^'

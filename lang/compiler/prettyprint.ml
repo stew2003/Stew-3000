@@ -37,10 +37,15 @@ let pretty_print_bin_op ?(is_nested_in_op = false) (op : bin_op)
     (if is_nested_in_op then "(%s)" else "%s")
     (sprintf "%s %s %s" pretty_left (pretty_bin_op op) pretty_right)
 
+let rec pretty_print_l_value (lv : l_value) : string =
+  match lv with
+  | LVar (name, _) -> name
+  | LDeref (e, _) -> sprintf "*(%s)" (pretty_print_expr e)
+
 (* [pretty_print_expr] converts an expression into a pretty-printed string. *)
-let rec pretty_print_expr ?(is_nested_in_op = false) (exp : expr) : string =
+and pretty_print_expr ?(is_nested_in_op = false) (exp : expr) : string =
   match exp with
-  | Num (n, _) -> sprintf "%d" n
+  | NumLiteral (n, _) -> sprintf "%d" n
   | Var (name, _) -> name
   | UnOp (op, operand, _) ->
       pretty_print_un_op op (pretty_print_expr operand ~is_nested_in_op:true)
@@ -56,11 +61,16 @@ let rec pretty_print_expr ?(is_nested_in_op = false) (exp : expr) : string =
 (* [pretty_print_stmt] converts a single statement into a pretty-printed string. *)
 and pretty_print_stmt (stmt : stmt) (indent_level : int) : string =
   match stmt with
-  | Let (name, typ, expr, scope, _) ->
-      sprintf "%s %s = %s;\n%s" (pretty_print_type typ) name
-        (pretty_print_expr expr)
+  | Declare (name, typ, expr, scope, _) ->
+      let initialization =
+        match expr with
+        | None -> ""
+        | Some expr -> sprintf " = %s" (pretty_print_expr expr)
+      in
+      sprintf "%s %s%s;\n%s" (pretty_print_type typ) name initialization
         (pretty_print_stmt_list scope indent_level)
-  | Assign (name, expr, _) -> sprintf "%s = %s;" name (pretty_print_expr expr)
+  | Assign (lv, expr, _) ->
+      sprintf "%s = %s;" (pretty_print_l_value lv) (pretty_print_expr expr)
   | If (cond, thn, _) ->
       sprintf "if (%s) %s" (pretty_print_expr cond)
         (pretty_print_block thn indent_level)
@@ -78,8 +88,8 @@ and pretty_print_stmt (stmt : stmt) (indent_level : int) : string =
   | Exit (None, _) -> "exit();"
   | ExprStmt (expr, _) -> sprintf "%s;" (pretty_print_expr expr)
   | PrintDec (expr, _) -> sprintf "print(%s);" (pretty_print_expr expr)
-  | Inr (name, _) -> sprintf "%s++;" name
-  | Dcr (name, _) -> sprintf "%s--;" name
+  | Inr (lv, _) -> sprintf "%s++;" (pretty_print_l_value lv)
+  | Dcr (lv, _) -> sprintf "%s--;" (pretty_print_l_value lv)
   | Assert (expr, _) -> sprintf "assert(%s);" (pretty_print_expr expr)
 
 (* [pretty_print_stmt_list] converts a statement list into a pretty-printed string. *)
