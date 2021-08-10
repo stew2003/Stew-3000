@@ -33,6 +33,7 @@ type bin_op =
   | Eq
   | Neq
 
+(* L-values represent memory locations that can be mutated. *)
 type l_value = LVar of string * maybe_loc | LDeref of expr * maybe_loc
 
 and expr =
@@ -49,7 +50,6 @@ and expr =
 type stmt =
   | Declare of string * ty * expr option * stmt list * maybe_loc
   | Assign of l_value * expr * maybe_loc
-  (* Inr/Dcr mutate a variable, incrementing/decrementing *)
   | Inr of l_value * maybe_loc
   | Dcr of l_value * maybe_loc
   | If of expr * stmt list * maybe_loc
@@ -97,7 +97,7 @@ let rec string_of_ty (t : ty) : string =
   | Int -> "int"
   | Unsigned -> "unsigned"
   | Char -> "char"
-  | Pointer typ -> Printf.sprintf "%s *" (string_of_ty typ)
+  | Pointer typ -> Printf.sprintf "%s*" (string_of_ty typ)
 
 (* [describe_bin_op] returns a description of a binary operator *)
 let describe_bin_op (op : bin_op) : string =

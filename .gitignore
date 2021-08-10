@@ -9,3 +9,6 @@ _build/
 
 # binary things
 *.3000.b
+
+# compiler-generated assembly
+programs/asm/compiler_output/

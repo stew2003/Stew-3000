@@ -34,7 +34,6 @@ Compiler
     [] update checker to support new types
       [] checker removes casts but uses them
       [] checker may replace comparison ops with unsigned equivalents
-      [] ... figure out type rules
 
 Docs
   [] document everything
