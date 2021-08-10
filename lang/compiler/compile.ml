@@ -63,6 +63,9 @@ let compile_bin_op (op : bin_op) (si : int) =
   | Lt -> comparison "less" (fun success -> Jl (success, None))
   | Gte -> comparison "greater_than_eq" (fun success -> Jge (success, None))
   | Lte -> comparison "less_than_eq" (fun success -> Jle (success, None))
+  | UnsignedGt | UnsignedLt | UnsignedGte | UnsignedLte ->
+      (* TODO: *)
+      failwith "unimplemented!"
   | Eq -> comparison "equal" (fun success -> Je (success, None))
   | Neq -> comparison "not_equal" (fun success -> Jne (success, None))
   | LAnd | LOr ->
@@ -87,6 +90,9 @@ let rec compile_expr (expression : expr) (bindings : int env) (si : int)
   in
   match expression with
   | NumLiteral (n, _) -> [ Mvi (n, A, None) ]
+  | CharLiteral (c, _) ->
+      (* TODO: *)
+      failwith "unimplemented!"
   | Var (x, _) -> (
       match Env.find_opt x bindings with
       | Some x_si -> [ Lds (x_si, A, None) ]
@@ -115,6 +121,17 @@ let rec compile_expr (expression : expr) (bindings : int env) (si : int)
           Call (function_label func, None);
           Subi (stack_base, SP, None);
         ]
+  | Deref (e, _) ->
+      (* TODO: *)
+      failwith "unimplemented!"
+  | AddrOf (lv, _) ->
+      (* TODO: *)
+      failwith "unimplemented!"
+  | Cast (typ, _, _) ->
+      raise
+        (InternalError
+           (Printf.sprintf "encountered cast in compiler (casting to %s)"
+              (string_of_ty typ)))
 
 (* [compile_cond] generates instructions for specifically compiling
    conditions in ifs and whiles*)
@@ -144,6 +161,9 @@ and compile_cond (cond : expr) (condition_failed : string) (bindings : int env)
       | Gte -> compile_comparison (fun label -> Jl (label, None))
       | Lt -> compile_comparison (fun label -> Jge (label, None))
       | Lte -> compile_comparison (fun label -> Jg (label, None))
+      | UnsignedGt | UnsignedGte | UnsignedLt | UnsignedLte ->
+          (* TODO: *)
+          failwith "unimplemented!"
       | Eq -> compile_comparison (fun label -> Jne (label, None))
       | Neq -> compile_comparison (fun label -> Je (label, None))
       | _ -> default_compile_cond ())

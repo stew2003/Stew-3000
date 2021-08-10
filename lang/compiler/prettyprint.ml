@@ -24,10 +24,10 @@ let pretty_print_bin_op ?(is_nested_in_op = false) (op : bin_op)
     | BAnd -> "&"
     | BOr -> "|"
     | BXor -> "^"
-    | Gt -> ">"
-    | Lt -> "<"
-    | Gte -> ">="
-    | Lte -> "<="
+    | Gt | UnsignedGt -> ">"
+    | Lt | UnsignedLt -> "<"
+    | Gte | UnsignedGte -> ">="
+    | Lte | UnsignedLte -> "<="
     | Eq -> "=="
     | Neq -> "!="
     | LAnd -> "&&"
@@ -37,6 +37,7 @@ let pretty_print_bin_op ?(is_nested_in_op = false) (op : bin_op)
     (if is_nested_in_op then "(%s)" else "%s")
     (sprintf "%s %s %s" pretty_left (pretty_bin_op op) pretty_right)
 
+(* [pretty_print_l_value] converts an l-value into a pretty-printed string. *)
 let rec pretty_print_l_value (lv : l_value) : string =
   match lv with
   | LVar (name, _) -> name
@@ -46,6 +47,7 @@ let rec pretty_print_l_value (lv : l_value) : string =
 and pretty_print_expr ?(is_nested_in_op = false) (exp : expr) : string =
   match exp with
   | NumLiteral (n, _) -> sprintf "%d" n
+  | CharLiteral (c, _) -> sprintf "%c" c
   | Var (name, _) -> name
   | UnOp (op, operand, _) ->
       pretty_print_un_op op (pretty_print_expr operand ~is_nested_in_op:true)
@@ -57,6 +59,11 @@ and pretty_print_expr ?(is_nested_in_op = false) (exp : expr) : string =
   | Call (name, args, _) ->
       sprintf "%s(%s)" name
         (List.map pretty_print_expr args |> String.concat ", ")
+  | Deref (e, _) -> sprintf "*%s" (pretty_print_expr ~is_nested_in_op:true e)
+  | AddrOf (lv, _) -> sprintf "&%s" (pretty_print_l_value lv)
+  | Cast (typ, e, _) ->
+      sprintf "(%s)%s" (pretty_print_type typ)
+        (pretty_print_expr ~is_nested_in_op:true e)
 
 (* [pretty_print_stmt] converts a single statement into a pretty-printed string. *)
 and pretty_print_stmt (stmt : stmt) (indent_level : int) : string =

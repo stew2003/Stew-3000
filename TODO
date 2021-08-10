@@ -27,12 +27,13 @@ Compiler
       [] dereference
       [] & (address of)
       [] cast
-    [] new statements:
+    [] statements:
       [] assign/inr/dcr
         [] make lefthand side an l-value (deref or var)
-      [] let: make initializer optional
+      [x] let: make initializer optional
     [] update checker to support new types
       [] checker removes casts but uses them
+      [] checker may replace comparison ops with unsigned equivalents
       [] ... figure out type rules
 
 Docs

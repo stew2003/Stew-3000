@@ -26,6 +26,10 @@ type bin_op =
   | Lt
   | Gte
   | Lte
+  | UnsignedGt
+  | UnsignedLt
+  | UnsignedGte
+  | UnsignedLte
   | Eq
   | Neq
 
@@ -112,6 +116,10 @@ let describe_bin_op (op : bin_op) : string =
   | Lt -> "less than"
   | Gte -> "greater than or equal"
   | Lte -> "less than or equal"
+  | UnsignedGt -> "unsigned greater than"
+  | UnsignedLt -> "unsigned less than"
+  | UnsignedGte -> "unsigned greater than or equal"
+  | UnsignedLte -> "unsigned less than or equal"
   | Eq -> "equality"
   | Neq -> "inequality"
 
@@ -123,27 +131,39 @@ let describe_un_op (op : un_op) : string =
 let describe_expr (e : expr) : string =
   match e with
   | NumLiteral _ -> "number"
+  | CharLiteral _ -> "character"
   | Var _ -> "variable"
   | UnOp (op, _, _) -> describe_un_op op
   | BinOp (op, _, _, _) -> describe_bin_op op
   | Call _ -> "function call"
+  | Deref _ -> "dereference"
+  | AddrOf _ -> "address-of"
+  | Cast _ -> "cast"
 
 (* [loc_from_expr] extracts the source location from an expression *)
 let loc_from_expr (exp : expr) : maybe_loc =
   match exp with
   | NumLiteral (_, loc)
+  | CharLiteral (_, loc)
   | Var (_, loc)
   | UnOp (_, _, loc)
   | BinOp (_, _, _, loc)
-  | Call (_, _, loc) ->
+  | Call (_, _, loc)
+  | Deref (_, loc)
+  | AddrOf (_, loc)
+  | Cast (_, _, loc) ->
       loc
 
 (* [check_for_expr] determines if the program contains an
    expression that satisfies the given predicate *)
 let check_for_expr (pgrm : prog) (pred : expr -> bool) : bool =
+  (* [check_l_value] determines if the given l-value contains an
+     expression that satisfies the predicate *)
+  let rec check_l_value (lv : l_value) (pred : expr -> bool) : bool =
+    match lv with LDeref (e, _) -> pred e | LVar _ -> false
   (* [check_expr] determines if the given expression contains a
      sub-expression that satisfies the given predicate. *)
-  let rec check_expr (exp : expr) (pred : expr -> bool) : bool =
+  and check_expr (exp : expr) (pred : expr -> bool) : bool =
     (* true if either the expression or its subexpressions yield true *)
     pred exp
     ||
@@ -153,7 +173,10 @@ let check_for_expr (pgrm : prog) (pred : expr -> bool) : bool =
     | Call (_, args, _) ->
         List.map (fun arg -> check_expr arg pred) args
         |> List.fold_left ( || ) false
-    | NumLiteral _ | Var _ -> false
+    | Deref (e, _) -> check_expr e pred
+    | AddrOf (lv, _) -> check_l_value lv pred
+    | Cast (_, e, _) -> check_expr e pred
+    | NumLiteral _ | CharLiteral _ | Var _ -> false
   (* [check_stmt] determines if the given statement contains an
      expression that satisfies the given predicate *)
   and check_stmt (stmt : stmt) (pred : expr -> bool) : bool =
@@ -163,7 +186,8 @@ let check_for_expr (pgrm : prog) (pred : expr -> bool) : bool =
     | Declare (_, _, value, body, _) ->
         (match value with None -> false | Some value -> check_expr value pred)
         || check_stmt_list body pred
-    | Assign (_, value, _) -> check_expr value pred
+    | Assign (lv, value, _) -> check_l_value lv pred || check_expr value pred
+    | Inr (lv, _) | Dcr (lv, _) -> check_l_value lv pred
     | If (cond, thn, _) -> check_expr cond pred || check_stmt_list thn pred
     | IfElse (cond, thn, els, _) ->
         check_expr cond pred || check_stmt_list thn pred
@@ -175,7 +199,7 @@ let check_for_expr (pgrm : prog) (pred : expr -> bool) : bool =
     | PrintDec (value, _) -> check_expr value pred
     | Exit (Some e, _) -> check_expr e pred
     | Assert (e, _) -> check_expr e pred
-    | Return _ | Exit _ | Inr _ | Dcr _ -> false
+    | Return _ | Exit _ -> false
   (* [check_stmt_list] determines if the given statement list
      contains an expression that satisfies the predicate *)
   and check_stmt_list (stmts : stmt list) (pred : expr -> bool) : bool =

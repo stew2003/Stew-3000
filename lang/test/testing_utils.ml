@@ -12,10 +12,14 @@ let rec norm_l_value_locs (lv : l_value) : l_value =
 and norm_expr_locs (exp : expr) : expr =
   match exp with
   | NumLiteral (n, _) -> NumLiteral (n, None)
+  | CharLiteral (c, _) -> CharLiteral (c, None)
   | Var (id, _) -> Var (id, None)
   | UnOp (op, e, _) -> UnOp (op, norm_expr_locs e, None)
   | BinOp (op, l, r, _) -> BinOp (op, norm_expr_locs l, norm_expr_locs r, None)
   | Call (fn, args, _) -> Call (fn, List.map norm_expr_locs args, None)
+  | Deref (e, _) -> Deref (norm_expr_locs e, None)
+  | AddrOf (lv, _) -> AddrOf (norm_l_value_locs lv, None)
+  | Cast (typ, e, _) -> Cast (typ, norm_expr_locs e, None)
 
 (* [norm_stmt_locs] normalizes source locations in a statement *)
 and norm_stmt_locs (stmt : stmt) : stmt =
