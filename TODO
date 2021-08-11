@@ -39,7 +39,7 @@ Compiler
       [x] checker removes casts but uses them
       [x] checker may replace comparison ops with unsigned equivalents
       [x] checker converts chars to nums
-      [] check array declarations
+      [x] check array declarations
 
 Docs
   [] document everything

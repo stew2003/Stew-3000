@@ -154,6 +154,25 @@ let loc_from_expr (exp : expr) : maybe_loc =
   | Cast (_, _, loc) ->
       loc
 
+(* [loc_from_stmt] extracts the source location from a statement. *)
+let loc_from_stmt (stmt : stmt) : maybe_loc =
+  match stmt with
+  | Declare (_, _, _, _, loc)
+  | ArrayDeclare (_, _, _, _, _, loc)
+  | Assign (_, _, loc)
+  | Inr (_, loc)
+  | Dcr (_, loc)
+  | If (_, _, loc)
+  | IfElse (_, _, _, loc)
+  | While (_, _, loc)
+  | Block (_, loc)
+  | Return (_, loc)
+  | ExprStmt (_, loc)
+  | PrintDec (_, loc)
+  | Exit (_, loc)
+  | Assert (_, loc) ->
+      loc
+
 (* [check_for_expr] determines if the program contains an
    expression that satisfies the given predicate *)
 let check_for_expr (pgrm : prog) (pred : expr -> bool) : bool =

@@ -19,7 +19,8 @@ let norm_check_err (err : Check.check_err) =
   | NonVoidMain | ReturnInMain | CtrlReachesEndOfNonVoid _ | MismatchedReturn _
   | UnboundVariable _ | UndefinedFunction _ | NonFunctionAnnotatedAsVoid _
   | ArityMismatch _ | MultipleDefinitions _ | UnrepresentableConstant _
-  | DerefVoidPointer | CastToVoid | DerefNonPointer _ ->
+  | DerefVoidPointer | CastToVoid | DerefNonPointer _ | NonConstantArraySize _
+  | UnderspecifiedArray _ | TooLargeInitializer _ ->
       err
 
 (* [assert_raises_check_err] runs a thunk and checks if it
@@ -178,6 +179,24 @@ let test_deref_void_pointer _ =
 let test_cast_void _ =
   assert_raises_check_err CastToVoid "void main() { (void)0; }"
 
+let test_non_const_array_size _ =
+  assert_raises_check_err (NonConstantArraySize "arr")
+    "void main() { int x; int arr[40 + x]; }";
+  assert_raises_check_err (NonConstantArraySize "s")
+    "void main() { int y; char s[2 * 3 + y] = \"string\"; }"
+
+let test_underspec_array _ =
+  assert_raises_check_err (UnderspecifiedArray "bad")
+    "void main() { unsigned *bad[]; }"
+
+let test_too_large_init _ =
+  assert_raises_check_err
+    (TooLargeInitializer ("a", 3, 4))
+    "void main() { int a[3] = { 1, 3, 5, 7 }; }";
+  assert_raises_check_err
+    (TooLargeInitializer ("array", 0, 2))
+    "void main() { char **array[0] = { 10, 5 }; }"
+
 let suite =
   "Checker Tests"
   >::: [
@@ -197,6 +216,9 @@ let suite =
          "test_deref_non_pointer" >:: test_deref_non_pointer;
          "test_deref_void_pointer" >:: test_deref_void_pointer;
          "test_cast_void" >:: test_cast_void;
+         "test_non_const_array_size" >:: test_non_const_array_size;
+         "test_underspec_array" >:: test_underspec_array;
+         "test_too_large_init" >:: test_too_large_init;
        ]
 
 let () = run_test_tt_main suite

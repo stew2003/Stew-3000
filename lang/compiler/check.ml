@@ -3,6 +3,8 @@ open Util.Srcloc
 open Util.Env
 open Util.Err
 open Printf
+open Warnings
+open Optimizations.Constant_fold
 
 (* A type constraint indicates whether the type of a given expression
    is constrained to a particular type, or if it could be various types. *)
@@ -41,6 +43,12 @@ type check_err =
   | DerefVoidPointer
   (* A (void) cast was made *)
   | CastToVoid
+  (* An array's size declaration was non-constant (string is name of array) *)
+  | NonConstantArraySize of string
+  (* An array was declared with neither a size nor initializer *)
+  | UnderspecifiedArray of string
+  (* An array was initialized with more elements than its size can hold (name, size, # initialized elements) *)
+  | TooLargeInitializer of string * int * int
 
 exception CheckError of check_err with_loc_opt
 
@@ -87,10 +95,17 @@ let string_of_check_err = function
         | ConstrainedTo t -> string_of_ty t)
   | DerefVoidPointer -> "cannot dereference void pointer"
   | CastToVoid -> "cannot cast to void type"
+  | NonConstantArraySize arr -> sprintf "array `%s` must have constant size" arr
+  | UnderspecifiedArray arr ->
+      sprintf "array `%s` must have either a size or initializer" arr
+  | TooLargeInitializer (arr, size, elements) ->
+      sprintf "array `%s` (size %d) cannot be initialized with %d elements" arr
+        size elements
 
 (* [type_check] checks a function definition for type errors, raising an
    error if they are discovered. *)
-let type_check (defn : func_defn) (defns : func_defn list) : func_defn =
+let type_check (defn : func_defn) (defns : func_defn list)
+    (emit_warning : compiler_warn_handler) : func_defn =
   (* [expect_non_void] checks that an expression is non-void type
      and raises an error if it is. *)
   let expect_non_void (exp : expr) (exp_ty_constraint : type_constraint) =
@@ -292,9 +307,63 @@ let type_check (defn : func_defn) (defns : func_defn list) : func_defn =
         let ext_env = Env.add name typ env in
         let scope_tc = type_check_stmt_list scope ext_env in
         Declare (name, typ, init_tc, scope_tc, loc)
-    | ArrayDeclare (name, typ, size, init, scope, loc) ->
-        (* TODO: *)
-        failwith "unimplemented!"
+    | ArrayDeclare (name, typ, size, init, scope, loc) as decl ->
+        (* cannot declare array of void types *)
+        if typ = Void then
+          raise (CheckError (NonFunctionAnnotatedAsVoid name, loc));
+
+        (* Checks an array size expression by type checking it, then folding
+           it to a constant value. *)
+        let extract_and_check_size (size_expr : expr) : int * expr =
+          let _, size_tc = type_check_expr size_expr env in
+          match fold_expr size_tc emit_warning with
+          | NumLiteral (size, _) as const_size_expr ->
+              if size = 0 then emit_warning (ZeroSizeArray (name, decl));
+              (size, const_size_expr)
+          | _ ->
+              raise
+                (CheckError (NonConstantArraySize name, loc_from_expr size_expr))
+        in
+        (* Checks an array initializer by type checking each expression and
+           ensuring they comply with the array's annotated type *)
+        let check_initializer (exprs : expr list) : expr list =
+          if List.length exprs = 0 then
+            emit_warning (EmptyInitializer (name, decl));
+          List.map
+            (fun e ->
+              (* every element in the initializer must satisfy the array's annotated type *)
+              ensure_type_satisfies (ConstrainedTo typ) e (loc_from_expr e))
+            exprs
+        in
+
+        let size_tc, init_tc =
+          match (size, init) with
+          (* only size specified *)
+          | Some size, None ->
+              let _, size_tc = extract_and_check_size size in
+              (Some size_tc, None)
+          (* only initializer specified *)
+          | None, Some exprs -> (None, Some (check_initializer exprs))
+          (* both size and initializer specified *)
+          | Some size, Some exprs ->
+              let const_size, size_tc = extract_and_check_size size in
+              let exprs_tc = check_initializer exprs in
+              let num_exprs = List.length exprs in
+              (* initializer exceeds declared size *)
+              if num_exprs > const_size then
+                raise
+                  (CheckError
+                     (TooLargeInitializer (name, const_size, num_exprs), loc));
+
+              (Some size_tc, Some exprs_tc)
+          (* no size, no initializer *)
+          | None, None -> raise (CheckError (UnderspecifiedArray name, loc))
+        in
+        (* typecheck scope with array name bound to pointer to element type *)
+        let ext_env = Env.add name (Pointer typ) env in
+        let scope_tc = type_check_stmt_list scope ext_env in
+
+        ArrayDeclare (name, typ, size_tc, init_tc, scope_tc, loc)
     | Assign (lv, expr, loc) ->
         let expected, lv_tc = type_check_l_value lv env in
         let expr_tc = ensure_type_satisfies expected expr loc in
@@ -424,7 +493,8 @@ let check_for_returns_in_main (main : func_defn) =
    it returns a processed version of the input program which has
    casts removed and certain operators replaced to correspond with
    the types they are used with. *)
-let check (pgrm : prog) : prog =
+let check ?(emit_warning : compiler_warn_handler = fun _ -> ()) (pgrm : prog) :
+    prog =
   (* main must have return type void *)
   if pgrm.main.return_ty <> Void then
     raise (CheckError (NonVoidMain, pgrm.main.loc));
@@ -445,7 +515,7 @@ let check (pgrm : prog) : prog =
       raise (CheckError (CtrlReachesEndOfNonVoid defn.name, defn.loc));
 
     (* type check the function definition *)
-    type_check defn pgrm.funcs
+    type_check defn pgrm.funcs emit_warning
   in
   {
     pgrm with

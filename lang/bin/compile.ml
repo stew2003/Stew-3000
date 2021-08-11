@@ -30,7 +30,7 @@ let command =
             print_warning (message_of_compiler_warn w source_text src_file)
           in
 
-          let pgrm = Check.check pgrm in
+          let pgrm = Check.check ~emit_warning:warning_handler pgrm in
           let pgrm =
             Constant_fold.constant_fold ~emit_warning:warning_handler pgrm
           in
