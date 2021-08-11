@@ -88,6 +88,293 @@ let string_of_check_err = function
   | DerefVoidPointer -> "cannot dereference void pointer"
   | CastToVoid -> "cannot cast to void type"
 
+(* [type_check] checks a function definition for type errors, raising an
+   error if they are discovered. *)
+let type_check (defn : func_defn) (defns : func_defn list) : func_defn =
+  (* [expect_non_void] checks that an expression is non-void type
+     and raises an error if it is. *)
+  let expect_non_void (exp : expr) (exp_ty_constraint : type_constraint) =
+    match exp_ty_constraint with
+    | ConstrainedTo Void ->
+        raise (CheckError (InvalidTypeError (exp, Void), loc_from_expr exp))
+    | _ -> ()
+  in
+  (* [lookup_var] looks up the type of a variable in the type environment
+     and returns it, or errors if the variable is unbound *)
+  let lookup_var (name : string) (env : ty env) (loc : maybe_loc) : ty =
+    match Env.find_opt name env with
+    | Some typ ->
+        if typ = Void then
+          raise (InternalError "found void variable type in type environment");
+        typ
+    | None -> raise (CheckError (UnboundVariable name, loc))
+  in
+  (* [type_check_expr] calculates the type of the given expression,
+     or raises an error if it violates type rules. *)
+  let rec type_check_expr (exp : expr) (env : ty env) : type_constraint * expr =
+    match exp with
+    | NumLiteral (n, loc) ->
+        (* all numbers are 8-bit *)
+        if n < -128 || n > 255 then
+          raise (CheckError (UnrepresentableConstant n, loc));
+        (* int is the only signed type, otherwise it could be any *)
+        if n < 0 then (ConstrainedTo Int, exp) else (Unconstrained, exp)
+    | CharLiteral (c, loc) ->
+        (* char literals are converted into num literals *)
+        (ConstrainedTo Char, NumLiteral (Char.code c, loc))
+    | Var (name, loc) -> (ConstrainedTo (lookup_var name env loc), exp)
+    | UnOp (LNot, expr, loc) ->
+        (* expression needs to be type checked and cannot be void *)
+        let expr_ty, expr_tc = type_check_expr expr env in
+        expect_non_void expr expr_ty;
+        (* log ops are always interpreted as ints *)
+        (ConstrainedTo Int, UnOp (LNot, expr_tc, loc))
+    | UnOp (op, expr, loc) ->
+        (* operand can be any non-void type *)
+        let expr_ty, expr_tc = type_check_expr expr env in
+        expect_non_void expr expr_ty;
+        (* interpret result of unop as same type as operand *)
+        (expr_ty, UnOp (op, expr_tc, loc))
+    | BinOp (log_bin_op, left, right, loc)
+      when log_bin_op = LAnd || log_bin_op = LOr ->
+        (* left and right should type check internally *)
+        let left_ty, left_tc = type_check_expr left env in
+        let right_ty, right_tc = type_check_expr right env in
+        (* neither left nor right can be void *)
+        expect_non_void left left_ty;
+        expect_non_void right right_ty;
+        (* log ops are always interpreted as ints *)
+        (ConstrainedTo Int, BinOp (log_bin_op, left_tc, right_tc, loc))
+    | BinOp (op, left, right, loc) ->
+        (* left and right should type check internally *)
+        let left_ty, left_tc = type_check_expr left env in
+        let right_ty, right_tc = type_check_expr right env in
+
+        (* Compute the type to interpret both operands as. If one operand is
+           constrained, the contrained type is taken. *)
+        let operand_ty =
+          match (left_ty, right_ty) with
+          | ConstrainedTo t1, ConstrainedTo t2 when t1 = t2 -> ConstrainedTo t1
+          | ConstrainedTo t, Unconstrained | Unconstrained, ConstrainedTo t ->
+              ConstrainedTo t
+          | Unconstrained, Unconstrained -> Unconstrained
+          | ConstrainedTo t1, ConstrainedTo t2 ->
+              raise
+                (CheckError
+                   (TypeMismatch (describe_bin_op op, left, t1, right, t2), loc))
+        in
+        (* neither left nor right can be void *)
+        expect_non_void left left_ty;
+        expect_non_void right right_ty;
+        (* Convert an operator into its unsigned equivalent if it has one. *)
+        let op_to_unsigned_op (op : bin_op) : bin_op =
+          match op with
+          | Gt -> UnsignedGt
+          | Lt -> UnsignedLt
+          | Gte -> UnsignedGte
+          | Lte -> UnsignedLte
+          | _ -> op
+        in
+        (* comparison operators evaluate to an int, other bin ops evaluate
+           to same type as the operands *)
+        let out_ty, typed_op =
+          match op with
+          | Gt | Lt | Gte | Lte | UnsignedGt | UnsignedLt | UnsignedGte
+          | UnsignedLte | Eq | Neq -> (
+              ( ConstrainedTo Int,
+                (* Int is the only signed type, convert all others to use
+                   unsigned equivalents *)
+                match operand_ty with
+                | ConstrainedTo Int -> op
+                | _ -> op_to_unsigned_op op ))
+          | Plus | Minus | Mult | Div | Mod | BAnd | BOr | BXor ->
+              (operand_ty, op)
+          | LAnd | LOr ->
+              raise
+                (InternalError
+                   "unreachable match arm in checker reached with logical \
+                    and/or")
+        in
+        (out_ty, BinOp (typed_op, left_tc, right_tc, loc))
+    | Call (name, args, loc) -> (
+        match lookup name defns with
+        | Some called_defn -> (
+            try
+              let args_tc =
+                List.map2
+                  (fun (_, param_ty) arg ->
+                    let arg_ty, arg_tc = type_check_expr arg env in
+
+                    (* annotated param type and arg type should match if arg
+                       is constrained, or arg should be unconstrained *)
+                    match arg_ty with
+                    | ConstrainedTo t when t <> param_ty ->
+                        raise
+                          (CheckError
+                             (TypeError (arg, param_ty, t), loc_from_expr arg))
+                    | _ -> arg_tc)
+                  called_defn.params args
+              in
+              (* function call has type of function's return type *)
+              (ConstrainedTo called_defn.return_ty, Call (name, args_tc, loc))
+              (* Invalid_argument here means param/arg list were of different
+                 lengths, which is arity mismatch error. *)
+            with Invalid_argument _ ->
+              raise
+                (CheckError
+                   ( ArityMismatch
+                       ( called_defn.name,
+                         List.length called_defn.params,
+                         List.length args ),
+                     loc )))
+        | None -> raise (CheckError (UndefinedFunction name, loc)))
+    | Deref (expr, loc) ->
+        let expr_ty, expr_tc = type_check_deref expr env loc in
+        (ConstrainedTo expr_ty, Deref (expr_tc, loc))
+    | AddrOf (lv, loc) -> (
+        match type_check_l_value lv env with
+        | ConstrainedTo inner, lv_tc ->
+            (ConstrainedTo (Pointer inner), AddrOf (lv_tc, loc))
+        | Unconstrained, _ ->
+            raise (InternalError "encountered l-value with unconstrained type"))
+    | Cast (typ, expr, loc) ->
+        if typ = Void then raise (CheckError (CastToVoid, loc));
+        let _, expr_tc = type_check_expr expr env in
+        (* constrain this expression to the casted type, and just pass
+           through the type checked expression (cast is not reproduced) *)
+        (ConstrainedTo typ, expr_tc)
+  (* [type_check_deref] checks a pointer dereference for type errors. It
+     returns the type of the inner expression being dereferenced, and the
+     type checked inner expression. *)
+  and type_check_deref (deref_expr : expr) (env : ty env) (loc : maybe_loc) :
+      ty * expr =
+    (* NOTE: Design choice: dereferences must take an explicit pointer type *)
+    match type_check_expr deref_expr env with
+    | ConstrainedTo (Pointer inner), deref_expr_tc ->
+        if inner = Void then raise (CheckError (DerefVoidPointer, loc));
+        (inner, deref_expr_tc)
+    | type_constr, _ -> raise (CheckError (DerefNonPointer type_constr, loc))
+  (* [type_check_l_value] checks an l-value for type errors *)
+  and type_check_l_value (lv : l_value) (env : ty env) :
+      type_constraint * l_value =
+    match lv with
+    | LVar (name, loc) -> (ConstrainedTo (lookup_var name env loc), lv)
+    | LDeref (expr, loc) ->
+        let expr_ty, expr_tc = type_check_deref expr env loc in
+        (ConstrainedTo expr_ty, LDeref (expr_tc, loc))
+  (* [type_check_stmt] checks a single statement for type errors *)
+  and type_check_stmt (stmt : stmt) (env : ty env) : stmt =
+    (* [ensure_type_satisfies] checks that a given expression type checks
+       to a constraint that is satisfied by the expected constraint.
+       Returns the type checked expr *)
+    let ensure_type_satisfies (expected : type_constraint) (expr : expr)
+        (loc : maybe_loc) : expr =
+      match (expected, type_check_expr expr env) with
+      | ConstrainedTo expected_ty, (ConstrainedTo actual_ty, _)
+        when actual_ty <> expected_ty ->
+          raise (CheckError (TypeError (expr, expected_ty, actual_ty), loc))
+      | _, (_, expr_tc) -> expr_tc
+    in
+    match stmt with
+    | Declare (name, typ, init, scope, loc) ->
+        (* cannot annotate a variable as having void type *)
+        if typ = Void then
+          raise (CheckError (NonFunctionAnnotatedAsVoid name, loc));
+        (* if supplied, initialization expression must type check
+           and match the annotated type. *)
+        let init_tc =
+          match init with
+          | None -> None
+          | Some expr ->
+              Some (ensure_type_satisfies (ConstrainedTo typ) expr loc)
+        in
+        (* typecheck scope with env binding name->typ *)
+        let ext_env = Env.add name typ env in
+        let scope_tc = type_check_stmt_list scope ext_env in
+        Declare (name, typ, init_tc, scope_tc, loc)
+    | Assign (lv, expr, loc) ->
+        let expected, lv_tc = type_check_l_value lv env in
+        let expr_tc = ensure_type_satisfies expected expr loc in
+        Assign (lv_tc, expr_tc, loc)
+    | Inr (lv, loc) ->
+        let _, lv_tc = type_check_l_value lv env in
+        Inr (lv_tc, loc)
+    | Dcr (lv, loc) ->
+        let _, lv_tc = type_check_l_value lv env in
+        Dcr (lv_tc, loc)
+    | If (cond, thn, loc) ->
+        let cond_ty, cond_tc = type_check_expr cond env in
+        expect_non_void cond cond_ty;
+        If (cond_tc, type_check_stmt_list thn env, loc)
+    | IfElse (cond, thn, els, loc) ->
+        let cond_ty, cond_tc = type_check_expr cond env in
+        expect_non_void cond cond_ty;
+        IfElse
+          ( cond_tc,
+            type_check_stmt_list thn env,
+            type_check_stmt_list els env,
+            loc )
+    | While (cond, body, loc) ->
+        let cond_ty, cond_tc = type_check_expr cond env in
+        expect_non_void cond cond_ty;
+        While (cond_tc, type_check_stmt_list body env, loc)
+    | Block (scope, loc) -> Block (type_check_stmt_list scope env, loc)
+    | Return (maybe_expr, loc) ->
+        let expr_tc =
+          match maybe_expr with
+          | Some expr ->
+              (* returning an expression from a void function: bad *)
+              if defn.return_ty = Void then
+                raise
+                  (CheckError (MismatchedReturn (defn.name, defn.return_ty), loc));
+              (* returned expression should match return type of function *)
+              Some
+                (ensure_type_satisfies (ConstrainedTo defn.return_ty) expr loc)
+          | None ->
+              (* returning nothing from a non-void function: bad *)
+              if defn.return_ty <> Void then
+                raise
+                  (CheckError (MismatchedReturn (defn.name, defn.return_ty), loc));
+              None
+        in
+        Return (expr_tc, loc)
+    | Exit (maybe_expr, loc) ->
+        let expr_tc =
+          match maybe_expr with
+          | Some expr ->
+              (* must exit with integer expression if given *)
+              Some (ensure_type_satisfies (ConstrainedTo Int) expr loc)
+          | None -> None
+        in
+        Exit (expr_tc, loc)
+    | PrintDec (expr, loc) ->
+        (* must print only signed integers on decimal display *)
+        PrintDec (ensure_type_satisfies (ConstrainedTo Int) expr loc, loc)
+    | ExprStmt (expr, loc) ->
+        (* as long as expression internally type checks, we are good *)
+        let _, expr_tc = type_check_expr expr env in
+        ExprStmt (expr_tc, loc)
+    | Assert (cond, loc) ->
+        let cond_ty, cond_tc = type_check_expr cond env in
+        expect_non_void cond cond_ty;
+        Assert (cond_tc, loc)
+  (* [type_check_stmt_list] checks a list of statements for type errors *)
+  and type_check_stmt_list (stmts : stmt list) (env : ty env) : stmt list =
+    List.map (fun stmt -> type_check_stmt stmt env) stmts
+  in
+  (* ensure all parameters are annotated as non-void *)
+  List.iter
+    (fun (name, typ) ->
+      if typ = Void then
+        raise (CheckError (NonFunctionAnnotatedAsVoid name, defn.loc)))
+    defn.params;
+
+  (* construct environment binding function parameters to their annotated types *)
+  let env = Util.Env.of_list defn.params in
+
+  (* type check the definition's body *)
+  { defn with body = type_check_stmt_list defn.body env }
+
 (* [ctrl_reaches_end] determines if the control flow of a function's
    body can reach the end of the function without encountering a return. *)
 let ctrl_reaches_end (defn : func_defn) : bool =
@@ -111,236 +398,6 @@ let ctrl_reaches_end (defn : func_defn) : bool =
   in
   ctrl_reaches_end_stmt_list defn.body
 
-(* [type_check] checks a function definition for type errors, raising an
-   error if they are discovered. *)
-let type_check (defn : func_defn) (defns : func_defn list) =
-  (* [expect_non_void] checks that an expression is non-void type
-     and raises an error if it is. *)
-  let expect_non_void (exp : expr) (exp_ty_constraint : type_constraint) =
-    match exp_ty_constraint with
-    | ConstrainedTo Void ->
-        raise (CheckError (InvalidTypeError (exp, Void), loc_from_expr exp))
-    | _ -> ()
-  in
-  (* [lookup_var] looks up the type of a variable in the type environment
-     and returns it, or errors if the variable is unbound *)
-  let lookup_var (name : string) (env : ty env) (loc : maybe_loc) : ty =
-    match Env.find_opt name env with
-    | Some typ ->
-        if typ = Void then
-          raise (InternalError "found void variable type in type environment");
-        typ
-    | None -> raise (CheckError (UnboundVariable name, loc))
-  in
-  (* [type_check_expr] calculates the type of the given expression,
-     or raises an error if it violates type rules. *)
-  let rec type_check_expr (exp : expr) (env : ty env) : type_constraint =
-    match exp with
-    | NumLiteral (n, loc) ->
-        (* all numbers are 8-bit *)
-        if n < -128 || n > 255 then
-          raise (CheckError (UnrepresentableConstant n, loc));
-        (* int is the only signed type, otherwise it could be any *)
-        if n < 0 then ConstrainedTo Int else Unconstrained
-    | CharLiteral _ -> ConstrainedTo Char
-    | Var (name, loc) -> ConstrainedTo (lookup_var name env loc)
-    | UnOp (LNot, expr, _) ->
-        (* expression needs to be type checked and cannot be void *)
-        expect_non_void expr (type_check_expr expr env);
-        (* log ops are always interpreted as ints *)
-        ConstrainedTo Int
-    | UnOp (_, expr, _) ->
-        (* operand can be any non-void type *)
-        let expr_ty = type_check_expr expr env in
-        expect_non_void expr expr_ty;
-        expr_ty
-    | BinOp (LAnd, left, right, _) | BinOp (LOr, left, right, _) ->
-        (* left and right should type check internally *)
-        let left_expr_ty = type_check_expr left env in
-        let right_expr_ty = type_check_expr right env in
-        (* neither left nor right can be void *)
-        expect_non_void left left_expr_ty;
-        expect_non_void right right_expr_ty;
-        (* log ops are always interpreted as ints *)
-        ConstrainedTo Int
-    | BinOp (op, left, right, loc) -> (
-        (* left and right should type check internally *)
-        let left_expr_ty = type_check_expr left env in
-        let right_expr_ty = type_check_expr right env in
-
-        (* Compute the type to interpret both operands as. If one operand is
-           constrained, the contrained type is taken. *)
-        let operand_type =
-          match (left_expr_ty, right_expr_ty) with
-          | ConstrainedTo t1, ConstrainedTo t2 when t1 = t2 -> ConstrainedTo t1
-          | ConstrainedTo t, Unconstrained | Unconstrained, ConstrainedTo t ->
-              ConstrainedTo t
-          | Unconstrained, Unconstrained -> Unconstrained
-          | ConstrainedTo t1, ConstrainedTo t2 ->
-              raise
-                (CheckError
-                   (TypeMismatch (describe_bin_op op, left, t1, right, t2), loc))
-        in
-        (* neither left nor right can be void *)
-        expect_non_void left left_expr_ty;
-        expect_non_void right right_expr_ty;
-
-        (* comparison operators evaluate to an int, other bin ops evaluate
-           to same type as the operands *)
-        match op with
-        | Gt | Lt | Gte | Lte | UnsignedGt | UnsignedLt | UnsignedGte
-        | UnsignedLte | Eq | Neq ->
-            ConstrainedTo Int
-        | Plus | Minus | Mult | Div | Mod | BAnd | BOr | BXor -> operand_type
-        | LAnd | LOr ->
-            raise
-              (InternalError
-                 "unreachable match arm in checker reached with logical and/or")
-        )
-    | Call (name, args, loc) -> (
-        match lookup name defns with
-        | Some called_defn -> (
-            try
-              List.iter2
-                (fun (_, param_ty) arg ->
-                  let arg_ty = type_check_expr arg env in
-
-                  (* annotated param type and arg type should match if arg
-                     is constrained, or arg should be unconstrained *)
-                  match arg_ty with
-                  | ConstrainedTo t when t <> param_ty ->
-                      raise
-                        (CheckError
-                           (TypeError (arg, param_ty, t), loc_from_expr arg))
-                  | _ -> ())
-                called_defn.params args;
-              (* function call has type of function's return type *)
-              ConstrainedTo called_defn.return_ty
-              (* Invalid_argument here means param/arg list were of different
-                 lengths, which is arity mismatch error. *)
-            with Invalid_argument _ ->
-              raise
-                (CheckError
-                   ( ArityMismatch
-                       ( called_defn.name,
-                         List.length called_defn.params,
-                         List.length args ),
-                     loc )))
-        | None -> raise (CheckError (UndefinedFunction name, loc)))
-    | Deref (expr, loc) -> type_check_deref expr env loc
-    | AddrOf (lv, _) -> (
-        match type_check_l_value lv env with
-        | ConstrainedTo inner -> ConstrainedTo (Pointer inner)
-        | Unconstrained ->
-            raise (InternalError "encountered l-value with unconstrained type"))
-    | Cast (typ, expr, loc) ->
-        if typ = Void then raise (CheckError (CastToVoid, loc));
-        type_check_expr expr env |> ignore;
-        (* constrain this expression to the casted type *)
-        ConstrainedTo typ
-  (* [type_check_deref] checks a pointer dereference for type errors *)
-  and type_check_deref (deref_expr : expr) (env : ty env) (loc : maybe_loc) =
-    (* NOTE: Design choice: dereferences must take an explicit pointer type *)
-    match type_check_expr deref_expr env with
-    | ConstrainedTo (Pointer inner) ->
-        if inner = Void then raise (CheckError (DerefVoidPointer, loc));
-        ConstrainedTo inner
-    | type_constr -> raise (CheckError (DerefNonPointer type_constr, loc))
-  (* [type_check_l_value] checks an l-value for type errors *)
-  and type_check_l_value (lv : l_value) (env : ty env) : type_constraint =
-    match lv with
-    | LVar (name, loc) -> ConstrainedTo (lookup_var name env loc)
-    | LDeref (expr, loc) -> type_check_deref expr env loc
-  (* [type_check_stmt] checks a single statement for type errors *)
-  and type_check_stmt (stmt : stmt) (env : ty env) =
-    (* [ensure_type_satisfies] checks that a given expression type checks
-       to a constraint that is satisfied by the expected constraint. *)
-    let ensure_type_satisfies (expected : type_constraint) (expr : expr)
-        (loc : maybe_loc) =
-      match (expected, type_check_expr expr env) with
-      | ConstrainedTo expected_ty, ConstrainedTo actual_ty
-        when actual_ty <> expected_ty ->
-          raise (CheckError (TypeError (expr, expected_ty, actual_ty), loc))
-      | _ -> ()
-    in
-    match stmt with
-    | Declare (name, typ, init, scope, loc) ->
-        (* cannot annotate a variable as having void type *)
-        if typ = Void then
-          raise (CheckError (NonFunctionAnnotatedAsVoid name, loc));
-        (* if supplied, initialization expression must type check
-           and match the annotated type. *)
-        (match init with
-        | None -> ()
-        | Some expr -> ensure_type_satisfies (ConstrainedTo typ) expr loc);
-        (* typecheck scope with env binding name->typ *)
-        let ext_env = Env.add name typ env in
-        type_check_stmt_list scope ext_env
-    | Assign (lv, expr, loc) ->
-        let expected = type_check_l_value lv env in
-        ensure_type_satisfies expected expr loc
-    | Inr (lv, _) | Dcr (lv, _) -> type_check_l_value lv env |> ignore
-    | If (cond, thn, _) ->
-        let cond_ty = type_check_expr cond env in
-        expect_non_void cond cond_ty;
-        type_check_stmt_list thn env
-    | IfElse (cond, thn, els, _) ->
-        let cond_ty = type_check_expr cond env in
-        expect_non_void cond cond_ty;
-        type_check_stmt_list thn env;
-        type_check_stmt_list els env
-    | While (cond, body, _) ->
-        let cond_ty = type_check_expr cond env in
-        expect_non_void cond cond_ty;
-        type_check_stmt_list body env
-    | Block (scope, _) -> type_check_stmt_list scope env
-    | Return (maybe_expr, loc) -> (
-        match maybe_expr with
-        | Some expr ->
-            (* returning an expression from a void function: bad *)
-            if defn.return_ty = Void then
-              raise
-                (CheckError (MismatchedReturn (defn.name, defn.return_ty), loc));
-            (* returned expression should match return type of function *)
-            ensure_type_satisfies (ConstrainedTo defn.return_ty) expr loc
-        | None ->
-            (* returning nothing from a non-void function: bad *)
-            if defn.return_ty <> Void then
-              raise
-                (CheckError (MismatchedReturn (defn.name, defn.return_ty), loc))
-        )
-    | Exit (maybe_expr, loc) -> (
-        match maybe_expr with
-        | Some expr ->
-            (* must exit with integer expression if given *)
-            ensure_type_satisfies (ConstrainedTo Int) expr loc
-        | None -> ())
-    | PrintDec (expr, loc) ->
-        (* must print only signed integers on decimal display *)
-        ensure_type_satisfies (ConstrainedTo Int) expr loc
-    | ExprStmt (expr, _) ->
-        (* as long as expression internally type checks, we are good *)
-        type_check_expr expr env |> ignore
-    | Assert (cond, _) ->
-        let cond_ty = type_check_expr cond env in
-        expect_non_void cond cond_ty
-  (* [type_check_stmt_list] checks a list of statements for type errors *)
-  and type_check_stmt_list (stmts : stmt list) (env : ty env) =
-    List.iter (fun stmt -> type_check_stmt stmt env) stmts
-  in
-  (* ensure all parameters are annotated as non-void *)
-  List.iter
-    (fun (name, typ) ->
-      if typ = Void then
-        raise (CheckError (NonFunctionAnnotatedAsVoid name, defn.loc)))
-    defn.params;
-
-  (* construct environment binding function parameters to their annotated types *)
-  let env = Util.Env.of_list defn.params in
-
-  (* type check the definition's body *)
-  type_check_stmt_list defn.body env
-
 (* [check_funcs_are_unique] checks that function names are unique *)
 let rec check_funcs_are_unique (defns : func_defn list) =
   match defns with
@@ -358,10 +415,12 @@ let check_for_returns_in_main (main : func_defn) =
     | _ -> false)
   |> ignore
 
-(* TODO: check needs to remove casts *)
 (* [check] performs all validity checking on the input program,
-   throwing an error if it finds problems. *)
-let check (pgrm : prog) =
+   throwing an error if it finds problems. If it does not error,
+   it returns a processed version of the input program which has
+   casts removed and certain operators replaced to correspond with
+   the types they are used with. *)
+let check (pgrm : prog) : prog =
   (* main must have return type void *)
   if pgrm.main.return_ty <> Void then
     raise (CheckError (NonVoidMain, pgrm.main.loc));
@@ -372,15 +431,20 @@ let check (pgrm : prog) =
   (* function definitions must have unique names *)
   check_funcs_are_unique pgrm.funcs;
 
-  pgrm.main :: pgrm.funcs
-  |> List.iter (fun defn ->
-         (* check whether control can reach the end of each definition *)
-         let reaches_end = ctrl_reaches_end defn in
-         defn.ctrl_reaches_end <- Some reaches_end;
+  let check_defn (defn : func_defn) : func_defn =
+    (* check whether control can reach the end of each definition *)
+    let reaches_end = ctrl_reaches_end defn in
+    defn.ctrl_reaches_end <- Some reaches_end;
 
-         (* control must not reach end of non-void function *)
-         if reaches_end && defn.return_ty <> Void then
-           raise (CheckError (CtrlReachesEndOfNonVoid defn.name, defn.loc));
+    (* control must not reach end of non-void function *)
+    if reaches_end && defn.return_ty <> Void then
+      raise (CheckError (CtrlReachesEndOfNonVoid defn.name, defn.loc));
 
-         (* type check the function definition *)
-         type_check defn pgrm.funcs)
+    (* type check the function definition *)
+    type_check defn pgrm.funcs
+  in
+  {
+    pgrm with
+    main = check_defn pgrm.main;
+    funcs = List.map check_defn pgrm.funcs;
+  }

@@ -9,7 +9,9 @@ let rec fold_l_value (lv : l_value) (emit_warning : compiler_warn_handler) :
   | LDeref (e, loc) -> LDeref (fold_expr e emit_warning, loc)
   | LVar _ -> lv
 
-(* [fold_expr] performs constant folding on a given expression. *)
+(* [fold_expr] performs constant folding on a given expression.
+   NOTE: character literals are not explicitly folded here because they
+   should be replaced by their number literal equivalents in the checking phase. *)
 and fold_expr (exp : expr) (emit_warning : compiler_warn_handler) : expr =
   match exp with
   | UnOp (op, expr, loc) -> (

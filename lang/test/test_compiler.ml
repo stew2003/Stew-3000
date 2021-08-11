@@ -4,32 +4,32 @@ open Emulator__Machine
 open Asm.Isa
 
 (* [run] parses a source program, checks it, compiles it, and runs
-  the generated instructions in the emulator, returning
-  the final machine state. *)
+   the generated instructions in the emulator, returning
+   the final machine state. *)
 let run (source : string) : stew_3000 =
   let pgrm = Parser.parse source in
-  Check.check pgrm;
+  let pgrm = Check.check pgrm in
   let instrs = Compile.compile pgrm in
   Emulator.emulate instrs
 
 (* [main_from_body] constructs a source string for a main function
-  given the contents of its body. *)
+   given the contents of its body. *)
 let main_from_body (body : string) : string =
   Printf.sprintf "void main() { %s }" body
 
-(* [run_body] generates a program with main() containing the given 
-  body and runs it in the emulator. *)
+(* [run_body] generates a program with main() containing the given
+   body and runs it in the emulator. *)
 let run_body (body : string) : stew_3000 = run (main_from_body body)
 
-(* [assert_a] asserts that after running a program with 
-  the given body, the machine's a register will equal a given value. *)
+(* [assert_a] asserts that after running a program with
+   the given body, the machine's a register will equal a given value. *)
 let assert_a (body : string) (a : int) =
   let machine = run_body body in
   assert_equal a machine.a ~printer:string_of_int
 
 (* [assert_dec] asserts that after running a program with
-  the given body, the machine's decimal display history
-  will equal the given list. *)
+   the given body, the machine's decimal display history
+   will equal the given list. *)
 let assert_dec (body : string) (dec_history : int list) =
   let machine = run_body body in
   assert_equal dec_history machine.dec_disp_history
@@ -211,7 +211,7 @@ let test_functions _ =
 let test_ignore_asserts _ =
   let compile_with_ignore_asserts (source : string) =
     let pgrm = Parser.parse source in
-    Check.check pgrm;
+    let pgrm = Check.check pgrm in
     Compile.compile ~ignore_asserts:true pgrm
   in
   assert_equal [ Hlt None ]

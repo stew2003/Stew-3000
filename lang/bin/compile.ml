@@ -30,13 +30,10 @@ let command =
             print_warning (message_of_compiler_warn w source_text src_file)
           in
 
-          Check.check pgrm;
+          let pgrm = Check.check pgrm in
           let pgrm =
             Constant_fold.constant_fold ~emit_warning:warning_handler pgrm
           in
-
-          (* check again, post-optimization (catch folded unrepresentable values) *)
-          Check.check pgrm;
           let instrs = Compile.compile pgrm ~ignore_asserts in
 
           (* optimize the generated instructions *)

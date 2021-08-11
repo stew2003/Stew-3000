@@ -27,7 +27,7 @@ let norm_check_err (err : Check.check_err) =
 let assert_raises_check_err (err : Check.check_err) (source : string) =
   let raised =
     try
-      check source;
+      check source |> ignore;
       false
     with
     | Check.CheckError (actual_err, _) ->

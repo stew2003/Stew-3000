@@ -29,11 +29,14 @@ Compiler
       [] cast
     [] statements:
       [] assign/inr/dcr
-        [] make lefthand side an l-value (deref or var)
-      [x] let: make initializer optional
-    [] update checker to support new types
-      [] checker removes casts but uses them
-      [] checker may replace comparison ops with unsigned equivalents
+        [x] make lefthand side an l-value (deref or var)
+      [x] declare: make initializer optional
+      [] declare-array
+        [] allow size specifier, and initializer (string literal or {} array literal)
+    [x] update checker to support new types
+      [x] checker removes casts but uses them
+      [x] checker may replace comparison ops with unsigned equivalents
+      [x] checker converts chars to nums 
 
 Docs
   [] document everything
