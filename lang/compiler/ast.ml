@@ -47,15 +47,10 @@ and expr =
   | AddrOf of l_value * maybe_loc
   | Cast of ty * expr * maybe_loc
 
-(* An initializer for an array type *)
-type array_init =
-  | StringLiteral of string * maybe_loc
-  | ArrayLiteral of expr list * maybe_loc
-
 type stmt =
   | Declare of string * ty * expr option * stmt list * maybe_loc
   | ArrayDeclare of
-      string * ty * expr option * array_init option * stmt list * maybe_loc
+      string * ty * expr option * expr list option * stmt list * maybe_loc
   | Assign of l_value * expr * maybe_loc
   | Inr of l_value * maybe_loc
   | Dcr of l_value * maybe_loc
@@ -166,14 +161,6 @@ let check_for_expr (pgrm : prog) (pred : expr -> bool) : bool =
      expression that satisfies the predicate *)
   let rec check_l_value (lv : l_value) (pred : expr -> bool) : bool =
     match lv with LDeref (e, _) -> pred e | LVar _ -> false
-  (* [check_array_init] checks an array initializer for uses of
-     an expression that satisfies the predicate *)
-  and check_array_init (init : array_init) (pred : expr -> bool) : bool =
-    match init with
-    | StringLiteral _ -> false
-    | ArrayLiteral (exprs, _) ->
-        List.map (fun e -> check_expr e pred) exprs
-        |> List.fold_left ( || ) false
   (* [check_expr] determines if the given expression contains a
      sub-expression that satisfies the given predicate. *)
   and check_expr (exp : expr) (pred : expr -> bool) : bool =
@@ -203,7 +190,9 @@ let check_for_expr (pgrm : prog) (pred : expr -> bool) : bool =
         (match size with None -> false | Some size -> check_expr size pred)
         || (match init with
            | None -> false
-           | Some init -> check_array_init init pred)
+           | Some exprs ->
+               List.map (fun e -> check_expr e pred) exprs
+               |> List.fold_left ( || ) false)
         || check_stmt_list body pred
     | Assign (lv, value, _) -> check_l_value lv pred || check_expr value pred
     | Inr (lv, _) | Dcr (lv, _) -> check_l_value lv pred

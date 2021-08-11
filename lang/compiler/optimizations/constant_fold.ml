@@ -9,14 +9,6 @@ let rec fold_l_value (lv : l_value) (emit_warning : compiler_warn_handler) :
   | LDeref (e, loc) -> LDeref (fold_expr e emit_warning, loc)
   | LVar _ -> lv
 
-(* [fold_array_init] performs constant folding on an array initializer. *)
-and fold_array_init (init : array_init) (emit_warning : compiler_warn_handler) :
-    array_init =
-  match init with
-  | StringLiteral _ -> init
-  | ArrayLiteral (exprs, loc) ->
-      ArrayLiteral (List.map (fun e -> fold_expr e emit_warning) exprs, loc)
-
 (* [fold_expr] performs constant folding on a given expression.
    NOTE: character literals are not explicitly folded here because they
    should be replaced by their number literal equivalents in the checking phase. *)
@@ -103,7 +95,9 @@ and fold_stmt (stmt : stmt) (emit_warning : compiler_warn_handler) : stmt =
         ( name,
           typ,
           Option.map (fun size -> fold_expr size emit_warning) size,
-          Option.map (fun init -> fold_array_init init emit_warning) init,
+          Option.map
+            (fun exprs -> List.map (fun e -> fold_expr e emit_warning) exprs)
+            init,
           fold_stmt_list scope emit_warning,
           loc )
   | Assign (lv, expr, loc) ->

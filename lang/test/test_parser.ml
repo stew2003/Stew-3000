@@ -275,6 +275,10 @@ let test_let _ =
   assert_body_parses_to body body_stmts
 
 let test_array_decl _ =
+  let literals_from_chars (chars : char list) : expr list =
+    chars |> List.map (fun c -> CharLiteral (c, None))
+  in
+
   assert_body_parses_to "int array[10];"
     [
       ArrayDeclare ("array", Int, Some (NumLiteral (10, None)), None, [], None);
@@ -282,7 +286,12 @@ let test_array_decl _ =
   assert_body_parses_to "char s[] = \"neat\";"
     [
       ArrayDeclare
-        ("s", Char, None, Some (StringLiteral ("neat", None)), [], None);
+        ( "s",
+          Char,
+          None,
+          Some (literals_from_chars [ 'n'; 'e'; 'a'; 't'; '\x00' ]),
+          [],
+          None );
     ];
   assert_body_parses_to "unsigned *x[3] = {4, 6, 8};"
     [
@@ -291,13 +300,7 @@ let test_array_decl _ =
           Pointer Unsigned,
           Some (NumLiteral (3, None)),
           Some
-            (ArrayLiteral
-               ( [
-                   NumLiteral (4, None);
-                   NumLiteral (6, None);
-                   NumLiteral (8, None);
-                 ],
-                 None )),
+            [ NumLiteral (4, None); NumLiteral (6, None); NumLiteral (8, None) ],
           [],
           None );
     ];
@@ -307,7 +310,23 @@ let test_array_decl _ =
         ( "str",
           Char,
           Some (NumLiteral (100, None)),
-          Some (StringLiteral ("string value", None)),
+          Some
+            (literals_from_chars
+               [
+                 's';
+                 't';
+                 'r';
+                 'i';
+                 'n';
+                 'g';
+                 ' ';
+                 'v';
+                 'a';
+                 'l';
+                 'u';
+                 'e';
+                 '\x00';
+               ]),
           [],
           None );
     ];

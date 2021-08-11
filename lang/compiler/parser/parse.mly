@@ -140,13 +140,14 @@ array_init:
 | ASSIGN s = STRINGLIT
   {
     let (s, loc) = s in 
-    (StringLiteral (s, Some loc), loc)
+    (* Convert string literal to null-terminated list of chars *)
+    let chars = s |> String.to_seq |> List.of_seq in 
+    let chars = List.rev ('\x00' :: (List.rev chars)) in 
+    List.map (fun c -> CharLiteral (c, Some loc)) chars
   }
-| ASSIGN start_loc = LBRACE es = separated_list(COMMA, expr) end_loc = RBRACE
+| ASSIGN LBRACE es = separated_list(COMMA, expr) RBRACE
   {
-    let loc = span start_loc end_loc in
-    let es = List.map (fun (e, _) -> e) es in  
-    (ArrayLiteral (es, Some loc), loc)
+    List.map (fun (e, _) -> e) es
   }
 
 stmt_list:
@@ -179,7 +180,6 @@ block_stmt:
   {
     let (name, typ, start_loc) = d in 
     let size = Option.map (fun (e, _) -> e) size in
-    let init = Option.map (fun (i, _) -> i) init in 
     let loc = span start_loc end_loc in  
     ArrayDeclare (name, typ, size, init, scope, Some loc)
   }
