@@ -27,6 +27,8 @@ rule token = parse
   { NUMLIT (int_of_string binary, loc_from_lexbuf lexbuf) }
 | "'"_"'" as character
   { CHARLIT ((String.get character 1), loc_from_lexbuf lexbuf) }
+| '"'[^'"''\n']*'"' as str
+  { STRINGLIT (String.sub str 1 (String.length str - 2), loc_from_lexbuf lexbuf) }
 | '('
   { LPAREN (loc_from_lexbuf lexbuf) }
 | ')'
@@ -35,6 +37,10 @@ rule token = parse
   { LBRACE (loc_from_lexbuf lexbuf) }
 | '}'
   { RBRACE (loc_from_lexbuf lexbuf) }
+| '['
+  { LBRACKET (loc_from_lexbuf lexbuf) }
+| ']'
+  { RBRACKET (loc_from_lexbuf lexbuf) }
 | ';'
   { SEMICOLON (loc_from_lexbuf lexbuf) }
 | ','

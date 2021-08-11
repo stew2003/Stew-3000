@@ -185,6 +185,9 @@ and compile_stmt (statement : stmt) (bindings : int env) (si : int)
       let ext_env = Env.add name si bindings in
       initialization
       @ compile_stmt_list scope ext_env (si + 1) defns ignore_asserts
+  | ArrayDeclare _ ->
+      (* TODO: *)
+      failwith "unimplemented!"
   | Assign (lv, expr, _) ->
       (* TODO: *)
       failwith "unimplemented!"

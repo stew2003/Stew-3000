@@ -274,6 +274,57 @@ let test_let _ =
   in
   assert_body_parses_to body body_stmts
 
+let test_array_decl _ =
+  assert_body_parses_to "int array[10];"
+    [
+      ArrayDeclare ("array", Int, Some (NumLiteral (10, None)), None, [], None);
+    ];
+  assert_body_parses_to "char s[] = \"neat\";"
+    [
+      ArrayDeclare
+        ("s", Char, None, Some (StringLiteral ("neat", None)), [], None);
+    ];
+  assert_body_parses_to "unsigned *x[3] = {4, 6, 8};"
+    [
+      ArrayDeclare
+        ( "x",
+          Pointer Unsigned,
+          Some (NumLiteral (3, None)),
+          Some
+            (ArrayLiteral
+               ( [
+                   NumLiteral (4, None);
+                   NumLiteral (6, None);
+                   NumLiteral (8, None);
+                 ],
+                 None )),
+          [],
+          None );
+    ];
+  assert_body_parses_to "char str[100] = \"string value\";"
+    [
+      ArrayDeclare
+        ( "str",
+          Char,
+          Some (NumLiteral (100, None)),
+          Some (StringLiteral ("string value", None)),
+          [],
+          None );
+    ];
+  assert_body_parses_to "char ***x[5]; 1; 2;"
+    [
+      ArrayDeclare
+        ( "x",
+          Pointer (Pointer (Pointer Char)),
+          Some (NumLiteral (5, None)),
+          None,
+          [
+            ExprStmt (NumLiteral (1, None), None);
+            ExprStmt (NumLiteral (2, None), None);
+          ],
+          None );
+    ]
+
 let test_assign _ =
   assert_body_parses_to "int x = 0; x = 7;"
     [
@@ -427,6 +478,7 @@ let suite =
          "test_assoc" >:: test_assoc;
          "test_arbitrary_parens" >:: test_arbitrary_parens;
          "test_let" >:: test_let;
+         "test_array_decl" >:: test_array_decl;
          "test_assign" >:: test_assign;
          "test_if" >:: test_if;
          "test_if_else" >:: test_if_else;

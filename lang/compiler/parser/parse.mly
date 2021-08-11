@@ -5,12 +5,15 @@
 
 %token <int * Util.Srcloc.src_loc> NUMLIT
 %token <char * Util.Srcloc.src_loc> CHARLIT
+%token <string * Util.Srcloc.src_loc> STRINGLIT
 %token <string * Util.Srcloc.src_loc> IDENT
 
 %token <Util.Srcloc.src_loc> LPAREN
 %token <Util.Srcloc.src_loc> RPAREN
 %token <Util.Srcloc.src_loc> LBRACE
 %token <Util.Srcloc.src_loc> RBRACE
+%token <Util.Srcloc.src_loc> LBRACKET
+%token <Util.Srcloc.src_loc> RBRACKET
 %token <Util.Srcloc.src_loc> SEMICOLON
 %token <Util.Srcloc.src_loc> COMMA
 
@@ -132,6 +135,20 @@ decl:
     (name, t, span start_loc end_loc)
   }
 
+// array initializers
+array_init:
+| ASSIGN s = STRINGLIT
+  {
+    let (s, loc) = s in 
+    (StringLiteral (s, Some loc), loc)
+  }
+| ASSIGN start_loc = LBRACE es = separated_list(COMMA, expr) end_loc = RBRACE
+  {
+    let loc = span start_loc end_loc in
+    let es = List.map (fun (e, _) -> e) es in  
+    (ArrayLiteral (es, Some loc), loc)
+  }
+
 stmt_list:
 | stmts = list(stmt_in_block)
   { stmts }
@@ -156,6 +173,15 @@ block_stmt:
   {
     let (name, typ, start_loc) = d in 
     Declare (name, typ, None, scope, Some (span start_loc end_loc))
+  }
+| d = decl LBRACKET size = option(expr) RBRACKET init = option(array_init) 
+  end_loc = SEMICOLON scope = stmt_list
+  {
+    let (name, typ, start_loc) = d in 
+    let size = Option.map (fun (e, _) -> e) size in
+    let init = Option.map (fun (i, _) -> i) init in 
+    let loc = span start_loc end_loc in  
+    ArrayDeclare (name, typ, size, init, scope, Some loc)
   }
 | start_loc = IF LPAREN cond = expr RPAREN 
   LBRACE thn = stmt_list end_loc = RBRACE

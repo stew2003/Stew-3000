@@ -33,10 +33,13 @@ Compiler
       [x] declare: make initializer optional
       [] declare-array
         [] allow size specifier, and initializer (string literal or {} array literal)
+        [] size specifiers will be checked, then folded, then that compile-time size
+          will be used to check the declaration
     [x] update checker to support new types
       [x] checker removes casts but uses them
       [x] checker may replace comparison ops with unsigned equivalents
-      [x] checker converts chars to nums 
+      [x] checker converts chars to nums
+      [] check array declarations
 
 Docs
   [] document everything

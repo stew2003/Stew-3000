@@ -292,6 +292,9 @@ let type_check (defn : func_defn) (defns : func_defn list) : func_defn =
         let ext_env = Env.add name typ env in
         let scope_tc = type_check_stmt_list scope ext_env in
         Declare (name, typ, init_tc, scope_tc, loc)
+    | ArrayDeclare (name, typ, size, init, scope, loc) ->
+        (* TODO: *)
+        failwith "unimplemented!"
     | Assign (lv, expr, loc) ->
         let expected, lv_tc = type_check_l_value lv env in
         let expr_tc = ensure_type_satisfies expected expr loc in
@@ -380,7 +383,8 @@ let type_check (defn : func_defn) (defns : func_defn list) : func_defn =
 let ctrl_reaches_end (defn : func_defn) : bool =
   let rec can_pass_stmt (stmt : stmt) : bool =
     match stmt with
-    | Declare (_, _, _, scope, _) -> ctrl_reaches_end_stmt_list scope
+    | Declare (_, _, _, scope, _) | ArrayDeclare (_, _, _, _, scope, _) ->
+        ctrl_reaches_end_stmt_list scope
     | IfElse (_, thn, els, _) ->
         ctrl_reaches_end_stmt_list thn || ctrl_reaches_end_stmt_list els
     | Block (scope, _) -> ctrl_reaches_end_stmt_list scope

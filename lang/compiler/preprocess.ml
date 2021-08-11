@@ -6,6 +6,13 @@ let rec expand_in_l_value (define : pp_define) (lv : l_value) : l_value =
   | LDeref (e, loc) -> LDeref (expand_in_expr define e, loc)
   | LVar _ -> lv
 
+(* [expand_in_array_init] expands a #define directive in an array initializer. *)
+and expand_in_array_init (define : pp_define) (init : array_init) : array_init =
+  match init with
+  | StringLiteral _ -> init
+  | ArrayLiteral (exprs, loc) ->
+      ArrayLiteral (List.map (fun e -> expand_in_expr define e) exprs, loc)
+
 (* [expand_in_expr] expands a #define directive in an expression. *)
 and expand_in_expr (define : pp_define) (exp : expr) : expr =
   match exp with
@@ -30,9 +37,15 @@ and expand_in_stmt (define : pp_define) (stmt : stmt) : stmt =
       Declare
         ( name,
           typ,
-          (match expr with
-          | None -> None
-          | Some expr -> Some (expand_in_expr define expr)),
+          Option.map (fun e -> expand_in_expr define e) expr,
+          expand_in_stmt_list define body,
+          loc )
+  | ArrayDeclare (name, typ, size, init, body, loc) ->
+      ArrayDeclare
+        ( name,
+          typ,
+          Option.map (fun s -> expand_in_expr define s) size,
+          Option.map (fun init -> expand_in_array_init define init) init,
           expand_in_stmt_list define body,
           loc )
   | Assign (lv, expr, loc) ->

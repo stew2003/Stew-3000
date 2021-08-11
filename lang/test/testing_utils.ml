@@ -8,6 +8,12 @@ let rec norm_l_value_locs (lv : l_value) : l_value =
   | LVar (name, _) -> LVar (name, None)
   | LDeref (e, _) -> LDeref (e, None)
 
+(* [norm_array_init_locs] normalizes source locations for an array initializer. *)
+and norm_array_init_locs (init : array_init) : array_init =
+  match init with
+  | StringLiteral (s, _) -> StringLiteral (s, None)
+  | ArrayLiteral (exprs, _) -> ArrayLiteral (List.map norm_expr_locs exprs, None)
+
 (* [norm_expr_locs] normalizes source locations in an expression *)
 and norm_expr_locs (exp : expr) : expr =
   match exp with
@@ -31,6 +37,14 @@ and norm_stmt_locs (stmt : stmt) : stmt =
           (match value with
           | None -> None
           | Some value -> Some (norm_expr_locs value)),
+          norm_stmt_list_locs body,
+          None )
+  | ArrayDeclare (name, typ, size, init, body, _) ->
+      ArrayDeclare
+        ( name,
+          typ,
+          Option.map norm_expr_locs size,
+          Option.map norm_array_init_locs init,
           norm_stmt_list_locs body,
           None )
   | Assign (lv, exp, _) ->

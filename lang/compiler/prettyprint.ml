@@ -43,6 +43,13 @@ let rec pretty_print_l_value (lv : l_value) : string =
   | LVar (name, _) -> name
   | LDeref (e, _) -> sprintf "*(%s)" (pretty_print_expr e)
 
+(* [pretty_print_array_init] converts an array initializer into a pretty-printed string. *)
+and pretty_print_array_init (init : array_init) : string =
+  match init with
+  | StringLiteral (s, _) -> sprintf "\"%s\"" s
+  | ArrayLiteral (exprs, _) ->
+      sprintf "{ %s }" (List.map pretty_print_expr exprs |> String.concat ", ")
+
 (* [pretty_print_expr] converts an expression into a pretty-printed string. *)
 and pretty_print_expr ?(is_nested_in_op = false) (exp : expr) : string =
   match exp with
@@ -75,6 +82,18 @@ and pretty_print_stmt (stmt : stmt) (indent_level : int) : string =
         | Some expr -> sprintf " = %s" (pretty_print_expr expr)
       in
       sprintf "%s %s%s;\n%s" (pretty_print_type typ) name initialization
+        (pretty_print_stmt_list scope indent_level)
+  | ArrayDeclare (name, typ, size, init, scope, _) ->
+      let pretty_size =
+        match size with None -> "" | Some size -> pretty_print_expr size
+      in
+      let pretty_init =
+        match init with
+        | None -> ""
+        | Some init -> sprintf " = %s" (pretty_print_array_init init)
+      in
+      sprintf "%s %s[%s]%s;\n%s" (pretty_print_type typ) name pretty_size
+        pretty_init
         (pretty_print_stmt_list scope indent_level)
   | Assign (lv, expr, _) ->
       sprintf "%s = %s;" (pretty_print_l_value lv) (pretty_print_expr expr)
