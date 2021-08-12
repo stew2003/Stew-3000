@@ -62,7 +62,7 @@ type func_defn = {
 type pp_define = { var : string; expression : expr; loc : maybe_loc }
 
 (* main is a special function with void return/no args
-  whose body is what is run when the program is run *)
+   whose body is what is run when the program is run *)
 type prog = {
   defines : pp_define list;
   funcs : func_defn list;
@@ -120,8 +120,8 @@ let loc_from_expr (exp : expr) : maybe_loc =
   | Call (_, _, loc) ->
       loc
 
-(* [check_for_expr] determines if the program contains an 
-  expression that satisfies the given predicate *)
+(* [check_for_expr] determines if the program contains an
+   expression that satisfies the given predicate *)
 let check_for_expr (pgrm : prog) (pred : expr -> bool) : bool =
   (* [check_expr] determines if the given expression contains a
      sub-expression that satisfies the given predicate. *)
@@ -169,8 +169,8 @@ let check_for_expr (pgrm : prog) (pred : expr -> bool) : bool =
     (pgrm.funcs @ [ pgrm.main ])
   |> List.fold_left ( || ) false
 
-(* [check_for_stmt] checks a given program for a statement 
-  that satisfies the given predicate *)
+(* [check_for_stmt] checks a given program for a statement
+   that satisfies the given predicate *)
 let check_for_stmt (pgrm : prog) (pred : stmt -> bool) : bool =
   (* [check_stmt] checks a statement for the presence of a statement
      that satisfies the given predicate *)
