@@ -58,11 +58,13 @@ let test_block _ =
 
 let test_inr _ =
   assert_a "int x = 50; x++; x++; x;" 52;
-  assert_a "int y = -16; y++; y;" (-15)
+  assert_a "int y = -16; y++; y;" (-15);
+  assert_dec "int x = 5; int *px = &x; *(px)++; print(x);" [ 6 ]
 
 let test_dcr _ =
   assert_a "int a = 71; a--; a;" 70;
-  assert_a "int b = -100; b--; b--; b;" (-102)
+  assert_a "int b = -100; b--; b--; b;" (-102);
+  assert_dec "int x = 14; int *px = &x; *(px)--; print(x);" [ 13 ]
 
 let test_exit _ =
   assert_dec "exit(15); assert(0);" [ 15 ];
@@ -175,38 +177,34 @@ let test_log_ops _ =
 let test_functions _ =
   let machine =
     run
-      "\n\
-      \    int five() { return 5; }\n\
-      \    void main() {\n\
-      \      five();\n\
-      \    }\n\
-      \  "
+      "
+      int five() { return 5; }
+      void main() {
+        five();
+      }"
   in
-  assert_equal 5 machine.a;
+  assert_equal 5 machine.a; 
   let machine =
     run
-      "\n\
-      \    void print_double(int n) { print(2 * n); }\n\
-      \    void main() {\n\
-      \      print_double(7);\n\
-      \      print_double(10);\n\
-      \      print_double(-16);\n\
-      \    }\n\
-      \  "
+      "
+      void print_double(int n) { print(2 * n); }
+      void main() {
+        print_double(7);
+        print_double(10);
+        print_double(-16);
+      }"
   in
   assert_equal [ 14; 20; -32 ] machine.dec_disp_history;
   let machine =
-    run
-      "\n\
-      \    int sum(int a, int b, int c) {\n\
-      \      return a + b + c;\n\
-      \    }\n\
-      \    void main() {\n\
-      \      sum(4, 5, 6) + sum(-3, -2, -1);\n\
-      \    }\n\
-      \  "
+    run "
+      int sum(int a, int b, int c) {
+        return a + b + c;
+      }
+      void main() {
+        sum(4, 5, 6) + sum(-3, -2, -1);
+      }"
   in
-  assert_equal 9 machine.a
+  assert_equal 9 machine.a [@@ocamlformat "disable"]
 
 let test_ignore_asserts _ =
   let compile_with_ignore_asserts (source : string) =
@@ -219,6 +217,95 @@ let test_ignore_asserts _ =
   assert_equal [ Hlt None ]
     (compile_with_ignore_asserts
        "void main() { assert(1 == 2); assert(1); assert(41 - 1 == 40); }")
+
+let test_char_literals  _ = 
+  let machine = run_body "
+      char a = 'A';
+      print((int)a);" in 
+  assert_equal ~printer:string_of_dec_display [65] machine.dec_disp_history;
+  let machine = run_body "
+      char c = '[';
+      if (c + 2 == ']') {
+        print(1);
+      } else {
+        print(0);
+      }" in 
+  assert_equal ~printer:string_of_dec_display [1] machine.dec_disp_history
+  [@@ocamlformat "disable"]
+
+let test_deref _ = 
+  let machine = run_body "
+    int x = 41;
+    int *px = &x;
+    print(*px);
+  " in 
+  assert_equal ~printer:string_of_dec_display [41] machine.dec_disp_history;
+  let machine = run_body "
+    int x = -3;
+    int *px = &x;
+    int **ppx = &px;
+    print(**ppx);
+  " in 
+  assert_equal ~printer:string_of_dec_display [-3] machine.dec_disp_history; 
+  let machine = run_body "
+    *(unsigned*)(1 + 2) = 255;
+    print(*(int*)3);
+  " in 
+  assert_equal ~printer:string_of_dec_display [255] machine.dec_disp_history
+  [@@ocamlformat "disable"]
+
+let test_addr_of _ = 
+  let machine = run_body "
+    int x;
+    print(&x);
+  " in 
+  assert_equal ~printer:string_of_dec_display [1] machine.dec_disp_history;
+  let machine = run_body "
+    int x;
+    int *px;
+    print(&*px == &x);
+    print(&*(px + 1) == &x + 1);
+  " in 
+  assert_equal ~printer:string_of_dec_display [1; 1] machine.dec_disp_history
+  [@@ocamlformat "disable"]
+
+let test_assign _ = 
+  let machine = run_body "
+    int a = 10;
+    *(&a) = 41;
+    print(a);
+  " in 
+  assert_equal ~printer:string_of_dec_display [41] machine.dec_disp_history;
+  let machine = run_body "
+    char c = 'v';
+    c = 'z';
+    c = 'B';
+    print((int)c);
+  " in 
+  assert_equal ~printer:string_of_dec_display [66] machine.dec_disp_history
+  [@@ocamlformat "disable"]
+
+let test_array_decl _ = 
+  let machine = run_body "
+    int arr[5] = { 2, 4, 6, 8, 10 };
+    print(*(arr + 0));
+    print(*(arr + 1));
+    print(*(arr + 2));
+    print(*(arr + 3));
+    print(*(arr + 4));
+  " in 
+  assert_equal ~printer:string_of_dec_display [2; 4; 6; 8; 10] machine.dec_disp_history;
+  let machine = run_body "
+    char str[] = \"hello\";
+    print((int)*(arr + 0));
+    print((int)*(arr + 1));
+    print((int)*(arr + 2));
+    print((int)*(arr + 3));
+    print((int)*(arr + 4));
+    print((int)*(arr + 5));
+  " in 
+  assert_equal ~printer:string_of_dec_display [104; 101; 108; 108; 111; 0;] machine.dec_disp_history
+  [@@ocamlformat "disable"]
 
 let suite =
   "Compiler Tests"
@@ -240,6 +327,10 @@ let suite =
          "test_log_ops" >:: test_log_ops;
          "test_functions" >:: test_functions;
          "test_ignore_asserts" >:: test_ignore_asserts;
+         "test_char_literals" >:: test_char_literals;
+         "test_deref" >:: test_deref;
+         "test_assign" >:: test_assign;
+         "test_array_decl" >:: test_array_decl;
        ]
 
 let () = run_test_tt_main suite
