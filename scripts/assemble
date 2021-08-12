@@ -10,13 +10,13 @@
 
 # ensure called from root (so paths work out)
 if [ $(basename "$PWD") != "Stew-3000" ]; then
-    echo "please invoke assemble from the project root"
+    echo "Please invoke assemble from the project root"
     exit -1
 fi
 
 # check correct number of arguments
 if [ ! "$#" -ge 2 ]; then
-    echo "usage: assemble ASM_NAME BIN_NAME [EXTRA_ARGS ...]"
+    echo "Usage: assemble ASM_NAME BIN_NAME [EXTRA_ARGS ...]"
     exit -1
 fi
 

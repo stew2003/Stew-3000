@@ -11,13 +11,13 @@
 
 # ensure called from root (so paths work out)
 if [ $(basename "$PWD") != "Stew-3000" ]; then
-    echo "please invoke compile from the project root"
+    echo "Please invoke compile from the project root"
     exit -1
 fi
 
 # check correct number of arguments
 if [ ! "$#" -ge 2 ]; then
-    echo "usage: compile SRC_NAME OUT_NAME [EXTRA_ARGS ...]"
+    echo "Usage: compile SRC_NAME OUT_NAME [EXTRA_ARGS ...]"
     exit -1
 fi
 

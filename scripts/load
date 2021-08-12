@@ -4,13 +4,13 @@
 
 # ensure called from root (so paths work out)
 if [ $(basename "$PWD") != "Stew-3000" ]; then
-    echo "please invoke load from the project root"
+    echo "Please invoke load from the project root"
     exit -1
 fi
 
 # check correct number of arguments
 if [ "$#" -ne 1 ]; then
-    echo "usage: load FILENAME"
+    echo "Usage: load FILENAME"
     exit -1
 fi
 
