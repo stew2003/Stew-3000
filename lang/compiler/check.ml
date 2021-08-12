@@ -41,6 +41,8 @@ type check_err =
   | DerefNonPointer of type_constraint
   (* A void pointer was dereferenced *)
   | DerefVoidPointer
+  (* L-values must be variables or pointer dereferences *)
+  | InvalidLValue of expr
   (* A (void) cast was made *)
   | CastToVoid
   (* An array's size declaration was non-constant (string is name of array) *)
@@ -94,6 +96,9 @@ let string_of_check_err = function
         | Unconstrained -> "unconstrained type"
         | ConstrainedTo t -> string_of_ty t)
   | DerefVoidPointer -> "cannot dereference void pointer"
+  | InvalidLValue e ->
+      sprintf "invalid l-value: %s (must be variable or dereference)"
+        (describe_expr e)
   | CastToVoid -> "cannot cast to void type"
   | NonConstantArraySize arr -> sprintf "array `%s` must have constant size" arr
   | UnderspecifiedArray arr ->
@@ -124,9 +129,23 @@ let type_check (defn : func_defn) (defns : func_defn list)
         typ
     | None -> raise (CheckError (UnboundVariable name, loc))
   in
+  (* [type_check_l_value] checks an expression that is intended to be used as
+     an l-value, so it must be backed by a memory location. NOTE: Valid l-values
+     always must have a constrained type, because they are backed by memory, which
+     could only be obtained through variable declaration or array declaration (both
+     of which require type annotations). So this function returns a type, not a
+     type constraint. *)
+  let rec type_check_l_value (exp : expr) (env : ty env) (loc : maybe_loc) :
+      ty * expr =
+    match type_check_expr exp env with
+    | ConstrainedTo t, (Var _ as lv_tc) | ConstrainedTo t, (Deref _ as lv_tc) ->
+        (t, lv_tc)
+    | Unconstrained, Var _ | Unconstrained, Deref _ ->
+        raise (InternalError "l-value with unconstrained type encountered")
+    | _, lv -> raise (CheckError (InvalidLValue lv, loc))
   (* [type_check_expr] calculates the type of the given expression,
      or raises an error if it violates type rules. *)
-  let rec type_check_expr (exp : expr) (env : ty env) : type_constraint * expr =
+  and type_check_expr (exp : expr) (env : ty env) : type_constraint * expr =
     match exp with
     | NumLiteral (n, loc) ->
         (* all numbers are 8-bit *)
@@ -243,40 +262,23 @@ let type_check (defn : func_defn) (defns : func_defn list)
                          List.length args ),
                      loc )))
         | None -> raise (CheckError (UndefinedFunction name, loc)))
-    | Deref (expr, loc) ->
-        let expr_ty, expr_tc = type_check_deref expr env loc in
-        (ConstrainedTo expr_ty, Deref (expr_tc, loc))
-    | AddrOf (lv, loc) -> (
-        match type_check_l_value lv env with
-        | ConstrainedTo inner, lv_tc ->
-            (ConstrainedTo (Pointer inner), AddrOf (lv_tc, loc))
-        | Unconstrained, _ ->
-            raise (InternalError "encountered l-value with unconstrained type"))
+    | Deref (expr, loc) -> (
+        (* NOTE: Design choice: dereferences must take an explicit pointer type *)
+        match type_check_expr expr env with
+        | ConstrainedTo (Pointer inner), deref_expr_tc ->
+            if inner = Void then raise (CheckError (DerefVoidPointer, loc));
+            (ConstrainedTo inner, Deref (deref_expr_tc, loc))
+        | type_constr, _ ->
+            raise (CheckError (DerefNonPointer type_constr, loc)))
+    | AddrOf (lv, loc) ->
+        let lv_type, lv_tc = type_check_l_value lv env loc in
+        (ConstrainedTo (Pointer lv_type), AddrOf (lv_tc, loc))
     | Cast (typ, expr, loc) ->
         if typ = Void then raise (CheckError (CastToVoid, loc));
         let _, expr_tc = type_check_expr expr env in
         (* constrain this expression to the casted type, and just pass
            through the type checked expression (cast is not reproduced) *)
         (ConstrainedTo typ, expr_tc)
-  (* [type_check_deref] checks a pointer dereference for type errors. It
-     returns the type of the inner expression being dereferenced, and the
-     type checked inner expression. *)
-  and type_check_deref (deref_expr : expr) (env : ty env) (loc : maybe_loc) :
-      ty * expr =
-    (* NOTE: Design choice: dereferences must take an explicit pointer type *)
-    match type_check_expr deref_expr env with
-    | ConstrainedTo (Pointer inner), deref_expr_tc ->
-        if inner = Void then raise (CheckError (DerefVoidPointer, loc));
-        (inner, deref_expr_tc)
-    | type_constr, _ -> raise (CheckError (DerefNonPointer type_constr, loc))
-  (* [type_check_l_value] checks an l-value for type errors *)
-  and type_check_l_value (lv : l_value) (env : ty env) :
-      type_constraint * l_value =
-    match lv with
-    | LVar (name, loc) -> (ConstrainedTo (lookup_var name env loc), lv)
-    | LDeref (expr, loc) ->
-        let expr_ty, expr_tc = type_check_deref expr env loc in
-        (ConstrainedTo expr_ty, LDeref (expr_tc, loc))
   (* [type_check_stmt] checks a single statement for type errors *)
   and type_check_stmt (stmt : stmt) (env : ty env) : stmt =
     (* [ensure_type_satisfies] checks that a given expression type checks
@@ -365,14 +367,14 @@ let type_check (defn : func_defn) (defns : func_defn list)
 
         ArrayDeclare (name, typ, size_tc, init_tc, scope_tc, loc)
     | Assign (lv, expr, loc) ->
-        let expected, lv_tc = type_check_l_value lv env in
-        let expr_tc = ensure_type_satisfies expected expr loc in
+        let lv_type, lv_tc = type_check_l_value lv env loc in
+        let expr_tc = ensure_type_satisfies (ConstrainedTo lv_type) expr loc in
         Assign (lv_tc, expr_tc, loc)
     | Inr (lv, loc) ->
-        let _, lv_tc = type_check_l_value lv env in
+        let _, lv_tc = type_check_l_value lv env loc in
         Inr (lv_tc, loc)
     | Dcr (lv, loc) ->
-        let _, lv_tc = type_check_l_value lv env in
+        let _, lv_tc = type_check_l_value lv env loc in
         Dcr (lv_tc, loc)
     | If (cond, thn, loc) ->
         let cond_ty, cond_tc = type_check_expr cond env in

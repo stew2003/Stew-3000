@@ -199,11 +199,11 @@ block_stmt:
 
 // statements that require semicolon termination
 stmt:
-| var = l_value ASSIGN e = expr
+| dest = expr ASSIGN e = expr
   { 
-    let (var, start_loc) = var in 
+    let (dest, start_loc) = dest in 
     let (e, end_loc) = e in 
-    Assign (var, e, Some (span start_loc end_loc))
+    Assign (dest, e, Some (span start_loc end_loc))
   }
 | start_loc = RETURN e = expr 
   {
@@ -218,12 +218,12 @@ stmt:
 | start_loc = PRINT LPAREN arg = expr end_loc = RPAREN
   { let (arg, _) = arg in 
     PrintDec (arg, Some (span start_loc end_loc)) }
-| var = l_value end_loc = INR
-  { let (var, start_loc) = var in 
-    Inr (var, Some (span start_loc end_loc)) }
-| var = l_value end_loc = DCR
-  { let (var, start_loc) = var in 
-    Dcr (var, Some (span start_loc end_loc)) }
+| e = expr end_loc = INR
+  { let (e, start_loc) = e in 
+    Inr (e, Some (span start_loc end_loc)) }
+| e = expr end_loc = DCR
+  { let (e, start_loc) = e in 
+    Dcr (e, Some (span start_loc end_loc)) }
 | start_loc = EXIT LPAREN arg = expr end_loc = RPAREN
   { let (arg, _) = arg in 
     Exit (Some arg, Some (span start_loc end_loc)) }
@@ -233,26 +233,6 @@ stmt:
   { 
     let (e, _) = e in 
     Assert (e, Some (span start_loc end_loc))
-  }
-
-// l-values
-l_value:
-| var = IDENT
-  {
-    let (var, loc) = var in 
-    (LVar (var, Some loc), loc)
-  }
-| start_loc = STAR e = expr
-  {
-    let (e, end_loc) = e in 
-    let loc = span start_loc end_loc in 
-    (LDeref (e, Some loc), loc)
-  }
-| start_loc = LPAREN lv = l_value end_loc = RPAREN
-  {
-    let (lv, _) = lv in 
-    let loc = span start_loc end_loc in 
-    (lv, loc)
   }
 
 // expressions
@@ -281,11 +261,11 @@ expr:
     let loc = span start_loc end_loc in 
     (Deref (e, Some loc), loc)
   }
-| start_loc = AMPERSAND lv = l_value
+| start_loc = AMPERSAND e = expr
   {
-    let (lv, end_loc) = lv in 
+    let (e, end_loc) = e in 
     let loc = span start_loc end_loc in 
-    (AddrOf (lv, Some loc), loc)
+    (AddrOf (e, Some loc), loc)
   }
 | start_loc = LPAREN t = typ RPAREN e = expr
   {

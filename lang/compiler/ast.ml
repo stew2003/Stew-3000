@@ -33,10 +33,7 @@ type bin_op =
   | Eq
   | Neq
 
-(* L-values represent memory locations that can be mutated. *)
-type l_value = LVar of string * maybe_loc | LDeref of expr * maybe_loc
-
-and expr =
+type expr =
   | NumLiteral of int * maybe_loc
   | CharLiteral of char * maybe_loc
   | Var of string * maybe_loc
@@ -44,16 +41,16 @@ and expr =
   | BinOp of bin_op * expr * expr * maybe_loc
   | Call of string * expr list * maybe_loc
   | Deref of expr * maybe_loc
-  | AddrOf of l_value * maybe_loc
+  | AddrOf of expr * maybe_loc
   | Cast of ty * expr * maybe_loc
 
 type stmt =
   | Declare of string * ty * expr option * stmt list * maybe_loc
   | ArrayDeclare of
       string * ty * expr option * expr list option * stmt list * maybe_loc
-  | Assign of l_value * expr * maybe_loc
-  | Inr of l_value * maybe_loc
-  | Dcr of l_value * maybe_loc
+  | Assign of expr * expr * maybe_loc
+  | Inr of expr * maybe_loc
+  | Dcr of expr * maybe_loc
   | If of expr * stmt list * maybe_loc
   | IfElse of expr * stmt list * stmt list * maybe_loc
   | While of expr * stmt list * maybe_loc
@@ -176,13 +173,9 @@ let loc_from_stmt (stmt : stmt) : maybe_loc =
 (* [check_for_expr] determines if the program contains an
    expression that satisfies the given predicate *)
 let check_for_expr (pgrm : prog) (pred : expr -> bool) : bool =
-  (* [check_l_value] determines if the given l-value contains an
-     expression that satisfies the predicate *)
-  let rec check_l_value (lv : l_value) (pred : expr -> bool) : bool =
-    match lv with LDeref (e, _) -> pred e | LVar _ -> false
   (* [check_expr] determines if the given expression contains a
      sub-expression that satisfies the given predicate. *)
-  and check_expr (exp : expr) (pred : expr -> bool) : bool =
+  let rec check_expr (exp : expr) (pred : expr -> bool) : bool =
     (* true if either the expression or its subexpressions yield true *)
     pred exp
     ||
@@ -193,7 +186,7 @@ let check_for_expr (pgrm : prog) (pred : expr -> bool) : bool =
         List.map (fun arg -> check_expr arg pred) args
         |> List.fold_left ( || ) false
     | Deref (e, _) -> check_expr e pred
-    | AddrOf (lv, _) -> check_l_value lv pred
+    | AddrOf (e, _) -> check_expr e pred
     | Cast (_, e, _) -> check_expr e pred
     | NumLiteral _ | CharLiteral _ | Var _ -> false
   (* [check_stmt] determines if the given statement contains an
@@ -213,8 +206,8 @@ let check_for_expr (pgrm : prog) (pred : expr -> bool) : bool =
                List.map (fun e -> check_expr e pred) exprs
                |> List.fold_left ( || ) false)
         || check_stmt_list body pred
-    | Assign (lv, value, _) -> check_l_value lv pred || check_expr value pred
-    | Inr (lv, _) | Dcr (lv, _) -> check_l_value lv pred
+    | Assign (e, value, _) -> check_expr e pred || check_expr value pred
+    | Inr (e, _) | Dcr (e, _) -> check_expr e pred
     | If (cond, thn, _) -> check_expr cond pred || check_stmt_list thn pred
     | IfElse (cond, thn, els, _) ->
         check_expr cond pred || check_stmt_list thn pred

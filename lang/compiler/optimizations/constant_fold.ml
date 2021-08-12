@@ -2,17 +2,10 @@ open Ast
 open Warnings
 open Util.Err
 
-(* [fold_l_value] performs constant folding on a given l-value. *)
-let rec fold_l_value (lv : l_value) (emit_warning : compiler_warn_handler) :
-    l_value =
-  match lv with
-  | LDeref (e, loc) -> LDeref (fold_expr e emit_warning, loc)
-  | LVar _ -> lv
-
 (* [fold_expr] performs constant folding on a given expression.
    NOTE: character literals are not explicitly folded here because they
    should be replaced by their number literal equivalents in the checking phase. *)
-and fold_expr (exp : expr) (emit_warning : compiler_warn_handler) : expr =
+let rec fold_expr (exp : expr) (emit_warning : compiler_warn_handler) : expr =
   match exp with
   | UnOp (op, expr, loc) -> (
       let folded_operand = fold_expr expr emit_warning in
@@ -74,7 +67,7 @@ and fold_expr (exp : expr) (emit_warning : compiler_warn_handler) : expr =
   | Call (name, args, loc) ->
       Call (name, List.map (fun arg -> fold_expr arg emit_warning) args, loc)
   | Deref (e, loc) -> Deref (fold_expr e emit_warning, loc)
-  | AddrOf (lv, loc) -> AddrOf (fold_l_value lv emit_warning, loc)
+  | AddrOf (e, loc) -> AddrOf (fold_expr e emit_warning, loc)
   | Cast (typ, e, loc) -> Cast (typ, fold_expr e emit_warning, loc)
   | NumLiteral _ | CharLiteral _ | Var _ -> exp
 
@@ -100,10 +93,10 @@ and fold_stmt (stmt : stmt) (emit_warning : compiler_warn_handler) : stmt =
             init,
           fold_stmt_list scope emit_warning,
           loc )
-  | Assign (lv, expr, loc) ->
-      Assign (fold_l_value lv emit_warning, fold_expr expr emit_warning, loc)
-  | Inr (lv, loc) -> Inr (fold_l_value lv emit_warning, loc)
-  | Dcr (lv, loc) -> Dcr (fold_l_value lv emit_warning, loc)
+  | Assign (dest, expr, loc) ->
+      Assign (fold_expr dest emit_warning, fold_expr expr emit_warning, loc)
+  | Inr (e, loc) -> Inr (fold_expr e emit_warning, loc)
+  | Dcr (e, loc) -> Dcr (fold_expr e emit_warning, loc)
   | If (cond, body, loc) -> (
       match fold_expr cond emit_warning with
       | NumLiteral (cond_value, _) ->

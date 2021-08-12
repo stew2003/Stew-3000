@@ -351,7 +351,7 @@ let test_assign _ =
         ( "x",
           Int,
           Some (NumLiteral (0, None)),
-          [ Assign (LVar ("x", None), NumLiteral (7, None), None) ],
+          [ Assign (Var ("x", None), NumLiteral (7, None), None) ],
           None );
     ]
 
@@ -407,11 +407,11 @@ let test_print_dec _ =
 
 let test_inr _ =
   assert_body_parses_to "x++; name++;"
-    [ Inr (LVar ("x", None), None); Inr (LVar ("name", None), None) ]
+    [ Inr (Var ("x", None), None); Inr (Var ("name", None), None) ]
 
 let test_dcr _ =
   assert_body_parses_to "x--; name--;"
-    [ Dcr (LVar ("x", None), None); Dcr (LVar ("name", None), None) ]
+    [ Dcr (Var ("x", None), None); Dcr (Var ("name", None), None) ]
 
 let test_exit _ =
   assert_body_parses_to "exit(); exit(-1);"

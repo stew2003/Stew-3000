@@ -1,13 +1,7 @@
 open Ast
 
-(* [expand_in_l_value] expands a #define directive in an l-value. *)
-let rec expand_in_l_value (define : pp_define) (lv : l_value) : l_value =
-  match lv with
-  | LDeref (e, loc) -> LDeref (expand_in_expr define e, loc)
-  | LVar _ -> lv
-
 (* [expand_in_expr] expands a #define directive in an expression. *)
-and expand_in_expr (define : pp_define) (exp : expr) : expr =
+let rec expand_in_expr (define : pp_define) (exp : expr) : expr =
   match exp with
   (* check if this var is the same as that of the define *)
   | Var (name, loc) ->
@@ -20,7 +14,7 @@ and expand_in_expr (define : pp_define) (exp : expr) : expr =
   | Call (name, args, loc) ->
       Call (name, List.map (fun arg -> expand_in_expr define arg) args, loc)
   | Deref (e, loc) -> Deref (expand_in_expr define e, loc)
-  | AddrOf (lv, loc) -> AddrOf (expand_in_l_value define lv, loc)
+  | AddrOf (e, loc) -> AddrOf (expand_in_expr define e, loc)
   | Cast (typ, e, loc) -> Cast (typ, expand_in_expr define e, loc)
 
 (* [expand_in_stmt] expands a #define directive in a single statement. *)
@@ -43,10 +37,10 @@ and expand_in_stmt (define : pp_define) (stmt : stmt) : stmt =
             init,
           expand_in_stmt_list define body,
           loc )
-  | Assign (lv, expr, loc) ->
-      Assign (expand_in_l_value define lv, expand_in_expr define expr, loc)
-  | Inr (lv, loc) -> Inr (expand_in_l_value define lv, loc)
-  | Dcr (lv, loc) -> Dcr (expand_in_l_value define lv, loc)
+  | Assign (dest, expr, loc) ->
+      Assign (expand_in_expr define dest, expand_in_expr define expr, loc)
+  | Inr (e, loc) -> Inr (expand_in_expr define e, loc)
+  | Dcr (e, loc) -> Dcr (expand_in_expr define e, loc)
   | If (cond, thn, loc) ->
       If (expand_in_expr define cond, expand_in_stmt_list define thn, loc)
   | IfElse (cond, thn, els, loc) ->

@@ -16,6 +16,7 @@ let norm_check_err (err : Check.check_err) =
   | InvalidTypeError (e, act) -> InvalidTypeError (norm_expr_locs e, act)
   | TypeMismatch (name, op1, ty1, op2, ty2) ->
       TypeMismatch (name, norm_expr_locs op1, ty1, norm_expr_locs op2, ty2)
+  | InvalidLValue e -> InvalidLValue (norm_expr_locs e)
   | NonVoidMain | ReturnInMain | CtrlReachesEndOfNonVoid _ | MismatchedReturn _
   | UnboundVariable _ | UndefinedFunction _ | NonFunctionAnnotatedAsVoid _
   | ArityMismatch _ | MultipleDefinitions _ | UnrepresentableConstant _
@@ -176,6 +177,18 @@ let test_deref_void_pointer _ =
   assert_raises_check_err DerefVoidPointer
     "void main() { void *ptr = 0x0; *ptr; }"
 
+let test_invalid_lvalue _ =
+  assert_raises_check_err
+    (InvalidLValue (NumLiteral (5, None)))
+    "void main() { 5 = 10; }";
+  assert_raises_check_err
+    (InvalidLValue
+       (BinOp (Plus, NumLiteral (2, None), NumLiteral (2, None), None)))
+    "void main() { int x = &(2 + 2); }";
+  assert_raises_check_err
+    (InvalidLValue (NumLiteral (9, None)))
+    "void main() { 9++; }"
+
 let test_cast_void _ =
   assert_raises_check_err CastToVoid "void main() { (void)0; }"
 
@@ -215,6 +228,7 @@ let suite =
          "test_unrepresentable_const" >:: test_unrepresentable_const;
          "test_deref_non_pointer" >:: test_deref_non_pointer;
          "test_deref_void_pointer" >:: test_deref_void_pointer;
+         "test_invalid_lvalue" >:: test_invalid_lvalue;
          "test_cast_void" >:: test_cast_void;
          "test_non_const_array_size" >:: test_non_const_array_size;
          "test_underspec_array" >:: test_underspec_array;

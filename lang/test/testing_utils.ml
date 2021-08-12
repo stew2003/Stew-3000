@@ -2,14 +2,8 @@ open Compiler.Ast
 open Compiler.Prettyprint
 open OUnit2
 
-(* [norm_l_value_locs] normalizes source locations for an l-value *)
-let rec norm_l_value_locs (lv : l_value) : l_value =
-  match lv with
-  | LVar (name, _) -> LVar (name, None)
-  | LDeref (e, _) -> LDeref (e, None)
-
 (* [norm_expr_locs] normalizes source locations in an expression *)
-and norm_expr_locs (exp : expr) : expr =
+let rec norm_expr_locs (exp : expr) : expr =
   match exp with
   | NumLiteral (n, _) -> NumLiteral (n, None)
   | CharLiteral (c, _) -> CharLiteral (c, None)
@@ -18,7 +12,7 @@ and norm_expr_locs (exp : expr) : expr =
   | BinOp (op, l, r, _) -> BinOp (op, norm_expr_locs l, norm_expr_locs r, None)
   | Call (fn, args, _) -> Call (fn, List.map norm_expr_locs args, None)
   | Deref (e, _) -> Deref (norm_expr_locs e, None)
-  | AddrOf (lv, _) -> AddrOf (norm_l_value_locs lv, None)
+  | AddrOf (e, _) -> AddrOf (norm_expr_locs e, None)
   | Cast (typ, e, _) -> Cast (typ, norm_expr_locs e, None)
 
 (* [norm_stmt_locs] normalizes source locations in a statement *)
@@ -41,8 +35,8 @@ and norm_stmt_locs (stmt : stmt) : stmt =
           Option.map (fun exprs -> List.map norm_expr_locs exprs) init,
           norm_stmt_list_locs body,
           None )
-  | Assign (lv, exp, _) ->
-      Assign (norm_l_value_locs lv, norm_expr_locs exp, None)
+  | Assign (dest, exp, _) ->
+      Assign (norm_expr_locs dest, norm_expr_locs exp, None)
   | If (cond, thn, _) -> If (norm_expr_locs cond, norm_stmt_list_locs thn, None)
   | IfElse (cond, thn, els, _) ->
       IfElse
@@ -57,8 +51,8 @@ and norm_stmt_locs (stmt : stmt) : stmt =
   | While (cond, body, _) ->
       While (norm_expr_locs cond, norm_stmt_list_locs body, None)
   | PrintDec (e, _) -> PrintDec (norm_expr_locs e, None)
-  | Inr (lv, _) -> Inr (norm_l_value_locs lv, None)
-  | Dcr (lv, _) -> Dcr (norm_l_value_locs lv, None)
+  | Inr (e, _) -> Inr (norm_expr_locs e, None)
+  | Dcr (e, _) -> Dcr (norm_expr_locs e, None)
   | Exit (Some e, _) -> Exit (Some (norm_expr_locs e), None)
   | Exit (None, _) -> Exit (None, None)
   | Assert (e, _) -> Assert (e, None)
