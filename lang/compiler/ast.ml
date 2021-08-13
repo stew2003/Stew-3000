@@ -6,6 +6,7 @@ open Util.Srcloc
     - unsigned: 8 bit unsigned integer
     - char: 8 bit ASCII character
     - pointer: 8 bit memory address
+    - any: used internally by the compiler to facilitate typechecking
 *)
 type ty = Void | Int | Unsigned | Char | Pointer of ty | Any
 

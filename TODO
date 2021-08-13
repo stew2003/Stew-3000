@@ -24,9 +24,7 @@ Compiler
     [] char literals 
     [] dereference 
     [] & (address of)
-    [] assignment 
-    [] inr
-    [] dcr
+    [] assignment
     [] array declarations
     [] unsigned comparison ops
 
