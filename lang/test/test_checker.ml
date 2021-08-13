@@ -6,6 +6,8 @@ open Testing_utils
 (* [check] parses a source program and passes it through the checker. *)
 let check (source : string) =
   let pgrm = Parser.parse source in
+  let pgrm = Preprocess.preprocess pgrm in
+  let pgrm = Desugar.desugar pgrm in
   Check.check pgrm
 
 (* [norm_check_err] normalizes the source locations present in any

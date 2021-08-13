@@ -8,6 +8,8 @@ open Asm.Isa
    the final machine state. *)
 let run (source : string) : stew_3000 =
   let pgrm = Parser.parse source in
+  let pgrm = Preprocess.preprocess pgrm in
+  let pgrm = Desugar.desugar pgrm in
   let pgrm = Check.check pgrm in
   let instrs = Compile.compile pgrm in
   Emulator.emulate instrs

@@ -24,6 +24,9 @@ let command =
         try
           let pgrm = Parser.parse source_text in
           let pgrm = Preprocess.preprocess pgrm in
+          let pgrm = Desugar.desugar pgrm in
+
+          Printf.printf "%s\n" (Prettyprint.pretty_print pgrm);
 
           (* On warnings, print them *)
           let warning_handler (w : compiler_warn) =

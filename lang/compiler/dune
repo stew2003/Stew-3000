@@ -6,6 +6,7 @@
     ast 
     check 
     compile 
+    desugar
     lex
     parse
     parser 

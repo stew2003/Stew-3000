@@ -66,7 +66,8 @@ let rec pretty_print_expr ?(is_nested_in_op = false) (exp : expr) : string =
         (pretty_print_expr ~is_nested_in_op:true e)
   | Assign (dest, expr, _) ->
       wrap_if_nested
-        (sprintf "%s = %s" (pretty_print_expr dest) (pretty_print_expr expr))
+        (sprintf "%s = %s" (pretty_print_expr dest)
+           (pretty_print_expr ~is_nested_in_op:true expr))
         is_nested_in_op
   | SInr (e, _) -> sprintf "%s++" (pretty_print_expr ~is_nested_in_op:true e)
   | SDcr (e, _) -> sprintf "%s--" (pretty_print_expr ~is_nested_in_op:true e)
@@ -87,7 +88,8 @@ and pretty_print_stmt (stmt : stmt) (indent_level : int) : string =
       let initialization =
         match expr with
         | None -> ""
-        | Some expr -> sprintf " = %s" (pretty_print_expr expr)
+        | Some expr ->
+            sprintf " = %s" (pretty_print_expr ~is_nested_in_op:true expr)
       in
       sprintf "%s %s%s;\n%s" (pretty_print_type typ) name initialization
         (pretty_print_stmt_list scope indent_level)
