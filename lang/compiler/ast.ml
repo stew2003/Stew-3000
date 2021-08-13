@@ -7,7 +7,7 @@ open Util.Srcloc
     - char: 8 bit ASCII character
     - pointer: 8 bit memory address
 *)
-type ty = Void | Int | Unsigned | Char | Pointer of ty
+type ty = Void | Int | Unsigned | Char | Pointer of ty | Any
 
 type un_op = BNot | LNot
 
@@ -98,6 +98,7 @@ let rec string_of_ty (t : ty) : string =
   | Unsigned -> "unsigned"
   | Char -> "char"
   | Pointer typ -> Printf.sprintf "%s*" (string_of_ty typ)
+  | Any -> "any"
 
 (* [describe_bin_op] returns a description of a binary operator *)
 let describe_bin_op (op : bin_op) : string =

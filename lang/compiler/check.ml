@@ -283,12 +283,15 @@ let type_check (defn : func_defn) (defns : func_defn list)
     | AddrOf (lv, loc) ->
         let lv_type, lv_tc = type_check_l_value lv env loc in
         (ConstrainedTo (Pointer lv_type), AddrOf (lv_tc, loc))
-    | Cast (typ, expr, loc) ->
+    | Cast (typ, expr, loc) -> (
         if typ = Void then raise (CheckError (CastToVoid, loc));
         let _, expr_tc = type_check_expr expr env in
-        (* constrain this expression to the casted type, and just pass
+        match typ with
+        (* Casting to special any type causes type to become unconstrained *)
+        | Any -> (Unconstrained, expr_tc)
+        (* Otherwise, constrain this expression to the casted type, and just pass
            through the type checked expression (cast is not reproduced) *)
-        (ConstrainedTo typ, expr_tc)
+        | _ -> (ConstrainedTo typ, expr_tc))
     | Assign (lv, expr, loc) ->
         let lv_type, lv_tc = type_check_l_value lv env loc in
         let expr_tc =

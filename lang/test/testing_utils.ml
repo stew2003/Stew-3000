@@ -84,7 +84,8 @@ and norm_prog_locs (pgrm : prog) : prog =
 (* [assert_prog_eq] asserts that an actual program equals an expected program,
    and uses pretty printing to display a message if they are not. *)
 let assert_prog_eq (expected : prog) (actual : prog) =
-  assert_equal expected actual ~printer:pretty_print
+  assert_equal (norm_prog_locs expected) (norm_prog_locs actual)
+    ~printer:pretty_print
 
 (* [parse_norm] is a wrapper around parsing a source string and normalizing its
    source locations. *)

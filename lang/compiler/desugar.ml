@@ -1,5 +1,4 @@
 open Ast
-open Util.Env
 
 (* [desugar] replaces syntactic sugar in the given program with equivalent
     expressions made up of non-sugar features. *)
@@ -26,7 +25,10 @@ let desugar (pgrm : prog) : prog =
         let arr_desugar = desugar_expr arr in
         let idx_desugar = desugar_expr idx in
         (* a[i] ==> *(a + i) *)
-        Deref (BinOp (Plus, arr_desugar, idx_desugar, loc), loc)
+        (* NOTE: the index expression is casted to any to guarantee that
+           the addition will typecheck. Effectively, the index is treated
+           as though it is the same type as a. *)
+        Deref (BinOp (Plus, arr_desugar, Cast (Any, idx_desugar, loc), loc), loc)
     (* recursively desugar sub-expressions *)
     | UnOp (op, operand, loc) -> UnOp (op, desugar_expr operand, loc)
     | BinOp (op, left, right, loc) ->

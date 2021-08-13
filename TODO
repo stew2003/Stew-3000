@@ -20,22 +20,15 @@ Compiler
       [x] eliminate redundant instrs
       [x] replace addi 1, _ / subi 1, _ with inr/dcr
       [x] remove addi 0, subi 0, etc (no effect)
-  [] new types
-    [] implement code gen for:
-      [] char literals 
-      [] dereference 
-      [] & (address of)
-      [] assignment 
-      [] inr
-      [] dcr
-      [] array declarations
-      [] unsigned comparison ops
-  [] desugar
-    [] array subscript notation (a[i])
-      [] how to deal with typeof i != typeof a: map array names to their pointer
-        types, add a cast
-    [] += -= *= /= %= ...
-    [] ++ and --
+  [] implement code gen for:
+    [] char literals 
+    [] dereference 
+    [] & (address of)
+    [] assignment 
+    [] inr
+    [] dcr
+    [] array declarations
+    [] unsigned comparison ops
 
 Docs
   [] document everything

@@ -26,11 +26,73 @@ let test_update _ =
     (from_body "v += 10; y /= 2 + 3; *px |= 0b101;")
     (from_body "v = v + 10; y = y / (2 + 3); *px = *px | 0b101;")
 
+(* This is a bit inconvenient since the `any` type isn't accessible
+   to the outside world. *)
 let test_subscript _ =
-  assert_prog_eq (from_body "arr[40];") (from_body "*(arr + 40);");
+  assert_prog_eq (from_body "arr[40];")
+    {
+      defines = [];
+      funcs = [];
+      main =
+        {
+          name = "main";
+          params = [];
+          body =
+            [
+              ExprStmt
+                ( Deref
+                    ( BinOp
+                        ( Plus,
+                          Var ("arr", None),
+                          Cast (Any, NumLiteral (40, None), None),
+                          None ),
+                      None ),
+                  None );
+            ];
+          return_ty = Void;
+          ctrl_reaches_end = None;
+          loc = None;
+        };
+    };
   assert_prog_eq
     (from_body "(*(p + 10))[2 + 4];")
-    (from_body "*((*(p + 10)) + (2 + 4));")
+    {
+      defines = [];
+      funcs = [];
+      main =
+        {
+          name = "main";
+          params = [];
+          body =
+            [
+              ExprStmt
+                ( Deref
+                    ( BinOp
+                        ( Plus,
+                          Deref
+                            ( BinOp
+                                ( Plus,
+                                  Var ("p", None),
+                                  NumLiteral (10, None),
+                                  None ),
+                              None ),
+                          Cast
+                            ( Any,
+                              BinOp
+                                ( Plus,
+                                  NumLiteral (2, None),
+                                  NumLiteral (4, None),
+                                  None ),
+                              None ),
+                          None ),
+                      None ),
+                  None );
+            ];
+          return_ty = Void;
+          ctrl_reaches_end = None;
+          loc = None;
+        };
+    }
 
 let suite =
   "Desugaring Tests"
