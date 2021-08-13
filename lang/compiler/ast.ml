@@ -43,14 +43,17 @@ type expr =
   | Deref of expr * maybe_loc
   | AddrOf of expr * maybe_loc
   | Cast of ty * expr * maybe_loc
+  | Assign of expr * expr * maybe_loc
+  (* Desugared expressions: *)
+  | SInr of expr * maybe_loc
+  | SDcr of expr * maybe_loc
+  | SUpdate of expr * expr * bin_op * maybe_loc
+  | SSubscript of expr * expr * maybe_loc
 
 type stmt =
   | Declare of string * ty * expr option * stmt list * maybe_loc
   | ArrayDeclare of
       string * ty * expr option * expr list option * stmt list * maybe_loc
-  | Assign of expr * expr * maybe_loc
-  | Inr of expr * maybe_loc
-  | Dcr of expr * maybe_loc
   | If of expr * stmt list * maybe_loc
   | IfElse of expr * stmt list * stmt list * maybe_loc
   | While of expr * stmt list * maybe_loc
@@ -136,6 +139,11 @@ let describe_expr (e : expr) : string =
   | Deref _ -> "dereference"
   | AddrOf _ -> "address-of"
   | Cast _ -> "cast"
+  | Assign _ -> "assignment"
+  | SInr _ -> "increment"
+  | SDcr _ -> "decrement"
+  | SUpdate _ -> "update"
+  | SSubscript _ -> "subscript"
 
 (* [loc_from_expr] extracts the source location from an expression *)
 let loc_from_expr (exp : expr) : maybe_loc =
@@ -148,7 +156,12 @@ let loc_from_expr (exp : expr) : maybe_loc =
   | Call (_, _, loc)
   | Deref (_, loc)
   | AddrOf (_, loc)
-  | Cast (_, _, loc) ->
+  | Cast (_, _, loc)
+  | Assign (_, _, loc)
+  | SInr (_, loc)
+  | SDcr (_, loc)
+  | SSubscript (_, _, loc)
+  | SUpdate (_, _, _, loc) ->
       loc
 
 (* [loc_from_stmt] extracts the source location from a statement. *)
@@ -156,9 +169,6 @@ let loc_from_stmt (stmt : stmt) : maybe_loc =
   match stmt with
   | Declare (_, _, _, _, loc)
   | ArrayDeclare (_, _, _, _, _, loc)
-  | Assign (_, _, loc)
-  | Inr (_, loc)
-  | Dcr (_, loc)
   | If (_, _, loc)
   | IfElse (_, _, _, loc)
   | While (_, _, loc)
@@ -188,6 +198,12 @@ let check_for_expr (pgrm : prog) (pred : expr -> bool) : bool =
     | Deref (e, _) -> check_expr e pred
     | AddrOf (e, _) -> check_expr e pred
     | Cast (_, e, _) -> check_expr e pred
+    | Assign (dest, e, _) -> check_expr dest pred || check_expr e pred
+    | SInr (e, _) -> check_expr e pred
+    | SDcr (e, _) -> check_expr e pred
+    | SUpdate (dest, amount, _, _) ->
+        check_expr dest pred || check_expr amount pred
+    | SSubscript (arr, idx, _) -> check_expr arr pred || check_expr idx pred
     | NumLiteral _ | CharLiteral _ | Var _ -> false
   (* [check_stmt] determines if the given statement contains an
      expression that satisfies the given predicate *)
@@ -206,8 +222,6 @@ let check_for_expr (pgrm : prog) (pred : expr -> bool) : bool =
                List.map (fun e -> check_expr e pred) exprs
                |> List.fold_left ( || ) false)
         || check_stmt_list body pred
-    | Assign (e, value, _) -> check_expr e pred || check_expr value pred
-    | Inr (e, _) | Dcr (e, _) -> check_expr e pred
     | If (cond, thn, _) -> check_expr cond pred || check_stmt_list thn pred
     | IfElse (cond, thn, els, _) ->
         check_expr cond pred || check_stmt_list thn pred
@@ -250,9 +264,7 @@ let check_for_stmt (pgrm : prog) (pred : stmt -> bool) : bool =
         check_stmt_list thn pred || check_stmt_list els pred
     | Block (stmts, _) -> check_stmt_list stmts pred
     | While (_, body, _) -> check_stmt_list body pred
-    | Assign _ | Return _ | ExprStmt _ | PrintDec _ | Inr _ | Dcr _ | Exit _
-    | Assert _ ->
-        false
+    | Return _ | ExprStmt _ | PrintDec _ | Exit _ | Assert _ -> false
   (* [check_stmt_list] checks a list of statements for one that satisfies
      the given predicate *)
   and check_stmt_list (stmts : stmt list) (pred : stmt -> bool) : bool =

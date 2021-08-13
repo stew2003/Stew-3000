@@ -40,6 +40,14 @@
 %token <Util.Srcloc.src_loc> ASSIGN
 %token <Util.Srcloc.src_loc> INR
 %token <Util.Srcloc.src_loc> DCR
+%token <Util.Srcloc.src_loc> PLUS_UPDATE
+%token <Util.Srcloc.src_loc> MINUS_UPDATE
+%token <Util.Srcloc.src_loc> TIMES_UPDATE
+%token <Util.Srcloc.src_loc> DIV_UPDATE
+%token <Util.Srcloc.src_loc> MOD_UPDATE
+%token <Util.Srcloc.src_loc> BAND_UPDATE
+%token <Util.Srcloc.src_loc> BOR_UPDATE
+%token <Util.Srcloc.src_loc> BXOR_UPDATE
 
 %token <Util.Srcloc.src_loc> IF
 %token <Util.Srcloc.src_loc> ELSE
@@ -61,6 +69,7 @@
 
 %start <pp_define list * func_defn list> program
 
+%left ASSIGN PLUS_UPDATE MINUS_UPDATE TIMES_UPDATE DIV_UPDATE MOD_UPDATE BAND_UPDATE BOR_UPDATE BXOR_UPDATE
 %left LOR
 %left LAND
 %left BOR
@@ -71,6 +80,7 @@
 %left PLUS MINUS
 %left STAR DIV MOD
 %right BNOT LNOT
+%left INR DCR
 
 %%
 
@@ -199,41 +209,47 @@ block_stmt:
 
 // statements that require semicolon termination
 stmt:
-| dest = expr ASSIGN e = expr
-  { 
-    let (dest, start_loc) = dest in 
-    let (e, end_loc) = e in 
-    Assign (dest, e, Some (span start_loc end_loc))
-  }
-| start_loc = RETURN e = expr 
+| start_loc = RETURN e = option(expr) 
   {
-    let (e, end_loc) = e in 
-    Return (Some e, Some (span start_loc end_loc))
+    let e, end_loc = (match e with 
+      | None -> (None, start_loc)
+      | Some (e, end_loc) -> (Some e, end_loc)
+    ) in 
+    Return (e, Some (span start_loc end_loc))
   }
-| loc = RETURN 
-  { Return (None, Some loc) }
 | e = expr 
   { let (e, loc) = e in 
     ExprStmt (e, Some loc) }
 | start_loc = PRINT LPAREN arg = expr end_loc = RPAREN
   { let (arg, _) = arg in 
     PrintDec (arg, Some (span start_loc end_loc)) }
-| e = expr end_loc = INR
-  { let (e, start_loc) = e in 
-    Inr (e, Some (span start_loc end_loc)) }
-| e = expr end_loc = DCR
-  { let (e, start_loc) = e in 
-    Dcr (e, Some (span start_loc end_loc)) }
-| start_loc = EXIT LPAREN arg = expr end_loc = RPAREN
-  { let (arg, _) = arg in 
-    Exit (Some arg, Some (span start_loc end_loc)) }
-| start_loc = EXIT LPAREN end_loc = RPAREN
-  { Exit (None, Some (span start_loc end_loc)) }
+| start_loc = EXIT LPAREN arg = option(expr) end_loc = RPAREN
+  { let arg = Option.map (fun (a, _) -> a) arg in 
+    Exit (arg, Some (span start_loc end_loc)) }
 | start_loc = ASSERT LPAREN e = expr end_loc = RPAREN 
   { 
     let (e, _) = e in 
     Assert (e, Some (span start_loc end_loc))
   }
+
+// parses an update (*=, +=, ...) and returns corresponding bin_op
+update:
+| PLUS_UPDATE
+  { Plus }
+| MINUS_UPDATE
+  { Minus }
+| TIMES_UPDATE
+  { Mult }
+| DIV_UPDATE
+  { Div }
+| MOD_UPDATE
+  { Mod }
+| BAND_UPDATE
+  { BAnd }
+| BOR_UPDATE
+  { BOr }
+| BXOR_UPDATE
+  { BXor }
 
 // expressions
 expr:
@@ -273,6 +289,13 @@ expr:
     let (e, end_loc) = e in 
     let loc = span start_loc end_loc in 
     (Cast (t, e, Some loc), loc)
+  }
+| dest = expr ASSIGN e = expr
+  { 
+    let (dest, start_loc) = dest in 
+    let (e, end_loc) = e in 
+    let loc = span start_loc end_loc in 
+    (Assign (dest, e, Some loc), loc)
   }
 | start_loc = BNOT e = expr 
   { let (e, end_loc) = e in 
@@ -362,6 +385,28 @@ expr:
     let (r, end_loc) = r in 
     let loc = span start_loc end_loc in 
     (BinOp (Neq, l, r, Some loc), loc) }
+| e = expr end_loc = INR
+  { let (e, start_loc) = e in 
+    let loc = span start_loc end_loc in 
+    (SInr (e, Some loc), loc) }
+| e = expr end_loc = DCR
+  { let (e, start_loc) = e in 
+    let loc = span start_loc end_loc in 
+    (SDcr (e, Some loc), loc) }
+| dest = expr op = update e = expr 
+  {
+    let (dest, start_loc) = dest in 
+    let (e, end_loc) = e in 
+    let loc = span start_loc end_loc in 
+    (SUpdate (dest, e, op, Some loc), loc)
+  }
+| arr = expr LBRACKET sub = expr end_loc = RBRACKET
+  {
+    let (arr, start_loc) = arr in 
+    let (sub, _) = sub in 
+    let loc = span start_loc end_loc in 
+    (SSubscript (arr, sub, Some loc), loc)
+  }
 
 // argument list of expressions for function calls
 arg_list:

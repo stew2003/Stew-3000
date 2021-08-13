@@ -83,6 +83,22 @@ rule token = parse
   { LNOT (loc_from_lexbuf lexbuf) }
 | '='
   { ASSIGN (loc_from_lexbuf lexbuf) }
+| "+="
+  { PLUS_UPDATE (loc_from_lexbuf lexbuf) }
+| "-="
+  { MINUS_UPDATE (loc_from_lexbuf lexbuf) }
+| "*="
+  { TIMES_UPDATE (loc_from_lexbuf lexbuf) }
+| "/="
+  { DIV_UPDATE (loc_from_lexbuf lexbuf) }
+| "%="
+  { MOD_UPDATE (loc_from_lexbuf lexbuf) }
+| "&="
+  { BAND_UPDATE (loc_from_lexbuf lexbuf) }
+| "|="
+  { BOR_UPDATE (loc_from_lexbuf lexbuf) }
+| "^="
+  { BXOR_UPDATE (loc_from_lexbuf lexbuf) }
 | "++"
   { INR (loc_from_lexbuf lexbuf) }
 | "--"

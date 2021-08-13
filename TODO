@@ -30,6 +30,12 @@ Compiler
       [] dcr
       [] array declarations
       [] unsigned comparison ops
+  [] desugar
+    [] array subscript notation (a[i])
+      [] how to deal with typeof i != typeof a: map array names to their pointer
+        types, add a cast
+    [] += -= *= /= %= ...
+    [] ++ and --
 
 Docs
   [] document everything

@@ -351,7 +351,9 @@ let test_assign _ =
         ( "x",
           Int,
           Some (NumLiteral (0, None)),
-          [ Assign (Var ("x", None), NumLiteral (7, None), None) ],
+          [
+            ExprStmt (Assign (Var ("x", None), NumLiteral (7, None), None), None);
+          ],
           None );
     ]
 
@@ -407,11 +409,27 @@ let test_print_dec _ =
 
 let test_inr _ =
   assert_body_parses_to "x++; name++;"
-    [ Inr (Var ("x", None), None); Inr (Var ("name", None), None) ]
+    [
+      ExprStmt (SInr (Var ("x", None), None), None);
+      ExprStmt (SInr (Var ("name", None), None), None);
+    ];
+  assert_body_parses_to "x = y++;"
+    [
+      ExprStmt
+        (Assign (Var ("x", None), SInr (Var ("y", None), None), None), None);
+    ]
 
 let test_dcr _ =
   assert_body_parses_to "x--; name--;"
-    [ Dcr (Var ("x", None), None); Dcr (Var ("name", None), None) ]
+    [
+      ExprStmt (SDcr (Var ("x", None), None), None);
+      ExprStmt (SDcr (Var ("name", None), None), None);
+    ];
+  assert_body_parses_to "x = y--;"
+    [
+      ExprStmt
+        (Assign (Var ("x", None), SDcr (Var ("y", None), None), None), None);
+    ]
 
 let test_exit _ =
   assert_body_parses_to "exit(); exit(-1);"
@@ -484,6 +502,45 @@ let test_defines _ =
       main = empty_main;
     }
 
+let test_update _ =
+  assert_body_parses_to "x *= 15;"
+    [
+      ExprStmt
+        (SUpdate (Var ("x", None), NumLiteral (15, None), Mult, None), None);
+    ];
+  assert_body_parses_to "int y = z &= 3;"
+    [
+      Declare
+        ( "y",
+          Int,
+          Some (SUpdate (Var ("z", None), NumLiteral (3, None), BAnd, None)),
+          [],
+          None );
+    ]
+
+let test_subscript _ =
+  assert_body_parses_to "arr[15 + 2];"
+    [
+      ExprStmt
+        ( SSubscript
+            ( Var ("arr", None),
+              BinOp (Plus, NumLiteral (15, None), NumLiteral (2, None), None),
+              None ),
+          None );
+    ];
+  (* subscript has higher precedence than deref *)
+  assert_body_parses_to "*(p_array + 2)[x];"
+    [
+      ExprStmt
+        ( Deref
+            ( SSubscript
+                ( BinOp (Plus, Var ("p_array", None), NumLiteral (2, None), None),
+                  Var ("x", None),
+                  None ),
+              None ),
+          None );
+    ]
+
 let suite =
   "Source Language Parser Tests"
   >::: [
@@ -511,6 +568,8 @@ let suite =
          "test_exit" >:: test_exit;
          "test_fact" >:: test_fact;
          "test_defines" >:: test_defines;
+         "test_update" >:: test_update;
+         "test_subscript" >:: test_subscript;
        ]
 
 let () = run_test_tt_main suite

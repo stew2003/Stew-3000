@@ -69,7 +69,15 @@ let rec fold_expr (exp : expr) (emit_warning : compiler_warn_handler) : expr =
   | Deref (e, loc) -> Deref (fold_expr e emit_warning, loc)
   | AddrOf (e, loc) -> AddrOf (fold_expr e emit_warning, loc)
   | Cast (typ, e, loc) -> Cast (typ, fold_expr e emit_warning, loc)
+  | Assign (dest, expr, loc) ->
+      Assign (fold_expr dest emit_warning, fold_expr expr emit_warning, loc)
   | NumLiteral _ | CharLiteral _ | Var _ -> exp
+  | SInr _ | SDcr _ | SUpdate _ | SSubscript _ ->
+      raise
+        (InternalError
+           (Printf.sprintf
+              "encountered sugar expression in constant folding: %s"
+              (describe_expr exp)))
 
 (* [fold_stmt] performs constant folding on a single statement. *)
 and fold_stmt (stmt : stmt) (emit_warning : compiler_warn_handler) : stmt =
@@ -93,10 +101,6 @@ and fold_stmt (stmt : stmt) (emit_warning : compiler_warn_handler) : stmt =
             init,
           fold_stmt_list scope emit_warning,
           loc )
-  | Assign (dest, expr, loc) ->
-      Assign (fold_expr dest emit_warning, fold_expr expr emit_warning, loc)
-  | Inr (e, loc) -> Inr (fold_expr e emit_warning, loc)
-  | Dcr (e, loc) -> Dcr (fold_expr e emit_warning, loc)
   | If (cond, body, loc) -> (
       match fold_expr cond emit_warning with
       | NumLiteral (cond_value, _) ->

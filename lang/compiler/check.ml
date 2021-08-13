@@ -129,13 +129,23 @@ let type_check (defn : func_defn) (defns : func_defn list)
         typ
     | None -> raise (CheckError (UnboundVariable name, loc))
   in
+  (* [ensure_type_satisfies] checks that a given expression type checks
+     to a constraint that is satisfied by the expected constraint.
+     Returns the type checked expr *)
+  let rec ensure_type_satisfies (expected : type_constraint) (expr : expr)
+      (env : ty env) (loc : maybe_loc) : expr =
+    match (expected, type_check_expr expr env) with
+    | ConstrainedTo expected_ty, (ConstrainedTo actual_ty, _)
+      when actual_ty <> expected_ty ->
+        raise (CheckError (TypeError (expr, expected_ty, actual_ty), loc))
+    | _, (_, expr_tc) -> expr_tc
   (* [type_check_l_value] checks an expression that is intended to be used as
      an l-value, so it must be backed by a memory location. NOTE: Valid l-values
      always must have a constrained type, because they are backed by memory, which
      could only be obtained through variable declaration or array declaration (both
      of which require type annotations). So this function returns a type, not a
      type constraint. *)
-  let rec type_check_l_value (exp : expr) (env : ty env) (loc : maybe_loc) :
+  and type_check_l_value (exp : expr) (env : ty env) (loc : maybe_loc) :
       ty * expr =
     match type_check_expr exp env with
     | ConstrainedTo t, (Var _ as lv_tc) | ConstrainedTo t, (Deref _ as lv_tc) ->
@@ -279,19 +289,20 @@ let type_check (defn : func_defn) (defns : func_defn list)
         (* constrain this expression to the casted type, and just pass
            through the type checked expression (cast is not reproduced) *)
         (ConstrainedTo typ, expr_tc)
+    | Assign (lv, expr, loc) ->
+        let lv_type, lv_tc = type_check_l_value lv env loc in
+        let expr_tc =
+          ensure_type_satisfies (ConstrainedTo lv_type) expr env loc
+        in
+        (* assignment type checks to same type as lvalue *)
+        (ConstrainedTo lv_type, Assign (lv_tc, expr_tc, loc))
+    | SInr _ | SDcr _ | SUpdate _ | SSubscript _ ->
+        raise
+          (InternalError
+             (sprintf "encountered sugar expression in checker: %s"
+                (describe_expr exp)))
   (* [type_check_stmt] checks a single statement for type errors *)
   and type_check_stmt (stmt : stmt) (env : ty env) : stmt =
-    (* [ensure_type_satisfies] checks that a given expression type checks
-       to a constraint that is satisfied by the expected constraint.
-       Returns the type checked expr *)
-    let ensure_type_satisfies (expected : type_constraint) (expr : expr)
-        (loc : maybe_loc) : expr =
-      match (expected, type_check_expr expr env) with
-      | ConstrainedTo expected_ty, (ConstrainedTo actual_ty, _)
-        when actual_ty <> expected_ty ->
-          raise (CheckError (TypeError (expr, expected_ty, actual_ty), loc))
-      | _, (_, expr_tc) -> expr_tc
-    in
     match stmt with
     | Declare (name, typ, init, scope, loc) ->
         (* cannot annotate a variable as having void type *)
@@ -303,7 +314,7 @@ let type_check (defn : func_defn) (defns : func_defn list)
           match init with
           | None -> None
           | Some expr ->
-              Some (ensure_type_satisfies (ConstrainedTo typ) expr loc)
+              Some (ensure_type_satisfies (ConstrainedTo typ) expr env loc)
         in
         (* typecheck scope with env binding name->typ *)
         let ext_env = Env.add name typ env in
@@ -334,7 +345,7 @@ let type_check (defn : func_defn) (defns : func_defn list)
           List.map
             (fun e ->
               (* every element in the initializer must satisfy the array's annotated type *)
-              ensure_type_satisfies (ConstrainedTo typ) e (loc_from_expr e))
+              ensure_type_satisfies (ConstrainedTo typ) e env (loc_from_expr e))
             exprs
         in
 
@@ -366,16 +377,6 @@ let type_check (defn : func_defn) (defns : func_defn list)
         let scope_tc = type_check_stmt_list scope ext_env in
 
         ArrayDeclare (name, typ, size_tc, init_tc, scope_tc, loc)
-    | Assign (lv, expr, loc) ->
-        let lv_type, lv_tc = type_check_l_value lv env loc in
-        let expr_tc = ensure_type_satisfies (ConstrainedTo lv_type) expr loc in
-        Assign (lv_tc, expr_tc, loc)
-    | Inr (lv, loc) ->
-        let _, lv_tc = type_check_l_value lv env loc in
-        Inr (lv_tc, loc)
-    | Dcr (lv, loc) ->
-        let _, lv_tc = type_check_l_value lv env loc in
-        Dcr (lv_tc, loc)
     | If (cond, thn, loc) ->
         let cond_ty, cond_tc = type_check_expr cond env in
         expect_non_void cond cond_ty;
@@ -403,7 +404,8 @@ let type_check (defn : func_defn) (defns : func_defn list)
                   (CheckError (MismatchedReturn (defn.name, defn.return_ty), loc));
               (* returned expression should match return type of function *)
               Some
-                (ensure_type_satisfies (ConstrainedTo defn.return_ty) expr loc)
+                (ensure_type_satisfies (ConstrainedTo defn.return_ty) expr env
+                   loc)
           | None ->
               (* returning nothing from a non-void function: bad *)
               if defn.return_ty <> Void then
@@ -417,13 +419,13 @@ let type_check (defn : func_defn) (defns : func_defn list)
           match maybe_expr with
           | Some expr ->
               (* must exit with integer expression if given *)
-              Some (ensure_type_satisfies (ConstrainedTo Int) expr loc)
+              Some (ensure_type_satisfies (ConstrainedTo Int) expr env loc)
           | None -> None
         in
         Exit (expr_tc, loc)
     | PrintDec (expr, loc) ->
         (* must print only signed integers on decimal display *)
-        PrintDec (ensure_type_satisfies (ConstrainedTo Int) expr loc, loc)
+        PrintDec (ensure_type_satisfies (ConstrainedTo Int) expr env loc, loc)
     | ExprStmt (expr, loc) ->
         (* as long as expression internally type checks, we are good *)
         let _, expr_tc = type_check_expr expr env in
@@ -462,9 +464,7 @@ let ctrl_reaches_end (defn : func_defn) : bool =
     (* Return and exit *cannot* be passed. *)
     | Return _ | Exit _ -> false
     (* All of the following statements can be passed. *)
-    | Assign _ | If _ | ExprStmt _ | While _ | PrintDec _ | Inr _ | Dcr _
-    | Assert _ ->
-        true
+    | If _ | ExprStmt _ | While _ | PrintDec _ | Assert _ -> true
   and ctrl_reaches_end_stmt_list (stmts : stmt list) : bool =
     match stmts with
     | [] -> true

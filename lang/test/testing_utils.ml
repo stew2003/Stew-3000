@@ -14,6 +14,14 @@ let rec norm_expr_locs (exp : expr) : expr =
   | Deref (e, _) -> Deref (norm_expr_locs e, None)
   | AddrOf (e, _) -> AddrOf (norm_expr_locs e, None)
   | Cast (typ, e, _) -> Cast (typ, norm_expr_locs e, None)
+  | Assign (dest, exp, _) ->
+      Assign (norm_expr_locs dest, norm_expr_locs exp, None)
+  | SInr (e, _) -> SInr (norm_expr_locs e, None)
+  | SDcr (e, _) -> SDcr (norm_expr_locs e, None)
+  | SUpdate (dest, amount, op, _) ->
+      SUpdate (norm_expr_locs dest, norm_expr_locs amount, op, None)
+  | SSubscript (arr, idx, _) ->
+      SSubscript (norm_expr_locs arr, norm_expr_locs idx, None)
 
 (* [norm_stmt_locs] normalizes source locations in a statement *)
 and norm_stmt_locs (stmt : stmt) : stmt =
@@ -35,8 +43,6 @@ and norm_stmt_locs (stmt : stmt) : stmt =
           Option.map (fun exprs -> List.map norm_expr_locs exprs) init,
           norm_stmt_list_locs body,
           None )
-  | Assign (dest, exp, _) ->
-      Assign (norm_expr_locs dest, norm_expr_locs exp, None)
   | If (cond, thn, _) -> If (norm_expr_locs cond, norm_stmt_list_locs thn, None)
   | IfElse (cond, thn, els, _) ->
       IfElse
@@ -51,8 +57,6 @@ and norm_stmt_locs (stmt : stmt) : stmt =
   | While (cond, body, _) ->
       While (norm_expr_locs cond, norm_stmt_list_locs body, None)
   | PrintDec (e, _) -> PrintDec (norm_expr_locs e, None)
-  | Inr (e, _) -> Inr (norm_expr_locs e, None)
-  | Dcr (e, _) -> Dcr (norm_expr_locs e, None)
   | Exit (Some e, _) -> Exit (Some (norm_expr_locs e), None)
   | Exit (None, _) -> Exit (None, None)
   | Assert (e, _) -> Assert (e, None)
