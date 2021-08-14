@@ -1,0 +1,42 @@
+#!/usr/bin/env bash
+
+# Builds the compiler, assembler, and emulator binaries and 
+# copies them into /usr/local/bin.
+
+# ensure called from root (so paths work out)
+if [ $(basename "$PWD") != "Stew-3000" ]; then
+    echo "Please invoke build-release from the project root"
+    exit -1
+fi
+
+# path to compiler/assembler/emulator binaries
+BINARIES=./lang/_build/default/bin
+
+COMPILER=$BINARIES/compile.exe
+ASSEMBLER=$BINARIES/assemble.exe
+EMULATOR=$BINARIES/emulate.exe
+
+echo "Building for release..."
+cd lang
+dune build
+BUILD_STATUS=$?
+cd ..
+
+# abort if build did not succeed
+if [ $BUILD_STATUS -ne 0 ]; then 
+    echo "Build failed"
+    exit -1
+fi
+
+BINARIES_DEST=/usr/local/bin
+COMPILER_DEST=$BINARIES_DEST/stew3c
+ASSEMBLER_DEST=$BINARIES_DEST/stew3s
+EMULATOR_DEST=$BINARIES_DEST/stew3e
+
+# copy executables into destination folder
+echo "Copying $COMPILER to $COMPILER_DEST"
+sudo cp $COMPILER $COMPILER_DEST
+echo "Copying $ASSEMBLER to $ASSEMBLER_DEST"
+sudo cp $ASSEMBLER $ASSEMBLER_DEST
+echo "Copying $EMULATOR to $EMULATOR_DEST"
+sudo cp $EMULATOR $EMULATOR_DEST

@@ -1,57 +1,30 @@
 	mvi 2, a
 	sts a, 1
-start_while_11:
+start_while_9:
 	mvi 0, a
 	sts a, 2
 	lds 1, a
 	lds 2, b
 	cmp a, b
-	jle condition_failed_12
+	jle condition_failed_10
 	lds 1, a
 	sts a, 3
-	addi 1, sp
+	inr sp
 	call function_is_prime
-	subi 1, sp
+	dcr sp
 	cmpi a, 0
-	je condition_failed_13
+	je condition_failed_11
 	lds 1, a
 	out a
-condition_failed_13:
+condition_failed_11:
 	lds 1, a
 	inr a
 	sts a, 1
-	jmp start_while_11
-condition_failed_12:
+	jmp start_while_9
+condition_failed_10:
 	hlt
 function_is_prime:
 	mvi 0, a
-	sts a, 2
-	lds 1, a
-	lds 2, b
-	cmp a, b
-	jge greater_than_eq_0
-	mvi 0, a
-	jmp continue_1
-greater_than_eq_0:
-	mvi 1, a
-continue_1:
-	addi 1, sp
-	call runtime_assert
-	subi 1, sp
-	mvi 0, a
-	sts a, 2
-	lds 1, a
-	lds 2, b
-	cmp a, b
-	je equal_6
-	mvi 0, a
-	jmp continue_7
-equal_6:
-	mvi 1, a
-continue_7:
-	cmpi a, 0
-	jne continue_3
-	mvi 1, a
 	sts a, 2
 	lds 1, a
 	lds 2, b
@@ -62,25 +35,38 @@ continue_7:
 equal_4:
 	mvi 1, a
 continue_5:
-continue_3:
 	cmpi a, 0
-	je condition_failed_2
+	jne continue_1
+	mvi 1, a
+	sts a, 2
+	lds 1, a
+	lds 2, b
+	cmp a, b
+	je equal_2
+	mvi 0, a
+	jmp continue_3
+equal_2:
+	mvi 1, a
+continue_3:
+continue_1:
+	cmpi a, 0
+	je condition_failed_0
 	mvi 0, a
 	ret
-condition_failed_2:
+condition_failed_0:
 	mvi 1, a
 	sts a, 2
 	lds 1, a
 	lds 2, b
 	sub b, a
 	sts a, 2
-start_while_8:
+start_while_6:
 	mvi 1, a
 	sts a, 3
 	lds 2, a
 	lds 3, b
 	cmp a, b
-	jle condition_failed_9
+	jle condition_failed_7
 	mvi 0, a
 	sts a, 3
 	lds 2, a
@@ -92,15 +78,15 @@ start_while_8:
 	subi 3, sp
 	lds 3, b
 	cmp a, b
-	jne condition_failed_10
+	jne condition_failed_8
 	mvi 0, a
 	ret
-condition_failed_10:
+condition_failed_8:
 	lds 2, a
 	dcr a
 	sts a, 2
-	jmp start_while_8
-condition_failed_9:
+	jmp start_while_6
+condition_failed_7:
 	mvi 1, a
 	ret
 runtime_normalize_signs:
@@ -139,11 +125,3 @@ runtime_divide_loop:
 	jmp runtime_divide_loop
 runtime_divide_done:
 	jmp runtime_set_result_sign
-runtime_assert:
-	cmpi a, 0
-	jne assert_succeeded
-	mvi -1, c
-	out c
-	hlt
-assert_succeeded:
-	ret

@@ -1,0 +1,37 @@
+#!/usr/bin/env bash 
+
+# Shorthand for invoking the emulator CLI.
+# 
+# Expects the name of a file in programs/asm/ (though this can include
+# subdirectories).
+# 
+# Extra arguments to this script will be passed along to the emulator.
+
+# ensure called from root (so paths work out)
+if [ $(basename "$PWD") != "Stew-3000" ]; then
+    echo "Please invoke emulate from the project root"
+    exit -1
+fi
+
+# check correct number of arguments
+if [ ! "$#" -ge 1 ]; then
+    echo "Usage: emulate ASM_NAME [EXTRA_ARGS ...]"
+    exit -1
+fi
+
+ASM_NAME=$1
+EXTRA_ARGS=${@:2} # rest of arguments
+
+# use the default location for asm files
+ASM_PATH=programs/asm/$ASM_NAME.3000.s
+
+# ensure source file exists
+if [ ! -f "$ASM_PATH" ]; then
+    echo "$ASM_PATH does not exist."
+    exit -1
+fi
+
+echo "Emulating $ASM_PATH"
+cd lang
+dune exec bin/emulate.exe ../$ASM_PATH -- $EXTRA_ARGS
+cd ..

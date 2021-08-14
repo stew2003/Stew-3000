@@ -33,7 +33,7 @@ with open(sys.argv[1], "rb") as file:
         print(f"Loader script sent: 0x{bytes(byte).hex()}")
         connection.write(bytes(byte))
         
-        time.sleep(0.3)
+        time.sleep(0.2)
 
         # read all characters in buffer
         response = connection.read(connection.inWaiting())
