@@ -58,15 +58,25 @@ let test_block _ =
   assert_a "{ { { 90; } 80; } 70; }" 70;
   assert_a "10; {} {}" 10
 
-let test_inr _ =
+let test_prefix_inr _ =
+  assert_dec "int x = 14; print(++x);" [ 15 ];
+  assert_dec "int x = 0; int *px = &x; print(++(*px)); print(x);" [ 1; 1 ]
+
+let test_postfix_inr _ =
   assert_a "int x = 50; x++; x++; x;" 52;
   assert_a "int y = -16; y++; y;" (-15);
-  assert_dec "int x = 5; int *px = &x; *(px)++; print(x);" [ 6 ]
+  assert_dec "int x = 5; int *px = &x; *(px)++; print(x);" [ 6 ];
+  assert_dec "int x = 14; print(x++);" [ 14 ]
 
-let test_dcr _ =
+let test_prefix_dcr _ =
+  assert_dec "int x = -19; print(--x);" [ -20 ];
+  assert_dec "int x = 120; int *px = &x; print(--(*px)); print(x);" [ 119; 119 ]
+
+let test_postfix_dcr _ =
   assert_a "int a = 71; a--; a;" 70;
   assert_a "int b = -100; b--; b--; b;" (-102);
-  assert_dec "int x = 14; int *px = &x; *(px)--; print(x);" [ 13 ]
+  assert_dec "int x = 14; int *px = &x; *(px)--; print(x);" [ 13 ];
+  assert_dec "int x = 71; print(x--);" [ 71 ]
 
 let test_exit _ =
   assert_dec "exit(15); assert(0);" [ 15 ];
@@ -317,8 +327,10 @@ let suite =
          "test_if" >:: test_if;
          "test_if_else" >:: test_if_else;
          "test_block" >:: test_block;
-         "test_inr" >:: test_inr;
-         "test_dcr" >:: test_dcr;
+         "test_prefix_inr" >:: test_prefix_inr;
+         "test_postfix_inr" >:: test_postfix_inr;
+         "test_prefix_dcr" >:: test_prefix_dcr;
+         "test_postfix_dcr" >:: test_postfix_dcr;
          "test_exit" >:: test_exit;
          "test_print_dec" >:: test_print_dec;
          "test_assert" >:: test_assert;

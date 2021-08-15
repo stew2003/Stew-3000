@@ -407,28 +407,44 @@ let test_while _ =
 let test_print_dec _ =
   assert_body_parses_to "print(7);" [ PrintDec (NumLiteral (7, None), None) ]
 
-let test_inr _ =
-  assert_body_parses_to "x++; name++;"
+let test_prefix_inr _ =
+  assert_body_parses_to "++x; ++name;"
     [
-      ExprStmt (SInr (Var ("x", None), None), None);
-      ExprStmt (SInr (Var ("name", None), None), None);
+      ExprStmt (SPrefixInr (Var ("x", None), None), None);
+      ExprStmt (SPrefixInr (Var ("name", None), None), None);
     ];
-  assert_body_parses_to "x = y++;"
+  assert_body_parses_to "x = ++y;"
     [
       ExprStmt
-        (Assign (Var ("x", None), SInr (Var ("y", None), None), None), None);
+        ( Assign (Var ("x", None), SPrefixInr (Var ("y", None), None), None),
+          None );
     ]
 
-let test_dcr _ =
-  assert_body_parses_to "x--; name--;"
+let test_postfix_inr _ =
+  assert_body_parses_to "x++; *p++;"
     [
-      ExprStmt (SDcr (Var ("x", None), None), None);
-      ExprStmt (SDcr (Var ("name", None), None), None);
+      ExprStmt (PostfixInr (Var ("x", None), None), None);
+      ExprStmt (Deref (PostfixInr (Var ("p", None), None), None), None);
+    ]
+
+let test_prefix_dcr _ =
+  assert_body_parses_to "--x; --name;"
+    [
+      ExprStmt (SPrefixDcr (Var ("x", None), None), None);
+      ExprStmt (SPrefixDcr (Var ("name", None), None), None);
     ];
-  assert_body_parses_to "x = y--;"
+  assert_body_parses_to "x = --y;"
     [
       ExprStmt
-        (Assign (Var ("x", None), SDcr (Var ("y", None), None), None), None);
+        ( Assign (Var ("x", None), SPrefixDcr (Var ("y", None), None), None),
+          None );
+    ]
+
+let test_postfix_dcr _ =
+  assert_body_parses_to "x--; *p--;"
+    [
+      ExprStmt (PostfixDcr (Var ("x", None), None), None);
+      ExprStmt (Deref (PostfixDcr (Var ("p", None), None), None), None);
     ]
 
 let test_exit _ =
@@ -563,8 +579,10 @@ let suite =
          "test_exprstmt" >:: test_exprstmt;
          "test_while" >:: test_while;
          "test_print_dec" >:: test_print_dec;
-         "test_inr" >:: test_inr;
-         "test_dcr" >:: test_dcr;
+         "test_prefix_inr" >:: test_prefix_inr;
+         "test_prefix_dcr" >:: test_prefix_dcr;
+         "test_postfix_inr" >:: test_postfix_inr;
+         "test_postfix_dcr" >:: test_postfix_dcr;
          "test_exit" >:: test_exit;
          "test_fact" >:: test_fact;
          "test_defines" >:: test_defines;

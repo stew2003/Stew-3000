@@ -99,7 +99,7 @@ let rec compile_expr (expression : expr) (bindings : int env) (si : int)
   in
   match expression with
   | NumLiteral (n, _) -> [ Mvi (n, A, None) ]
-  | CharLiteral (c, _) ->
+  | CharLiteral _ ->
       raise
         (InternalError "compiler: checker did not replace character literal")
   | Var (x, _) -> [ Lds (lookup_var x bindings, A, None) ]
@@ -147,12 +147,41 @@ let rec compile_expr (expression : expr) (bindings : int env) (si : int)
           @ compile_expr expr bindings (si + 1) defns
           @ [ Lds (si, B, None); St (A, B, None) ]
       | _ -> raise (InternalError "compiler: assignment of invalid l-value"))
+  | PostfixInr (lv, _) | PostfixDcr (lv, _) -> (
+      (* [make_crement] constructs the appropriate 'crement instruction, depending on
+         whether this is a postfix INcrement or DEcrement. *)
+      let make_crement (reg : register) : instr =
+        match expression with
+        | PostfixInr _ -> Inr (reg, None)
+        | _ -> Dcr (reg, None)
+      in
+      match lv with
+      | Var (name, _) ->
+          let name_si = lookup_var name bindings in
+          [
+            Lds (name_si, A, None);
+            Mov (A, B, None);
+            make_crement B;
+            Sts (B, name_si, None);
+          ]
+      | Deref (expr, _) ->
+          compile_expr expr bindings si defns
+          @ [
+              Ld (A, B, None);
+              Mov (B, C, None);
+              make_crement C;
+              St (C, A, None);
+              Mov (B, A, None);
+            ]
+      | _ ->
+          raise
+            (InternalError "postfix increment/decrement got invalid l-value"))
   | Cast (typ, _, _) ->
       raise
         (InternalError
            (Printf.sprintf "encountered cast in compiler (casting to %s)"
               (string_of_ty typ)))
-  | SInr _ | SDcr _ | SUpdate _ | SSubscript _ ->
+  | SPrefixInr _ | SPrefixDcr _ | SUpdate _ | SSubscript _ ->
       raise
         (InternalError
            (Printf.sprintf "encountered sugar expression in compiler: %s"
@@ -210,27 +239,28 @@ and compile_stmt (statement : stmt) (bindings : int env) (si : int)
       let ext_env = Env.add name si bindings in
       initialization
       @ compile_stmt_list scope ext_env (si + 1) defns ignore_asserts
-  | ArrayDeclare (name, typ, size, init, scope, _) ->
+  | ArrayDeclare (name, _, size, init, scope, _) ->
+      (* extract exactly how much to allocate for the array from its size
+         expression (which should be a constant at this point) *)
       let allocation_amount =
         match size with
         | Some (NumLiteral (value, _)) -> value
         | _ -> raise (InternalError "compiler: underspecified array")
       in
-
-      let initialization =
-        match init with
-        | Some exprs ->
-            exprs
-            |> List.mapi (fun i expr ->
-                   compile_expr expr bindings (si + i + 1) defns
-                   @ [ Sts (A, si + i + 1, None) ])
-            |> List.concat
-        | None -> []
-      in
-
-      initialization
-      (* create pointer to beginning of the array *)
+      (* if initializer given, generate code for each expression and
+         move its value into the array *)
+      (match init with
+      | Some exprs ->
+          exprs
+          |> List.mapi (fun i expr ->
+                 compile_expr expr bindings (si + i + 1) defns
+                 @ [ Sts (A, si + i + 1, None) ])
+          |> List.concat
+      | None -> [])
+      (* create pointer to beginning of the array (stored at si, points at si+1) *)
       @ [ Mov (SP, A, None); Addi (si + 1, A, None); Sts (A, si, None) ]
+      (* compile scope with array name bound to pointer to first element,
+         give si that is past the array's allocation *)
       @ compile_stmt_list scope (Env.add name si bindings)
           (si + allocation_amount + 1)
           defns ignore_asserts

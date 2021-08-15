@@ -3,9 +3,7 @@ Hardware
   [] Fix stack memory
   [] Fix ram loader
   [] Add Zero register
-  [] New instructions
-    [] mov sp, a
-    [] ja, jae, jb, jbe
+  [] New instructions (see microcode README)
 
 Compiler
   [] implement optimizations for smol code
@@ -24,12 +22,13 @@ Compiler
       [x] replace addi 1, _ / subi 1, _ with inr/dcr
       [x] remove addi 0, subi 0, etc (no effect)
   [] implement code gen for:
-    [] char literals 
-    [] dereference 
-    [] & (address of)
-    [] assignment
-    [] array declarations
+    [x] char literals 
+    [x] dereference 
+    [x] & (address of)
+    [x] assignment
+    [x] array declarations
     [] unsigned comparison ops
+    [x] postfix increment / decrement
 
 Docs
   [] document everything

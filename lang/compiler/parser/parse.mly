@@ -74,13 +74,13 @@
 %left LAND
 %left BOR
 %left BXOR
-%left AMPERSAND
+%nonassoc AMPERSAND
 %left EQ NEQ
 %left LT LTE GT GTE
 %left PLUS MINUS
 %left STAR DIV MOD
 %right BNOT LNOT
-%left INR DCR
+%nonassoc INR DCR
 
 %%
 
@@ -297,6 +297,18 @@ expr:
     let loc = span start_loc end_loc in 
     (Assign (dest, e, Some loc), loc)
   }
+| e = expr end_loc = INR
+  { 
+    let (e, start_loc) = e in 
+    let loc = span start_loc end_loc in 
+    (PostfixInr (e, Some loc), loc) 
+  }
+| e = expr end_loc = DCR
+  { 
+    let (e, start_loc) = e in 
+    let loc = span start_loc end_loc in 
+    (PostfixDcr (e, Some loc), loc) 
+  }
 | start_loc = BNOT e = expr 
   { let (e, end_loc) = e in 
     let loc = span start_loc end_loc in 
@@ -385,14 +397,18 @@ expr:
     let (r, end_loc) = r in 
     let loc = span start_loc end_loc in 
     (BinOp (Neq, l, r, Some loc), loc) }
-| e = expr end_loc = INR
-  { let (e, start_loc) = e in 
-    let loc = span start_loc end_loc in 
-    (SInr (e, Some loc), loc) }
-| e = expr end_loc = DCR
-  { let (e, start_loc) = e in 
-    let loc = span start_loc end_loc in 
-    (SDcr (e, Some loc), loc) }
+| start_loc = INR e = expr 
+  { 
+    let (e, end_loc) = e in
+    let loc = span start_loc end_loc in
+    (SPrefixInr (e, Some loc), loc)
+  }
+| start_loc = DCR e = expr 
+  { 
+    let (e, end_loc) = e in
+    let loc = span start_loc end_loc in
+    (SPrefixDcr (e, Some loc), loc)
+  }
 | dest = expr op = update e = expr 
   {
     let (dest, start_loc) = dest in 

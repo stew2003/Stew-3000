@@ -14,12 +14,12 @@ let from_body (body : string) : prog =
   from_source (Printf.sprintf "void main() { %s }" body)
 
 let test_inr _ =
-  assert_prog_eq (from_body "x++;") (from_body "x = x + 1;");
-  assert_prog_eq (from_body "(*p)++;") (from_body "*p = *p + 1;")
+  assert_prog_eq (from_body "++x;") (from_body "x = x + 1;");
+  assert_prog_eq (from_body "++(*p);") (from_body "*p = *p + 1;")
 
 let test_dcr _ =
-  assert_prog_eq (from_body "x--;") (from_body "x = x - 1;");
-  assert_prog_eq (from_body "(*p)--;") (from_body "*p = *p - 1;")
+  assert_prog_eq (from_body "--x;") (from_body "x = x - 1;");
+  assert_prog_eq (from_body "--(*p);") (from_body "*p = *p - 1;")
 
 let test_update _ =
   assert_prog_eq

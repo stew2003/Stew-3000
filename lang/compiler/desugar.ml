@@ -6,12 +6,12 @@ let desugar (pgrm : prog) : prog =
   let rec desugar_expr (expr : expr) =
     match expr with
     (* sugar expressions *)
-    | SInr (e, loc) ->
+    | SPrefixInr (e, loc) ->
         let e_desugar = desugar_expr e in
         (* e++ ==> e = e + 1 *)
         Assign
           (e_desugar, BinOp (Plus, e_desugar, NumLiteral (1, loc), loc), loc)
-    | SDcr (e, loc) ->
+    | SPrefixDcr (e, loc) ->
         let e_desugar = desugar_expr e in
         (* e-- ==> e = e - 1 *)
         Assign
@@ -38,6 +38,8 @@ let desugar (pgrm : prog) : prog =
     | AddrOf (e, loc) -> AddrOf (desugar_expr e, loc)
     | Cast (typ, e, loc) -> Cast (typ, desugar_expr e, loc)
     | Assign (dest, e, loc) -> Assign (desugar_expr dest, desugar_expr e, loc)
+    | PostfixInr (lv, loc) -> PostfixInr (desugar_expr lv, loc)
+    | PostfixDcr (lv, loc) -> PostfixDcr (desugar_expr lv, loc)
     (* expressions with no sub-expressions *)
     | NumLiteral _ | CharLiteral _ | Var _ -> expr
   and desugar_stmt (stmt : stmt) : stmt =

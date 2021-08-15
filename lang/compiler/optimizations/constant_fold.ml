@@ -71,8 +71,10 @@ let rec fold_expr (exp : expr) (emit_warning : compiler_warn_handler) : expr =
   | Cast (typ, e, loc) -> Cast (typ, fold_expr e emit_warning, loc)
   | Assign (dest, expr, loc) ->
       Assign (fold_expr dest emit_warning, fold_expr expr emit_warning, loc)
+  | PostfixInr (lv, loc) -> PostfixInr (fold_expr lv emit_warning, loc)
+  | PostfixDcr (lv, loc) -> PostfixDcr (fold_expr lv emit_warning, loc)
   | NumLiteral _ | CharLiteral _ | Var _ -> exp
-  | SInr _ | SDcr _ | SUpdate _ | SSubscript _ ->
+  | SPrefixInr _ | SPrefixDcr _ | SUpdate _ | SSubscript _ ->
       raise
         (InternalError
            (Printf.sprintf

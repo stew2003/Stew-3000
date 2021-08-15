@@ -16,8 +16,10 @@ let rec norm_expr_locs (exp : expr) : expr =
   | Cast (typ, e, _) -> Cast (typ, norm_expr_locs e, None)
   | Assign (dest, exp, _) ->
       Assign (norm_expr_locs dest, norm_expr_locs exp, None)
-  | SInr (e, _) -> SInr (norm_expr_locs e, None)
-  | SDcr (e, _) -> SDcr (norm_expr_locs e, None)
+  | PostfixInr (lv, _) -> PostfixInr (norm_expr_locs lv, None)
+  | PostfixDcr (lv, _) -> PostfixDcr (norm_expr_locs lv, None)
+  | SPrefixInr (e, _) -> SPrefixInr (norm_expr_locs e, None)
+  | SPrefixDcr (e, _) -> SPrefixDcr (norm_expr_locs e, None)
   | SUpdate (dest, amount, op, _) ->
       SUpdate (norm_expr_locs dest, norm_expr_locs amount, op, None)
   | SSubscript (arr, idx, _) ->

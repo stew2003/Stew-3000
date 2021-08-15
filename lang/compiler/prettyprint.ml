@@ -69,8 +69,14 @@ let rec pretty_print_expr ?(is_nested_in_op = false) (exp : expr) : string =
         (sprintf "%s = %s" (pretty_print_expr dest)
            (pretty_print_expr ~is_nested_in_op:true expr))
         is_nested_in_op
-  | SInr (e, _) -> sprintf "%s++" (pretty_print_expr ~is_nested_in_op:true e)
-  | SDcr (e, _) -> sprintf "%s--" (pretty_print_expr ~is_nested_in_op:true e)
+  | PostfixInr (lv, _) ->
+      sprintf "%s++" (pretty_print_expr ~is_nested_in_op:true lv)
+  | PostfixDcr (lv, _) ->
+      sprintf "%s--" (pretty_print_expr ~is_nested_in_op:true lv)
+  | SPrefixInr (lv, _) ->
+      sprintf "++%s" (pretty_print_expr ~is_nested_in_op:true lv)
+  | SPrefixDcr (lv, _) ->
+      sprintf "--%s" (pretty_print_expr ~is_nested_in_op:true lv)
   | SUpdate (dest, amount, op, _) ->
       wrap_if_nested
         (sprintf "%s %s= %s" (pretty_print_expr dest) (pretty_bin_op op)

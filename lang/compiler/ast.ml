@@ -45,9 +45,11 @@ type expr =
   | AddrOf of expr * maybe_loc
   | Cast of ty * expr * maybe_loc
   | Assign of expr * expr * maybe_loc
+  | PostfixInr of expr * maybe_loc
+  | PostfixDcr of expr * maybe_loc
   (* Desugared expressions: *)
-  | SInr of expr * maybe_loc
-  | SDcr of expr * maybe_loc
+  | SPrefixInr of expr * maybe_loc
+  | SPrefixDcr of expr * maybe_loc
   | SUpdate of expr * expr * bin_op * maybe_loc
   | SSubscript of expr * expr * maybe_loc
 
@@ -142,8 +144,10 @@ let describe_expr (e : expr) : string =
   | AddrOf _ -> "address-of"
   | Cast _ -> "cast"
   | Assign _ -> "assignment"
-  | SInr _ -> "increment"
-  | SDcr _ -> "decrement"
+  | PostfixInr _ -> "postfix increment"
+  | PostfixDcr _ -> "postfix decrement"
+  | SPrefixInr _ -> "prefix increment"
+  | SPrefixDcr _ -> "prefix decrement"
   | SUpdate _ -> "update"
   | SSubscript _ -> "subscript"
 
@@ -160,8 +164,10 @@ let loc_from_expr (exp : expr) : maybe_loc =
   | AddrOf (_, loc)
   | Cast (_, _, loc)
   | Assign (_, _, loc)
-  | SInr (_, loc)
-  | SDcr (_, loc)
+  | PostfixInr (_, loc)
+  | PostfixDcr (_, loc)
+  | SPrefixInr (_, loc)
+  | SPrefixDcr (_, loc)
   | SSubscript (_, _, loc)
   | SUpdate (_, _, _, loc) ->
       loc
@@ -201,8 +207,10 @@ let check_for_expr (pgrm : prog) (pred : expr -> bool) : bool =
     | AddrOf (e, _) -> check_expr e pred
     | Cast (_, e, _) -> check_expr e pred
     | Assign (dest, e, _) -> check_expr dest pred || check_expr e pred
-    | SInr (e, _) -> check_expr e pred
-    | SDcr (e, _) -> check_expr e pred
+    | PostfixInr (e, _) -> check_expr e pred
+    | PostfixDcr (e, _) -> check_expr e pred
+    | SPrefixInr (e, _) -> check_expr e pred
+    | SPrefixDcr (e, _) -> check_expr e pred
     | SUpdate (dest, amount, _, _) ->
         check_expr dest pred || check_expr amount pred
     | SSubscript (arr, idx, _) -> check_expr arr pred || check_expr idx pred

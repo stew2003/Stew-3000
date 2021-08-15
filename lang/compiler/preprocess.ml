@@ -18,8 +18,10 @@ let rec expand_in_expr (define : pp_define) (exp : expr) : expr =
   | Cast (typ, e, loc) -> Cast (typ, expand_in_expr define e, loc)
   | Assign (dest, expr, loc) ->
       Assign (expand_in_expr define dest, expand_in_expr define expr, loc)
-  | SInr (e, loc) -> SInr (expand_in_expr define e, loc)
-  | SDcr (e, loc) -> SDcr (expand_in_expr define e, loc)
+  | PostfixInr (lv, loc) -> PostfixInr (expand_in_expr define lv, loc)
+  | PostfixDcr (lv, loc) -> PostfixDcr (expand_in_expr define lv, loc)
+  | SPrefixInr (e, loc) -> SPrefixInr (expand_in_expr define e, loc)
+  | SPrefixDcr (e, loc) -> SPrefixDcr (expand_in_expr define e, loc)
   | SUpdate (dest, amount, op, loc) ->
       SUpdate (expand_in_expr define dest, expand_in_expr define amount, op, loc)
   | SSubscript (arr, idx, loc) ->

@@ -299,7 +299,13 @@ let type_check (defn : func_defn) (defns : func_defn list)
         in
         (* assignment type checks to same type as lvalue *)
         (ConstrainedTo lv_type, Assign (lv_tc, expr_tc, loc))
-    | SInr _ | SDcr _ | SUpdate _ | SSubscript _ ->
+    | PostfixInr (lv, loc) ->
+        let lv_type, lv_tc = type_check_l_value lv env loc in
+        (ConstrainedTo lv_type, PostfixInr (lv_tc, loc))
+    | PostfixDcr (lv, loc) ->
+        let lv_type, lv_tc = type_check_l_value lv env loc in
+        (ConstrainedTo lv_type, PostfixDcr (lv_tc, loc))
+    | SPrefixInr _ | SPrefixDcr _ | SUpdate _ | SSubscript _ ->
         raise
           (InternalError
              (sprintf "encountered sugar expression in checker: %s"
