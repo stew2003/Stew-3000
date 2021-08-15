@@ -46,7 +46,6 @@
 
 %token COLON
 %token COMMA
-%token NEWLINE
 %token EOF
 
 %start <instr list> main
@@ -54,16 +53,8 @@
 %%
 
 main:
-| maybe_newlines i = instr NEWLINE maybe_newlines rest = main
-  { i :: rest }
-| maybe_newlines i = instr maybe_newlines EOF
-  { [i] }
-| EOF
-  { [] }
-
-maybe_newlines:
-| {}
-| NEWLINE maybe_newlines {}
+| instrs = list(instr) EOF
+  { instrs }
 
 reg:
 | REG_A

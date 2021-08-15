@@ -9,9 +9,7 @@ rule token = parse
   { token lexbuf }
 | ';'[^'\n']*?
   { token lexbuf }
-| '\n' {
-  Lexing.new_line lexbuf; 
-  NEWLINE }
+| '\n' { Lexing.new_line lexbuf; token lexbuf }
 | ':' { COLON }
 | ',' { COMMA }
 | '-'?['0'-'9']+ as i
