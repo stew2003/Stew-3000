@@ -73,6 +73,15 @@ let compile_bin_op (op : bin_op) (si : int) =
         (InternalError
            "attemped to compile logical and/or as normal binary operator")
 
+(* [lookup_var] extracts stack index from a given variable in the bindings.
+   Errors if the variable is unbound *)
+let lookup_var (name : string) (bindings : int env) : int =
+  match Env.find_opt name bindings with
+  | Some si -> si
+  | None ->
+      raise
+        (InternalError (Printf.sprintf "compiler: unbound variable %s" name))
+
 (* [compile_expr] generates instructions for the given expression
    in a given environment and stack index *)
 let rec compile_expr (expression : expr) (bindings : int env) (si : int)
@@ -91,12 +100,9 @@ let rec compile_expr (expression : expr) (bindings : int env) (si : int)
   match expression with
   | NumLiteral (n, _) -> [ Mvi (n, A, None) ]
   | CharLiteral (c, _) ->
-      (* TODO: *)
-      failwith "unimplemented!"
-  | Var (x, _) -> (
-      match Env.find_opt x bindings with
-      | Some x_si -> [ Lds (x_si, A, None) ]
-      | None -> raise (InternalError "compiler: unbound variable"))
+      raise
+        (InternalError "compiler: checker did not replace character literal")
+  | Var (x, _) -> [ Lds (lookup_var x bindings, A, None) ]
   | UnOp (op, operand, _) ->
       compile_expr operand bindings si defns @ compile_un_op op
   | BinOp (LAnd, left, right, _) ->
@@ -121,20 +127,26 @@ let rec compile_expr (expression : expr) (bindings : int env) (si : int)
           Call (function_label func, None);
           Subi (stack_base, SP, None);
         ]
-  | Deref (e, _) ->
-      (* TODO: *)
-      failwith "unimplemented!"
-  | AddrOf (lv, _) ->
-      (* TODO: *)
-      failwith "unimplemented!"
-  | Assign (lv, expr, _) ->
-      (* TODO: *)
-      failwith "unimplemented!"
-      (* (
-          match Env.find_opt name bindings with
-          | Some name_si ->
-              compile_expr expr bindings si defns @ [ Sts (A, name_si, None) ]
-          | None -> raise (InternalError "compiler: assign before initialize")) *)
+  | Deref (expr, _) -> compile_expr expr bindings si defns @ [ Ld (A, A, None) ]
+  | AddrOf (lv, _) -> (
+      match lv with
+      | Var (name, _) ->
+          [ Mov (SP, A, None); Addi (lookup_var name bindings, A, None) ]
+      | Deref (expr, _) -> compile_expr expr bindings si defns
+      | _ ->
+          raise
+            (InternalError "compiler: tried to take address of a non l-value"))
+  | Assign (lv, expr, _) -> (
+      match lv with
+      | Var (name, _) ->
+          compile_expr expr bindings si defns
+          @ [ Sts (A, lookup_var name bindings, None) ]
+      | Deref (dest, _) ->
+          compile_expr dest bindings si defns
+          @ [ Sts (A, si, None) ]
+          @ compile_expr expr bindings (si + 1) defns
+          @ [ Lds (si, B, None); St (A, B, None) ]
+      | _ -> raise (InternalError "compiler: assignment of invalid l-value"))
   | Cast (typ, _, _) ->
       raise
         (InternalError
@@ -198,9 +210,30 @@ and compile_stmt (statement : stmt) (bindings : int env) (si : int)
       let ext_env = Env.add name si bindings in
       initialization
       @ compile_stmt_list scope ext_env (si + 1) defns ignore_asserts
-  | ArrayDeclare _ ->
-      (* TODO: *)
-      failwith "unimplemented!"
+  | ArrayDeclare (name, typ, size, init, scope, _) ->
+      let allocation_amount =
+        match size with
+        | Some (NumLiteral (value, _)) -> value
+        | _ -> raise (InternalError "compiler: underspecified array")
+      in
+
+      let initialization =
+        match init with
+        | Some exprs ->
+            exprs
+            |> List.mapi (fun i expr ->
+                   compile_expr expr bindings (si + i + 1) defns
+                   @ [ Sts (A, si + i + 1, None) ])
+            |> List.concat
+        | None -> []
+      in
+
+      initialization
+      (* create pointer to beginning of the array *)
+      @ [ Mov (SP, A, None); Addi (si + 1, A, None); Sts (A, si, None) ]
+      @ compile_stmt_list scope (Env.add name si bindings)
+          (si + allocation_amount + 1)
+          defns ignore_asserts
   | Block (stmt_list, _) ->
       compile_stmt_list stmt_list bindings si defns ignore_asserts
   | ExprStmt (expr, _) -> compile_expr expr bindings si defns

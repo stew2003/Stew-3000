@@ -359,7 +359,10 @@ let type_check (defn : func_defn) (defns : func_defn list)
               let _, size_tc = extract_and_check_size size in
               (Some size_tc, None)
           (* only initializer specified *)
-          | None, Some exprs -> (None, Some (check_initializer exprs))
+          | None, Some exprs ->
+              (* computing size so it is never none in compiler *)
+              ( Some (NumLiteral (List.length exprs, None)),
+                Some (check_initializer exprs) )
           (* both size and initializer specified *)
           | Some size, Some exprs ->
               let const_size, size_tc = extract_and_check_size size in

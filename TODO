@@ -3,6 +3,9 @@ Hardware
   [] Fix stack memory
   [] Fix ram loader
   [] Add Zero register
+  [] New instructions
+    [] mov sp, a
+    [] ja, jae, jb, jbe
 
 Compiler
   [] implement optimizations for smol code
