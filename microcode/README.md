@@ -242,8 +242,8 @@ TODO: (stewart) implement the new instructions. Then we can unbold them here and
 | `dic byte` | `OPCODE TBD` | Send command byte to LCD |
 | `did byte` | `OPCODE TBD` | Send data byte to LCD |
 |  **`dd $r1`** | N/A | Send $r1 to LCD
-|  **`dd a`** | N/A |
-|  **`dd b`** | N/A |
-|  **`dd c`** | N/A |
+|  **`dd a`** | `OPCODE TBD` |
+|  **`dd b`** | `OPCODE TBD` |
+|  **`dd c`** | `OPCODE TBD` |
 | `hlt` | `OPCODE TBD` | Halt |
 | `nop` | `OPCODE TBD` | No operation |
