@@ -24,7 +24,7 @@ let string_of_emu_err (err : emu_err) =
         (string_of_stew_3000 machine)
 
 (* [emulate_instr] emulates the effect of the given instruction
-  on the machine, by mutating the machine in-place *)
+   on the machine, by mutating the machine in-place *)
 let emulate_instr (ins : instr) (machine : stew_3000) (label_to_addr : int env)
     (addr_to_index : int num_env) (index_to_addr : int num_env)
     (verbosity : int) (warn : bool) =
@@ -224,6 +224,9 @@ let emulate_instr (ins : instr) (machine : stew_3000) (label_to_addr : int env)
   | Jle (target, _) ->
       (* (SF ^ OF) | ZF *)
       emulate_jmp (machine.sflag <> machine.oflag || machine.zflag) target
+  | Ja _ | Jae _ | Jb _ | Jbe _ ->
+      (* TODO: unsigned jumps *)
+      failwith "unimplemented"
   | Call (target, _) ->
       let fun_pc = get_label_addr target in
       let ret_addr = next_pc () in
@@ -252,9 +255,9 @@ let emulate_instr (ins : instr) (machine : stew_3000) (label_to_addr : int env)
            (sprintf "emulator: invalid instruction: %s" (string_of_instr ins)))
 
 (* [map_addr_to_index] constructs an environment mapping physical
-  addresses of the beginnings of instructions in a binary to the index
-  in pgrm at which that instruction appears, and an env implementing
-  the inverse mapping.  *)
+   addresses of the beginnings of instructions in a binary to the index
+   in pgrm at which that instruction appears, and an env implementing
+   the inverse mapping. *)
 let map_addrs_and_indices (pgrm : instr list) : int num_env * int num_env =
   let addr_to_index, index_to_addr, _ =
     List.mapi (fun i ins -> (i, ins)) pgrm
@@ -268,8 +271,8 @@ let map_addrs_and_indices (pgrm : instr list) : int num_env * int num_env =
   in
   (addr_to_index, index_to_addr)
 
-(* [get_current_ins] retrieves the current instruction to execute 
-  by indexing into the program using the machine's program counter *)
+(* [get_current_ins] retrieves the current instruction to execute
+   by indexing into the program using the machine's program counter *)
 let get_current_ins (pgrm : instr list) (machine : stew_3000)
     (addr_to_index : int num_env) : instr =
   (* lookup machine's PC to find index in instructions *)
@@ -282,9 +285,9 @@ let get_current_ins (pgrm : instr list) (machine : stew_3000)
              "emulator: get current ins: addr to index yielded bad index"))
   | None -> raise (EmulatorError (InvalidProgramCounter machine, None))
 
-(* [emulate] emulates running the given assembly program 
-  on the Stew 3000, and returns the final machine state after the run.
-  verbosity indicates how much logging should happen during the run. *)
+(* [emulate] emulates running the given assembly program
+   on the Stew 3000, and returns the final machine state after the run.
+   verbosity indicates how much logging should happen during the run. *)
 let emulate ?(verbosity = 0) ?(db_mode = false) ?(warn = false)
     (pgrm : instr list) : stew_3000 =
   (* get byte-level info on the program from the assembler *)

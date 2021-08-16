@@ -84,6 +84,14 @@ rule token = parse
   { JL (loc_from_lexbuf lexbuf) }
 | "jle"
   { JLE (loc_from_lexbuf lexbuf) }
+| "ja"
+  { JA (loc_from_lexbuf lexbuf) }
+| "jae"
+  { JAE (loc_from_lexbuf lexbuf) }
+| "jb"
+  { JB (loc_from_lexbuf lexbuf) }
+| "jbe"
+  { JBE (loc_from_lexbuf lexbuf) }
 | "call"
   { CALL (loc_from_lexbuf lexbuf) }
 | "ret"

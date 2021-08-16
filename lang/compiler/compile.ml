@@ -63,9 +63,13 @@ let compile_bin_op (op : bin_op) (si : int) =
   | Lt -> comparison "less" (fun success -> Jl (success, None))
   | Gte -> comparison "greater_than_eq" (fun success -> Jge (success, None))
   | Lte -> comparison "less_than_eq" (fun success -> Jle (success, None))
-  | UnsignedGt | UnsignedLt | UnsignedGte | UnsignedLte ->
-      (* TODO: *)
-      failwith "unimplemented!"
+  | UnsignedGt ->
+      comparison "unsigned_greater" (fun success -> Ja (success, None))
+  | UnsignedLt -> comparison "unsigned_less" (fun success -> Jb (success, None))
+  | UnsignedGte ->
+      comparison "unsigned_greater_than_eq" (fun success -> Jae (success, None))
+  | UnsignedLte ->
+      comparison "unsigned_less_than_eq" (fun success -> Jbe (success, None))
   | Eq -> comparison "equal" (fun success -> Je (success, None))
   | Neq -> comparison "not_equal" (fun success -> Jne (success, None))
   | LAnd | LOr ->
@@ -215,9 +219,10 @@ and compile_cond (cond : expr) (condition_failed : string) (bindings : int env)
       | Gte -> compile_comparison (fun label -> Jl (label, None))
       | Lt -> compile_comparison (fun label -> Jge (label, None))
       | Lte -> compile_comparison (fun label -> Jg (label, None))
-      | UnsignedGt | UnsignedGte | UnsignedLt | UnsignedLte ->
-          (* TODO: *)
-          failwith "unimplemented!"
+      | UnsignedGt -> compile_comparison (fun label -> Jbe (label, None))
+      | UnsignedGte -> compile_comparison (fun label -> Jb (label, None))
+      | UnsignedLt -> compile_comparison (fun label -> Jae (label, None))
+      | UnsignedLte -> compile_comparison (fun label -> Ja (label, None))
       | Eq -> compile_comparison (fun label -> Jne (label, None))
       | Neq -> compile_comparison (fun label -> Je (label, None))
       | _ -> default_compile_cond ())

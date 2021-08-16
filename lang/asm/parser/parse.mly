@@ -35,6 +35,10 @@
 %token <Util.Srcloc.src_loc> JGE
 %token <Util.Srcloc.src_loc> JL
 %token <Util.Srcloc.src_loc> JLE
+%token <Util.Srcloc.src_loc> JA
+%token <Util.Srcloc.src_loc> JAE
+%token <Util.Srcloc.src_loc> JB
+%token <Util.Srcloc.src_loc> JBE
 %token <Util.Srcloc.src_loc> CALL
 %token <Util.Srcloc.src_loc> RET
 %token <Util.Srcloc.src_loc> DIC
@@ -144,6 +148,18 @@ instr:
 | loc = JLE target = LABEL
   { let (target, _) = target in 
     Jle(target, Some loc) }
+| loc = JA target = LABEL
+  { let (target, _) = target in 
+    Ja(target, Some loc) }
+| loc = JAE target = LABEL
+  { let (target, _) = target in 
+    Jae(target, Some loc) }
+| loc = JB target = LABEL
+  { let (target, _) = target in 
+    Jb(target, Some loc) }
+| loc = JBE target = LABEL
+  { let (target, _) = target in 
+    Jbe(target, Some loc) }
 | loc = CALL target = LABEL
   { let (target, _) = target in 
     Call(target, Some loc) }

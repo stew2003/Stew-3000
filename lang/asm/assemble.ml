@@ -180,6 +180,7 @@ let assemble_instr (ins : instr) (label_map : int env) : int list =
   | Jge (label, loc) -> [ 0x74; to_addr label loc ]
   | Jl (label, loc) -> [ 0x75; to_addr label loc ]
   | Jle (label, loc) -> [ 0x76; to_addr label loc ]
+  (* TODO: unsigned jumps here *)
   (* Call and return *)
   | Call (label, loc) -> [ 0x77; to_addr label loc ]
   | Ret _ -> [ 0x78 ]
@@ -213,8 +214,8 @@ let size_of (ins : instr) : int =
       1
   (* two-byte instructions *)
   | Addi _ | Subi _ | Ani _ | Ori _ | Xri _ | Mvi _ | Lds _ | Sts _ | Jmp _
-  | Je _ | Jne _ | Jg _ | Jge _ | Jl _ | Jle _ | Call _ | Dic _ | Did _ | Cmpi _
-    ->
+  | Je _ | Jne _ | Jg _ | Jge _ | Jl _ | Jle _ | Ja _ | Jae _ | Jb _ | Jbe _
+  | Call _ | Dic _ | Did _ | Cmpi _ ->
       2
 
 (* 256 bytes is the size of our program memory *)
