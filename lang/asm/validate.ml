@@ -103,7 +103,8 @@ let validate_instr (ins : instr) =
   | Mov (B, A, _)
   | Mov (B, C, _)
   | Mov (C, A, _)
-  | Mov (C, B, _) ->
+  | Mov (C, B, _)
+  | Mov (SP, A, _) ->
       ()
   (* Mvi byte, dest *)
   | Mvi (imm, A, loc) | Mvi (imm, B, loc) | Mvi (imm, C, loc) ->

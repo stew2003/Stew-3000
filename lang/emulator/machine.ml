@@ -1,8 +1,8 @@
 open Printf
 
-(*  stew_3000 models the programmer-visible state of the machine
-    NOTE: dec_disp_history is a record of every byte that has 
-    been sent to the decimal display so far *)
+(* stew_3000 models the programmer-visible state of the machine
+   NOTE: dec_disp_history is a record of every byte that has
+   been sent to the decimal display so far *)
 type stew_3000 = {
   mutable a : int;
   mutable b : int;
@@ -11,6 +11,7 @@ type stew_3000 = {
   mutable zflag : bool;
   mutable sflag : bool;
   mutable oflag : bool;
+  mutable cflag : bool;
   mutable stack : int array;
   mutable dec_disp_history : int list;
   mutable pc : int;
@@ -18,7 +19,7 @@ type stew_3000 = {
 }
 
 (* [num_as_hex_uns_sig] produces a string containing the given
-  number printed as unsigned hex, unsigned decimal, and signed decimal *)
+   number printed as unsigned hex, unsigned decimal, and signed decimal *)
 let num_as_hex_uns_sig (num : int) =
   let unsigned = Numbers.as_8bit_unsigned num in
   let signed = Numbers.as_8bit_signed num in
@@ -54,6 +55,7 @@ let string_of_all_flags (machine : stew_3000) =
     string_of_flag "zf" machine.zflag;
     string_of_flag "sf" machine.sflag;
     string_of_flag "of" machine.oflag;
+    string_of_flag "cf" machine.cflag;
   ]
   |> String.concat "\n"
 
@@ -75,8 +77,8 @@ let string_of_dec_display (history : int list) =
         history
       |> String.concat ""
 
-(* [string_of_stack_at_addr] gets a string of the stack contents 
-  at a given address. The address is always interpreted as unsigned 8-bit *)
+(* [string_of_stack_at_addr] gets a string of the stack contents
+   at a given address. The address is always interpreted as unsigned 8-bit *)
 let string_of_stack_at_addr (stack : int array) (addr : int) =
   let stack = Array.to_list stack in
   let addr_as_unsigned = Numbers.as_8bit_unsigned addr in
@@ -84,7 +86,7 @@ let string_of_stack_at_addr (stack : int array) (addr : int) =
   sprintf "stack[%d] = %s" addr_as_unsigned (num_as_hex_uns_sig contents)
 
 (* [string_of_stack] constructs a string containing the entire contents of
-  the stack *)
+   the stack *)
 let string_of_stack (stack : int array) : string =
   let stack = Array.to_list stack in
   let string_of_stack_value (value : int) =
@@ -125,6 +127,7 @@ let new_stew_3000 _ : stew_3000 =
     zflag = false;
     sflag = false;
     oflag = false;
+    cflag = false;
     stack = Array.make stack_size 0;
     dec_disp_history = [];
     pc = 0;

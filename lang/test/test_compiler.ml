@@ -56,7 +56,7 @@ let test_prefix_inr _ =
 let test_postfix_inr _ =
   assert_dec "int x = 50; x++; x++; print(x);" [ 52 ];
   assert_dec "int y = -16; y++; print(y);" [ -15 ];
-  assert_dec "int x = 5; int *px = &x; *(px)++; print(x);" [ 6 ];
+  assert_dec "int x = 5; int *px = &x; (*px)++; print(x);" [ 6 ];
   assert_dec "int x = 14; print(x++);" [ 14 ]
 
 let test_prefix_dcr _ =
@@ -66,7 +66,7 @@ let test_prefix_dcr _ =
 let test_postfix_dcr _ =
   assert_dec "int a = 71; a--; print(a);" [ 70 ];
   assert_dec "int b = -100; b--; b--; print(b);" [ -102 ];
-  assert_dec "int x = 14; int *px = &x; *(px)--; print(x);" [ 13 ];
+  assert_dec "int x = 14; int *px = &x; (*px)--; print(x);" [ 13 ];
   assert_dec "int x = 71; print(x--);" [ 71 ]
 
 let test_exit _ =
@@ -136,29 +136,49 @@ let test_binops _ =
   assert_expr "50 > 32" 1;
   assert_expr "-9 > 9" 0;
   assert_expr "14 > 14" 0;
+  assert_expr "255 > 1" 1;
+  assert_expr "-128 > -127" 0;
+  assert_expr "255 > 255" 0;
 
   (* less than *)
   assert_expr "100 < 120" 1;
   assert_expr "16 < -2" 0;
   assert_expr "88 < 88" 0;
+  assert_expr "1 < 255" 1;
+  assert_expr "-128 < -120" 1;
+  assert_expr "0 < 255" 1;
 
   (* greater than or eq *)
   assert_expr "14 >= 12" 1;
   assert_expr "-4 >= 0" 0;
   assert_expr "79 >= 79" 1;
+  assert_expr "255 >= 255" 1;
+  assert_expr "255 >= 254" 1;
+  assert_expr "-128 >= -121" 0;
 
   (* less than or eq *)
   assert_expr "7 <= 21" 1;
   assert_expr "-44 <= -127" 0;
   assert_expr "-9 <= -9" 1;
+  assert_expr "255 <= 255" 1;
+  assert_expr "0 <= 255" 1;
+  assert_expr "-128 <= 127" 1;
 
   (* equal *)
   assert_expr "45 == 45" 1;
   assert_expr "-100 == 18" 0;
+  assert_expr "255 == 255" 1;
+  assert_expr "-1 == -1" 1;
+  assert_expr "255 == 1" 0;
+  assert_expr "-128 == -128" 1;
 
   (* not equal *)
   assert_expr "16 != 90" 1;
-  assert_expr "47 != 47" 0
+  assert_expr "47 != 47" 0;
+  assert_expr "255 != 255" 0;
+  assert_expr "-128 != -128" 0;
+  assert_expr "-128 != 127" 1;
+  assert_expr "255 != 0" 1
 
 let test_log_ops _ =
   (* logical and *)
@@ -290,12 +310,12 @@ let test_array_decl _ =
   " [2; 4; 6; 8; 10];
   assert_dec "
     char str[] = \"hello\";
-    print((int)*(arr + 0));
-    print((int)*(arr + 1));
-    print((int)*(arr + 2));
-    print((int)*(arr + 3));
-    print((int)*(arr + 4));
-    print((int)*(arr + 5));
+    print((int)*(str + 0));
+    print((int)*(str + 1));
+    print((int)*(str + 2));
+    print((int)*(str + 3));
+    print((int)*(str + 4));
+    print((int)*(str + 5));
   " [104; 101; 108; 108; 111; 0;]
   [@@ocamlformat "disable"]
 

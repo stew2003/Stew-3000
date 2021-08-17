@@ -52,7 +52,8 @@ let exec_command (cmd : command) (machine : stew_3000) (ins : instr) =
         (match flag with
         | ZF -> string_of_flag "zf" machine.zflag
         | SF -> string_of_flag "sf" machine.sflag
-        | OF -> string_of_flag "of" machine.oflag)
+        | OF -> string_of_flag "of" machine.oflag
+        | CF -> string_of_flag "cf" machine.cflag)
   | PrintStackAtAddr addr ->
       print_endline (string_of_stack_at_addr machine.stack addr)
   | PrintRegs -> print_endline (string_of_all_regs machine)
@@ -76,7 +77,8 @@ let exec_command (cmd : command) (machine : stew_3000) (ins : instr) =
       match flag with
       | ZF -> machine.zflag <- value
       | SF -> machine.sflag <- value
-      | OF -> machine.oflag <- value)
+      | OF -> machine.oflag <- value
+      | CF -> machine.cflag <- value)
   | SetStackAtAddr (addr, value) ->
       let unsigned_addr = Numbers.as_8bit_unsigned addr in
       Array.set machine.stack unsigned_addr value
@@ -88,9 +90,9 @@ let exec_command (cmd : command) (machine : stew_3000) (ins : instr) =
 let prompt = Colors.log "(3db) "
 
 (* [loop_for_commands] loops, receiving commands from user input,
-  and executing them in the context of the current machine state
-  and instruction. It breaks out of the loop when a "next" command
-  is encountered. *)
+   and executing them in the context of the current machine state
+   and instruction. It breaks out of the loop when a "next" command
+   is encountered. *)
 let loop_for_commands =
   (* last_cmd tracks the last executed command, and is shared
      across all calls to loop_for_commands *)

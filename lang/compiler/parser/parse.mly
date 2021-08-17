@@ -79,7 +79,7 @@
 %left LT LTE GT GTE
 %left PLUS MINUS
 %left STAR DIV MOD
-%right BNOT LNOT
+%right BNOT LNOT DEREF_PREC
 %nonassoc INR DCR
 
 %%
@@ -271,7 +271,7 @@ expr:
   { let (fn, start_loc) = fn in 
     let loc = span start_loc end_loc in 
     (Call (fn, args, Some loc), loc) }
-| start_loc = STAR e = expr
+| start_loc = STAR e = expr %prec DEREF_PREC
   {
     let (e, end_loc) = e in 
     let loc = span start_loc end_loc in 
