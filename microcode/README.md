@@ -69,24 +69,24 @@ TODO: (stewart) implement the new instructions. Then we can unbold them here and
 |  `addi byte, b` | `OPCODE TBD` |
 |  `addi byte, c` | `OPCODE TBD` |
 |  `addi byte, sp` | `OPCODE TBD` |
-| `addc $r1, $r2` | N/A | $r2 = $r2 + $r1 + CF |
-|  `addc a, a` | `OPCODE TBD` |
-|  `addc a, b` | `OPCODE TBD` |
-|  `addc a, c` | `OPCODE TBD` |
-|  `addc a, sp` | `OPCODE TBD` |
-|  `addc b, a` | `OPCODE TBD` |
-|  `addc b, b` | `OPCODE TBD` |
-|  `addc b, c` | `OPCODE TBD` |
-|  `addc b, sp` | `OPCODE TBD` |
-|  `addc c, a` | `OPCODE TBD` |
-|  `addc c, b` | `OPCODE TBD` |
-|  `addc c, c` | `OPCODE TBD` |
-|  `addc c, sp` | `OPCODE TBD` |
-| `addci byte, $r1` | N/A | $r1 = $r1 + byte + CF |
-|  `addci byte, a` | `OPCODE TBD` |
-|  `addci byte, b` | `OPCODE TBD` |
-|  `addci byte, c` | `OPCODE TBD` |
-|  `addci byte, sp` | `OPCODE TBD` |
+| **`addc $r1, $r2`** | N/A | $r2 = $r2 + $r1 + CF |
+|  **`addc a, a`** | `OPCODE TBD` |
+|  **`addc a, b`** | `OPCODE TBD` |
+|  **`addc a, c`** | `OPCODE TBD` |
+|  **`addc a, sp`** | `OPCODE TBD` |
+|  **`addc b, a`** | `OPCODE TBD` |
+|  **`addc b, b`** | `OPCODE TBD` |
+|  **`addc b, c`** | `OPCODE TBD` |
+|  **`addc b, sp`** | `OPCODE TBD` |
+|  **`addc c, a`** | `OPCODE TBD` |
+|  **`addc c, b`** | `OPCODE TBD` |
+|  **`addc c, c`** | `OPCODE TBD` |
+|  **`addc c, sp`** | `OPCODE TBD` |
+| **`addci byte, $r1`** | N/A | $r1 = $r1 + byte + CF |
+|  **`addci byte, a`** | `OPCODE TBD` |
+|  **`addci byte, b`** | `OPCODE TBD` |
+|  **`addci byte, c`** | `OPCODE TBD` |
+|  **`addci byte, sp`** | `OPCODE TBD` |
 | `sub $r1, $r2` | N/A | $r2 = $r2 - $r1 |
 |  `sub b, a` | `OPCODE TBD` |
 |  `sub c, a` | `OPCODE TBD` |
@@ -102,21 +102,21 @@ TODO: (stewart) implement the new instructions. Then we can unbold them here and
 |  `subi byte, b` | `OPCODE TBD` |
 |  `subi byte, c` | `OPCODE TBD` |
 |  `subi byte, sp` | `OPCODE TBD` |
-| `subb $r1, $r2` | N/A | $r2 = $r2 - $r1 - CF|
-|  `subb b, a` | `OPCODE TBD` |
-|  `subb c, a` | `OPCODE TBD` |
-|  `subb a, b` | `OPCODE TBD` |
-|  `subb c, b` | `OPCODE TBD` |
-|  `subb a, c` | `OPCODE TBD` |
-|  `subb b, c` | `OPCODE TBD` |
-|  `subb a, sp` | `OPCODE TBD` |
-|  `subb b, sp` | `OPCODE TBD` |
-|  `subb c, sp` | `OPCODE TBD` |
-| `subbi byte, $r1` | N/A | $r1 = $r1 - byte - CF|
-|  `subbi byte, a` | `OPCODE TBD` |
-|  `subbi byte, b` | `OPCODE TBD` |
-|  `subbi byte, c` | `OPCODE TBD` |
-|  `subbi byte, sp` | `OPCODE TBD` |
+| **`subb $r1, $r2`** | N/A | $r2 = $r2 - $r1 - CF|
+|  **`subb b, a`** | `OPCODE TBD` |
+|  **`subb c, a`** | `OPCODE TBD` |
+|  **`subb a, b`** | `OPCODE TBD` |
+|  **`subb c, b`** | `OPCODE TBD` |
+|  **`subb a, c`** | `OPCODE TBD` |
+|  **`subb b, c`** | `OPCODE TBD` |
+|  **`subb a, sp`** | `OPCODE TBD` |
+|  **`subb b, sp`** | `OPCODE TBD` |
+|  **`subb c, sp`** | `OPCODE TBD` |
+| **`subbi byte, $r1`** | N/A | $r1 = $r1 - byte - CF|
+|  **`subbi byte, a`** | `OPCODE TBD` |
+|  **`subbi byte, b`** | `OPCODE TBD` |
+|  **`subbi byte, c`** | `OPCODE TBD` |
+|  **`subbi byte, sp`** | `OPCODE TBD` |
 | `and $r1, $r2` | N/A | $r2 = $r2 & $r1 |
 |  `and b, a` | `OPCODE TBD` |
 |  `and c, a` | `OPCODE TBD` |
