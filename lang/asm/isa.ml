@@ -8,8 +8,8 @@ type register = A | B | C | SP
 type immediate = int
 
 (* Either a register or an immediate.
-  NOTE: this isn't used much, since most instructions are 
-  restricted in their operands, and we can express that *)
+   NOTE: this isn't used much, since most instructions are
+   restricted in their operands, and we can express that *)
 type operand = Reg of register | Imm of immediate
 
 (* Assembly instructions *)
@@ -43,6 +43,10 @@ type instr =
   | Jge of string * maybe_loc
   | Jl of string * maybe_loc
   | Jle of string * maybe_loc
+  | Ja of string * maybe_loc
+  | Jae of string * maybe_loc
+  | Jb of string * maybe_loc
+  | Jbe of string * maybe_loc
   | Call of string * maybe_loc
   | Ret of maybe_loc
   | Dic of immediate * maybe_loc
@@ -58,8 +62,8 @@ let string_of_register (reg : register) : string =
 (* [string_of_imm] converts an immediate value into a string *)
 let string_of_imm (imm : immediate) : string = string_of_int imm
 
-(* [string_of_operand] converts an operand (either register 
-  or immediate) into a string *)
+(* [string_of_operand] converts an operand (either register
+   or immediate) into a string *)
 let string_of_operand (op : operand) : string =
   match op with Reg r -> string_of_register r | Imm imm -> string_of_imm imm
 
@@ -114,6 +118,10 @@ let string_of_instr (ins : instr) : string =
   | Jge (lbl, _) -> sprintf "\tjge %s" lbl
   | Jl (lbl, _) -> sprintf "\tjl %s" lbl
   | Jle (lbl, _) -> sprintf "\tjle %s" lbl
+  | Ja (lbl, _) -> sprintf "\tja %s" lbl
+  | Jae (lbl, _) -> sprintf "\tjae %s" lbl
+  | Jb (lbl, _) -> sprintf "\tjb %s" lbl
+  | Jbe (lbl, _) -> sprintf "\tjbe %s" lbl
   | Call (lbl, _) -> sprintf "\tcall %s" lbl
   | Ret _ -> "\tret"
   | Dic (byte, _) -> sprintf "\tdic %d" byte
@@ -131,7 +139,7 @@ let string_of_instr_list (instrs : instr list) =
  |> String.concat "\n")
   ^ "\n"
 
-(* [loc_from_instr] extracts the (optional) source 
+(* [loc_from_instr] extracts the (optional) source
     location info from an instruction *)
 let loc_from_instr (ins : instr) : maybe_loc =
   match ins with
@@ -164,6 +172,10 @@ let loc_from_instr (ins : instr) : maybe_loc =
   | Jge (_, loc)
   | Jl (_, loc)
   | Jle (_, loc)
+  | Ja (_, loc)
+  | Jae (_, loc)
+  | Jb (_, loc)
+  | Jbe (_, loc)
   | Call (_, loc)
   | Ret loc
   | Dic (_, loc)

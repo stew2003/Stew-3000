@@ -17,8 +17,8 @@ let validate_imm (imm : immediate) (loc : maybe_loc) =
   else raise (ValidityError (InvalidImm imm, loc))
 
 (* [validate_instr] checks if a given instruction is a valid
-  instruction for which we have an opcode, and that its 
-  immediates/offsets on the stack are valid. Errors if not *)
+   instruction for which we have an opcode, and that its
+   immediates/offsets on the stack are valid. Errors if not *)
 let validate_instr (ins : instr) =
   match ins with
   (* Add src, dest *)
@@ -103,7 +103,8 @@ let validate_instr (ins : instr) =
   | Mov (B, A, _)
   | Mov (B, C, _)
   | Mov (C, A, _)
-  | Mov (C, B, _) ->
+  | Mov (C, B, _)
+  | Mov (SP, A, _) ->
       ()
   (* Mvi byte, dest *)
   | Mvi (imm, A, loc) | Mvi (imm, B, loc) | Mvi (imm, C, loc) ->
@@ -153,7 +154,9 @@ let validate_instr (ins : instr) =
   | Cmpi (Imm imm, Reg C, loc) ->
       validate_imm imm loc
   (* Jumps *)
-  | Jmp _ | Je _ | Jne _ | Jg _ | Jge _ | Jl _ | Jle _ -> ()
+  | Jmp _ | Je _ | Jne _ | Jg _ | Jge _ | Jl _ | Jle _ | Ja _ | Jae _ | Jb _
+  | Jbe _ ->
+      ()
   (* Call and return *)
   | Call _ | Ret _ -> ()
   (* Out src *)

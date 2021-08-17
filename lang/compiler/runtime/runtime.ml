@@ -3,7 +3,7 @@ open Asm.Isa
 open Asm.Parser
 
 (* The below blobs include runtime implementations from the files
-  in this (runtime/) directory. *)
+   in this (runtime/) directory. *)
 
 let runtime_multiply = parse [%blob "multiply.3000.s"]
 
@@ -30,14 +30,14 @@ let uses_assert (pgrm : prog) =
   check_for_stmt pgrm (function Assert _ -> true | _ -> false)
 
 (* [conditionally_include] returns either the given code or an empty program,
-  depending on whether the given condition is true or not. *)
+   depending on whether the given condition is true or not. *)
 let conditionally_include (code : instr list) (condition : bool) : instr list =
   if condition then code else []
 
-(* [runtime] constructs the runtime code necessary for a given 
-  program. Usually, this will be empty, but if the program requires
-  special runtime functionality (multiplication, division, ...) this
-  will contribute those subroutines *)
+(* [runtime] constructs the runtime code necessary for a given
+   program. Usually, this will be empty, but if the program requires
+   special runtime functionality (multiplication, division, ...) this
+   will contribute those subroutines *)
 let runtime ?(ignore_asserts = false) (program : prog) : instr list =
   (* multiply has its own implementation, but modulus and division
      use the same division algorithm *)

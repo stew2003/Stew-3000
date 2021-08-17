@@ -24,19 +24,19 @@ let command =
         try
           let pgrm = Parser.parse source_text in
           let pgrm = Preprocess.preprocess pgrm in
+          let pgrm = Desugar.desugar pgrm in
+
+          Printf.printf "%s\n" (Prettyprint.pretty_print pgrm);
 
           (* On warnings, print them *)
           let warning_handler (w : compiler_warn) =
             print_warning (message_of_compiler_warn w source_text src_file)
           in
 
-          Check.check pgrm;
+          let pgrm = Check.check ~emit_warning:warning_handler pgrm in
           let pgrm =
             Constant_fold.constant_fold ~emit_warning:warning_handler pgrm
           in
-
-          (* check again, post-optimization (catch folded unrepresentable values) *)
-          Check.check pgrm;
           let instrs = Compile.compile pgrm ~ignore_asserts in
 
           (* optimize the generated instructions *)

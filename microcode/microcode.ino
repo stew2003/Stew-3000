@@ -192,6 +192,10 @@ const uint32_t PROGMEM microcode[NUM_INSTRUCTIONS][INSTRUCTION_ARR_LENGTH] = {
   { 0x62, PCO|MI, SO|TI, RO|TS|SUM|EI, EO|MI, STK|BO|RI|PCE, RST }, // STS B, byte
   { 0x63, PCO|MI, SO|TI, RO|TS|SUM|EI, EO|MI, STK|CO|RI|PCE, RST }, // STS A, byte
 
+  // STI byte, byte2: RAM [SP + byte2] = byte
+  // { 0xFF, PCO|MI, SO|TI|PCE, RO|TS|SUM|EI, PCO|MI, RO|TI, EO|MI, STK|TO|RI|PCE }
+  // { 0xFF, PCO|MI, RO|TI|PCE, ZO|MI, TO|RI|STK, PCO|MI, SO|TI, RO|TS|SUM|EI, ZO|MI, STK|RO|TI, EO|MI, STK|TO|RI|PCE }
+
   // CMP $r1, $r1: $r1 - $r2 and set flags
   { 0x64, BO|TI, AO|TS|SUM|SUB|CAR|EI|FI, RST, 0, 0, 0 }, // CMP A, B
   { 0x65, CO|TI, AO|TS|SUM|SUB|CAR|EI|FI, RST, 0, 0, 0 }, // CMP A, C

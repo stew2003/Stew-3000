@@ -126,6 +126,8 @@ let assemble_instr (ins : instr) (label_map : int env) : int list =
   | Mov (B, C, _) -> [ 0x46 ]
   | Mov (C, A, _) -> [ 0x47 ]
   | Mov (C, B, _) -> [ 0x48 ]
+  (* TODO: use actual opcode *)
+  | Mov (SP, A, _) -> [ 0xff ]
   (* Mvi byte, dest *)
   | Mvi (imm, A, _) -> [ 0x49; imm ]
   | Mvi (imm, B, _) -> [ 0x4a; imm ]
@@ -180,6 +182,11 @@ let assemble_instr (ins : instr) (label_map : int env) : int list =
   | Jge (label, loc) -> [ 0x74; to_addr label loc ]
   | Jl (label, loc) -> [ 0x75; to_addr label loc ]
   | Jle (label, loc) -> [ 0x76; to_addr label loc ]
+  (* TODO: use actual opcodes here *)
+  | Ja (label, loc) -> [ 0xff; to_addr label loc ]
+  | Jae (label, loc) -> [ 0xff; to_addr label loc ]
+  | Jb (label, loc) -> [ 0xff; to_addr label loc ]
+  | Jbe (label, loc) -> [ 0xff; to_addr label loc ]
   (* Call and return *)
   | Call (label, loc) -> [ 0x77; to_addr label loc ]
   | Ret _ -> [ 0x78 ]
@@ -213,8 +220,8 @@ let size_of (ins : instr) : int =
       1
   (* two-byte instructions *)
   | Addi _ | Subi _ | Ani _ | Ori _ | Xri _ | Mvi _ | Lds _ | Sts _ | Jmp _
-  | Je _ | Jne _ | Jg _ | Jge _ | Jl _ | Jle _ | Call _ | Dic _ | Did _ | Cmpi _
-    ->
+  | Je _ | Jne _ | Jg _ | Jge _ | Jl _ | Jle _ | Ja _ | Jae _ | Jb _ | Jbe _
+  | Call _ | Dic _ | Did _ | Cmpi _ ->
       2
 
 (* 256 bytes is the size of our program memory *)

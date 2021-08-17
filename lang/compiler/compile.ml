@@ -13,7 +13,7 @@ let call_runtime (func : string) (si : int) =
   ]
 
 (* [compile_un_op] generates code for a unary operator.
-  Note: this assumes the operand value is in the a register. *)
+   Note: this assumes the operand value is in the a register. *)
 let compile_un_op (op : un_op) =
   match op with
   | BNot -> [ Not (A, None) ]
@@ -31,8 +31,8 @@ let compile_un_op (op : un_op) =
       ]
 
 (* [compile_bin_op] generates code for a binary operator
-  Note: assumes left operand is in the a register, right
-  is in the b register *)
+   Note: assumes left operand is in the a register, right
+   is in the b register *)
 let compile_bin_op (op : bin_op) (si : int) =
   (* [comparison] generates code for a binary comparison
      operator, given a function that creates the corresponding
@@ -63,6 +63,13 @@ let compile_bin_op (op : bin_op) (si : int) =
   | Lt -> comparison "less" (fun success -> Jl (success, None))
   | Gte -> comparison "greater_than_eq" (fun success -> Jge (success, None))
   | Lte -> comparison "less_than_eq" (fun success -> Jle (success, None))
+  | UnsignedGt ->
+      comparison "unsigned_greater" (fun success -> Ja (success, None))
+  | UnsignedLt -> comparison "unsigned_less" (fun success -> Jb (success, None))
+  | UnsignedGte ->
+      comparison "unsigned_greater_than_eq" (fun success -> Jae (success, None))
+  | UnsignedLte ->
+      comparison "unsigned_less_than_eq" (fun success -> Jbe (success, None))
   | Eq -> comparison "equal" (fun success -> Je (success, None))
   | Neq -> comparison "not_equal" (fun success -> Jne (success, None))
   | LAnd | LOr ->
@@ -70,8 +77,17 @@ let compile_bin_op (op : bin_op) (si : int) =
         (InternalError
            "attemped to compile logical and/or as normal binary operator")
 
-(* [compile_expr] generates instructions for the given expression 
-  in a given environment and stack index *)
+(* [lookup_var] extracts stack index from a given variable in the bindings.
+   Errors if the variable is unbound *)
+let lookup_var (name : string) (bindings : int env) : int =
+  match Env.find_opt name bindings with
+  | Some si -> si
+  | None ->
+      raise
+        (InternalError (Printf.sprintf "compiler: unbound variable %s" name))
+
+(* [compile_expr] generates instructions for the given expression
+   in a given environment and stack index *)
 let rec compile_expr (expression : expr) (bindings : int env) (si : int)
     (defns : func_defn list) : instr list =
   (* [compile_log_bin_op] generates code for logical and/or,
@@ -86,11 +102,11 @@ let rec compile_expr (expression : expr) (bindings : int env) (si : int)
     @ [ Label (continue, None) ]
   in
   match expression with
-  | Num (n, _) -> [ Mvi (n, A, None) ]
-  | Var (x, _) -> (
-      match Env.find_opt x bindings with
-      | Some x_si -> [ Lds (x_si, A, None) ]
-      | None -> raise (InternalError "compiler: unbound variable"))
+  | NumLiteral (n, _) -> [ Mvi (n, A, None) ]
+  | CharLiteral _ ->
+      raise
+        (InternalError "compiler: checker did not replace character literal")
+  | Var (x, _) -> [ Lds (lookup_var x bindings, A, None) ]
   | UnOp (op, operand, _) ->
       compile_expr operand bindings si defns @ compile_un_op op
   | BinOp (LAnd, left, right, _) ->
@@ -115,9 +131,68 @@ let rec compile_expr (expression : expr) (bindings : int env) (si : int)
           Call (function_label func, None);
           Subi (stack_base, SP, None);
         ]
+  | Deref (expr, _) -> compile_expr expr bindings si defns @ [ Ld (A, A, None) ]
+  | AddrOf (lv, _) -> (
+      match lv with
+      | Var (name, _) ->
+          [ Mov (SP, A, None); Addi (lookup_var name bindings, A, None) ]
+      | Deref (expr, _) -> compile_expr expr bindings si defns
+      | _ ->
+          raise
+            (InternalError "compiler: tried to take address of a non l-value"))
+  | Assign (lv, expr, _) -> (
+      match lv with
+      | Var (name, _) ->
+          compile_expr expr bindings si defns
+          @ [ Sts (A, lookup_var name bindings, None) ]
+      | Deref (dest, _) ->
+          compile_expr dest bindings si defns
+          @ [ Sts (A, si, None) ]
+          @ compile_expr expr bindings (si + 1) defns
+          @ [ Lds (si, B, None); St (A, B, None) ]
+      | _ -> raise (InternalError "compiler: assignment of invalid l-value"))
+  | PostfixInr (lv, _) | PostfixDcr (lv, _) -> (
+      (* [make_crement] constructs the appropriate 'crement instruction, depending on
+         whether this is a postfix INcrement or DEcrement. *)
+      let make_crement (reg : register) : instr =
+        match expression with
+        | PostfixInr _ -> Inr (reg, None)
+        | _ -> Dcr (reg, None)
+      in
+      match lv with
+      | Var (name, _) ->
+          let name_si = lookup_var name bindings in
+          [
+            Lds (name_si, A, None);
+            Mov (A, B, None);
+            make_crement B;
+            Sts (B, name_si, None);
+          ]
+      | Deref (expr, _) ->
+          compile_expr expr bindings si defns
+          @ [
+              Ld (A, B, None);
+              Mov (B, C, None);
+              make_crement C;
+              St (C, A, None);
+              Mov (B, A, None);
+            ]
+      | _ ->
+          raise
+            (InternalError "postfix increment/decrement got invalid l-value"))
+  | Cast (typ, _, _) ->
+      raise
+        (InternalError
+           (Printf.sprintf "encountered cast in compiler (casting to %s)"
+              (string_of_ty typ)))
+  | SPrefixInr _ | SPrefixDcr _ | SUpdate _ | SSubscript _ ->
+      raise
+        (InternalError
+           (Printf.sprintf "encountered sugar expression in compiler: %s"
+              (describe_expr expression)))
 
-(* [compile_cond] generates instructions for specifically compiling 
-  conditions in ifs and whiles*)
+(* [compile_cond] generates instructions for specifically compiling
+   conditions in ifs and whiles*)
 and compile_cond (cond : expr) (condition_failed : string) (bindings : int env)
     (si : int) (defns : func_defn list) : instr list =
   (* For non-comparison expressions in condition-position, we just compile them
@@ -144,26 +219,56 @@ and compile_cond (cond : expr) (condition_failed : string) (bindings : int env)
       | Gte -> compile_comparison (fun label -> Jl (label, None))
       | Lt -> compile_comparison (fun label -> Jge (label, None))
       | Lte -> compile_comparison (fun label -> Jg (label, None))
+      | UnsignedGt -> compile_comparison (fun label -> Jbe (label, None))
+      | UnsignedGte -> compile_comparison (fun label -> Jb (label, None))
+      | UnsignedLt -> compile_comparison (fun label -> Jae (label, None))
+      | UnsignedLte -> compile_comparison (fun label -> Ja (label, None))
       | Eq -> compile_comparison (fun label -> Jne (label, None))
       | Neq -> compile_comparison (fun label -> Je (label, None))
       | _ -> default_compile_cond ())
   | _ -> default_compile_cond ()
 
-(* [compile_stmt] generates instructions for a single statement,  
-  in a given environment and stack index *)
+(* [compile_stmt] generates instructions for a single statement,
+   in a given environment and stack index *)
 and compile_stmt (statement : stmt) (bindings : int env) (si : int)
     (defns : func_defn list) (ignore_asserts : bool) : instr list =
   match statement with
-  | Let (name, _, value, scope, _) ->
+  | Declare (name, _, init, scope, _) ->
+      (* if variable is initialized, generate code for that *)
+      let initialization =
+        match init with
+        | None -> []
+        | Some init ->
+            compile_expr init bindings si defns @ [ Sts (A, si, None) ]
+      in
       let ext_env = Env.add name si bindings in
-      compile_expr value bindings si defns
-      @ [ Sts (A, si, None) ]
+      initialization
       @ compile_stmt_list scope ext_env (si + 1) defns ignore_asserts
-  | Assign (name, expr, _) -> (
-      match Env.find_opt name bindings with
-      | Some name_si ->
-          compile_expr expr bindings si defns @ [ Sts (A, name_si, None) ]
-      | None -> raise (InternalError "compiler: assign before initialize"))
+  | ArrayDeclare (name, _, size, init, scope, _) ->
+      (* extract exactly how much to allocate for the array from its size
+         expression (which should be a constant at this point) *)
+      let allocation_amount =
+        match size with
+        | Some (NumLiteral (value, _)) -> value
+        | _ -> raise (InternalError "compiler: underspecified array")
+      in
+      (* if initializer given, generate code for each expression and
+         move its value into the array *)
+      (match init with
+      | Some exprs ->
+          exprs
+          |> List.mapi (fun i expr ->
+                 compile_expr expr bindings (si + i + 1) defns
+                 @ [ Sts (A, si + i + 1, None) ])
+          |> List.concat
+      | None -> [])
+      (* create pointer to beginning of the array (stored at si, points at si+1) *)
+      @ [ Mov (SP, A, None); Addi (si + 1, A, None); Sts (A, si, None) ]
+      (* compile scope with array name bound to pointer to first element,
+         give si that is past the array's allocation *)
+      @ compile_stmt_list scope (Env.add name si bindings)
+          (si + allocation_amount + 1)
+          defns ignore_asserts
   | Block (stmt_list, _) ->
       compile_stmt_list stmt_list bindings si defns ignore_asserts
   | ExprStmt (expr, _) -> compile_expr expr bindings si defns
@@ -179,16 +284,6 @@ and compile_stmt (statement : stmt) (bindings : int env) (si : int)
       @ [ Ret None ]
   | PrintDec (expr, _) ->
       compile_expr expr bindings si defns @ [ Out (A, None) ]
-  | Inr (name, _) -> (
-      match Env.find_opt name bindings with
-      | Some name_si ->
-          [ Lds (name_si, A, None); Inr (A, None); Sts (A, name_si, None) ]
-      | None -> raise (InternalError "compiler: increment before initialize"))
-  | Dcr (name, _) -> (
-      match Env.find_opt name bindings with
-      | Some name_si ->
-          [ Lds (name_si, A, None); Dcr (A, None); Sts (A, name_si, None) ]
-      | None -> raise (InternalError "compiler: decrement before initialize"))
   | Assert _ when ignore_asserts -> []
   | Assert (expr, _) ->
       compile_expr expr bindings si defns @ call_runtime "runtime_assert" si
@@ -214,7 +309,7 @@ and compile_stmt (statement : stmt) (bindings : int env) (si : int)
       @ [ Jmp (start_while, None); Label (condition_failed, None) ]
 
 (* [compile_stmt_list] generates instructions for a list of statements,
-  in an environment and stack index *)
+   in an environment and stack index *)
 and compile_stmt_list (statements : stmt list) (bindings : int env) (si : int)
     (defns : func_defn list) (ignore_asserts : bool) : instr list =
   statements

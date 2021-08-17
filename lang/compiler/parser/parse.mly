@@ -3,22 +3,26 @@
   open Util.Srcloc
 %}
 
-%token <int * Util.Srcloc.src_loc> NUM
+%token <int * Util.Srcloc.src_loc> NUMLIT
+%token <char * Util.Srcloc.src_loc> CHARLIT
+%token <string * Util.Srcloc.src_loc> STRINGLIT
 %token <string * Util.Srcloc.src_loc> IDENT
 
 %token <Util.Srcloc.src_loc> LPAREN
 %token <Util.Srcloc.src_loc> RPAREN
 %token <Util.Srcloc.src_loc> LBRACE
 %token <Util.Srcloc.src_loc> RBRACE
+%token <Util.Srcloc.src_loc> LBRACKET
+%token <Util.Srcloc.src_loc> RBRACKET
 %token <Util.Srcloc.src_loc> SEMICOLON
 %token <Util.Srcloc.src_loc> COMMA
 
 %token <Util.Srcloc.src_loc> PLUS
 %token <Util.Srcloc.src_loc> MINUS
-%token <Util.Srcloc.src_loc> TIMES
+%token <Util.Srcloc.src_loc> STAR
 %token <Util.Srcloc.src_loc> DIV
 %token <Util.Srcloc.src_loc> MOD
-%token <Util.Srcloc.src_loc> BAND
+%token <Util.Srcloc.src_loc> AMPERSAND
 %token <Util.Srcloc.src_loc> BOR
 %token <Util.Srcloc.src_loc> BXOR
 %token <Util.Srcloc.src_loc> LAND
@@ -36,6 +40,14 @@
 %token <Util.Srcloc.src_loc> ASSIGN
 %token <Util.Srcloc.src_loc> INR
 %token <Util.Srcloc.src_loc> DCR
+%token <Util.Srcloc.src_loc> PLUS_UPDATE
+%token <Util.Srcloc.src_loc> MINUS_UPDATE
+%token <Util.Srcloc.src_loc> TIMES_UPDATE
+%token <Util.Srcloc.src_loc> DIV_UPDATE
+%token <Util.Srcloc.src_loc> MOD_UPDATE
+%token <Util.Srcloc.src_loc> BAND_UPDATE
+%token <Util.Srcloc.src_loc> BOR_UPDATE
+%token <Util.Srcloc.src_loc> BXOR_UPDATE
 
 %token <Util.Srcloc.src_loc> IF
 %token <Util.Srcloc.src_loc> ELSE
@@ -48,6 +60,8 @@
 
 %token <Util.Srcloc.src_loc> INT
 %token <Util.Srcloc.src_loc> VOID
+%token <Util.Srcloc.src_loc> UNSIGNED
+%token <Util.Srcloc.src_loc> CHAR
 
 %token <Util.Srcloc.src_loc> DEFINE
 
@@ -55,16 +69,19 @@
 
 %start <pp_define list * func_defn list> program
 
+%right ASSIGN PLUS_UPDATE MINUS_UPDATE TIMES_UPDATE DIV_UPDATE 
+  MOD_UPDATE BAND_UPDATE BOR_UPDATE BXOR_UPDATE
 %left LOR
 %left LAND
 %left BOR
 %left BXOR
-%left BAND
+%left AMPERSAND
 %left EQ NEQ
 %left LT LTE GT GTE
 %left PLUS MINUS
-%left TIMES DIV MOD
-%right BNOT LNOT
+%left STAR DIV MOD
+%right BNOT LNOT DEREF_PREC ADDROF_PREC CAST_PREC PREFIX_INR_DCR
+%left INR DCR
 
 %%
 
@@ -106,10 +123,19 @@ params:
   { p }
 
 typ:
-| loc = INT
-  { (Int, loc) }
 | loc = VOID
   { (Void, loc) }
+| loc = INT
+  { (Int, loc) }
+| loc = UNSIGNED
+  { (Unsigned, loc) }
+| loc = CHAR 
+  { (Char, loc) }
+| t = typ STAR
+  {
+    let (t, loc) = t in 
+    (Pointer t, loc)
+  }
 
 // variable declaration, type then name
 decl:
@@ -118,6 +144,21 @@ decl:
     let (t, start_loc) = t in 
     let (name, end_loc) = name in
     (name, t, span start_loc end_loc)
+  }
+
+// array initializers
+array_init:
+| ASSIGN s = STRINGLIT
+  {
+    let (s, loc) = s in 
+    (* Convert string literal to null-terminated list of chars *)
+    let chars = s |> String.to_seq |> List.of_seq in 
+    let chars = List.rev ('\x00' :: (List.rev chars)) in 
+    List.map (fun c -> CharLiteral (c, Some loc)) chars
+  }
+| ASSIGN LBRACE es = separated_list(COMMA, expr) RBRACE
+  {
+    List.map (fun (e, _) -> e) es
   }
 
 stmt_list:
@@ -138,7 +179,20 @@ block_stmt:
   {
     let (name, typ, start_loc) = d in 
     let (e, _) = e in 
-    Let (name, typ, e, scope, Some (span start_loc end_loc))
+    Declare(name, typ, Some e, scope, Some (span start_loc end_loc))
+  }
+| d = decl end_loc = SEMICOLON scope = stmt_list
+  {
+    let (name, typ, start_loc) = d in 
+    Declare (name, typ, None, scope, Some (span start_loc end_loc))
+  }
+| d = decl LBRACKET size = option(expr) RBRACKET init = option(array_init) 
+  end_loc = SEMICOLON scope = stmt_list
+  {
+    let (name, typ, start_loc) = d in 
+    let size = Option.map (fun (e, _) -> e) size in
+    let loc = span start_loc end_loc in  
+    ArrayDeclare (name, typ, size, init, scope, Some loc)
   }
 | start_loc = IF LPAREN cond = expr RPAREN 
   LBRACE thn = stmt_list end_loc = RBRACE
@@ -156,50 +210,61 @@ block_stmt:
 
 // statements that require semicolon termination
 stmt:
-| var = IDENT ASSIGN e = expr
-  { 
-    let (var, start_loc) = var in 
-    let (e, end_loc) = e in 
-    Assign (var, e, Some (span start_loc end_loc))
-  }
-| start_loc = RETURN e = expr 
+| start_loc = RETURN e = option(expr) 
   {
-    let (e, end_loc) = e in 
-    Return (Some e, Some (span start_loc end_loc))
+    let e, end_loc = (match e with 
+      | None -> (None, start_loc)
+      | Some (e, end_loc) -> (Some e, end_loc)
+    ) in 
+    Return (e, Some (span start_loc end_loc))
   }
-| loc = RETURN 
-  { Return (None, Some loc) }
 | e = expr 
   { let (e, loc) = e in 
     ExprStmt (e, Some loc) }
 | start_loc = PRINT LPAREN arg = expr end_loc = RPAREN
   { let (arg, _) = arg in 
     PrintDec (arg, Some (span start_loc end_loc)) }
-| var = IDENT end_loc = INR
-  { let (var, start_loc) = var in 
-    Inr (var, Some (span start_loc end_loc)) }
-| var = IDENT end_loc = DCR
-  { let (var, start_loc) = var in 
-    Dcr (var, Some (span start_loc end_loc)) }
-| start_loc = EXIT LPAREN arg = expr end_loc = RPAREN
-  { let (arg, _) = arg in 
-    Exit (Some arg, Some (span start_loc end_loc)) }
-| start_loc = EXIT LPAREN end_loc = RPAREN
-  { Exit (None, Some (span start_loc end_loc)) }
+| start_loc = EXIT LPAREN arg = option(expr) end_loc = RPAREN
+  { let arg = Option.map (fun (a, _) -> a) arg in 
+    Exit (arg, Some (span start_loc end_loc)) }
 | start_loc = ASSERT LPAREN e = expr end_loc = RPAREN 
   { 
     let (e, _) = e in 
     Assert (e, Some (span start_loc end_loc))
   }
 
+// parses an update (*=, +=, ...) and returns corresponding bin_op
+update:
+| PLUS_UPDATE
+  { Plus }
+| MINUS_UPDATE
+  { Minus }
+| TIMES_UPDATE
+  { Mult }
+| DIV_UPDATE
+  { Div }
+| MOD_UPDATE
+  { Mod }
+| BAND_UPDATE
+  { BAnd }
+| BOR_UPDATE
+  { BOr }
+| BXOR_UPDATE
+  { BXor }
+
 // expressions
 expr:
 | start_loc = LPAREN e = expr end_loc = RPAREN
   { let (e, _) = e in
     (e, span start_loc end_loc) }
-| n = NUM
+| n = NUMLIT
   { let (n, loc) = n in 
-    (Num (n, Some loc), loc) }
+    (NumLiteral (n, Some loc), loc) }
+| c = CHARLIT
+  { 
+    let (c, loc) = c in 
+    (CharLiteral (c, Some loc), loc)
+  }
 | var = IDENT 
   { let (var, loc) = var in 
     (Var (var, Some loc), loc) }
@@ -207,6 +272,44 @@ expr:
   { let (fn, start_loc) = fn in 
     let loc = span start_loc end_loc in 
     (Call (fn, args, Some loc), loc) }
+| start_loc = STAR e = expr %prec DEREF_PREC
+  {
+    let (e, end_loc) = e in 
+    let loc = span start_loc end_loc in 
+    (Deref (e, Some loc), loc)
+  }
+| start_loc = AMPERSAND e = expr %prec ADDROF_PREC
+  {
+    let (e, end_loc) = e in 
+    let loc = span start_loc end_loc in 
+    (AddrOf (e, Some loc), loc)
+  }
+| start_loc = LPAREN t = typ RPAREN e = expr %prec CAST_PREC
+  {
+    let (t, _) = t in 
+    let (e, end_loc) = e in 
+    let loc = span start_loc end_loc in 
+    (Cast (t, e, Some loc), loc)
+  }
+| dest = expr ASSIGN e = expr
+  { 
+    let (dest, start_loc) = dest in 
+    let (e, end_loc) = e in 
+    let loc = span start_loc end_loc in 
+    (Assign (dest, e, Some loc), loc)
+  }
+| e = expr end_loc = INR
+  { 
+    let (e, start_loc) = e in 
+    let loc = span start_loc end_loc in 
+    (PostfixInr (e, Some loc), loc) 
+  }
+| e = expr end_loc = DCR
+  { 
+    let (e, start_loc) = e in 
+    let loc = span start_loc end_loc in 
+    (PostfixDcr (e, Some loc), loc) 
+  }
 | start_loc = BNOT e = expr 
   { let (e, end_loc) = e in 
     let loc = span start_loc end_loc in 
@@ -225,7 +328,7 @@ expr:
     let (r, end_loc) = r in 
     let loc = span start_loc end_loc in 
     (BinOp (Minus, l, r, Some loc), loc) }
-| l = expr TIMES r = expr 
+| l = expr STAR r = expr 
   { let (l, start_loc) = l in 
     let (r, end_loc) = r in 
     let loc = span start_loc end_loc in 
@@ -240,7 +343,7 @@ expr:
     let (r, end_loc) = r in 
     let loc = span start_loc end_loc in 
     (BinOp (Mod, l, r, Some loc), loc) }
-| l = expr BAND r = expr 
+| l = expr AMPERSAND r = expr 
   { let (l, start_loc) = l in 
     let (r, end_loc) = r in 
     let loc = span start_loc end_loc in 
@@ -295,6 +398,32 @@ expr:
     let (r, end_loc) = r in 
     let loc = span start_loc end_loc in 
     (BinOp (Neq, l, r, Some loc), loc) }
+| start_loc = INR e = expr %prec PREFIX_INR_DCR
+  { 
+    let (e, end_loc) = e in
+    let loc = span start_loc end_loc in
+    (SPrefixInr (e, Some loc), loc)
+  }
+| start_loc = DCR e = expr %prec PREFIX_INR_DCR
+  { 
+    let (e, end_loc) = e in
+    let loc = span start_loc end_loc in
+    (SPrefixDcr (e, Some loc), loc)
+  }
+| dest = expr op = update e = expr 
+  {
+    let (dest, start_loc) = dest in 
+    let (e, end_loc) = e in 
+    let loc = span start_loc end_loc in 
+    (SUpdate (dest, e, op, Some loc), loc)
+  }
+| arr = expr LBRACKET sub = expr end_loc = RBRACKET
+  {
+    let (arr, start_loc) = arr in 
+    let (sub, _) = sub in 
+    let loc = span start_loc end_loc in 
+    (SSubscript (arr, sub, Some loc), loc)
+  }
 
 // argument list of expressions for function calls
 arg_list:

@@ -1,6 +1,6 @@
 type register = A | B | C | SP | PC
 
-type flag = ZF | SF | OF
+type flag = ZF | SF | OF | CF
 
 type command =
   | PrintReg of register

@@ -20,11 +20,15 @@ rule token = parse
     token lexbuf }
 | '\n' { Lexing.new_line lexbuf; token lexbuf }
 | '-'?['0'-'9']+ as i
-  { NUM (int_of_string i, loc_from_lexbuf lexbuf) }
+  { NUMLIT (int_of_string i, loc_from_lexbuf lexbuf) }
 | '-'?"0x"['0'-'9''a'-'f''A'-'F']+ as hex
-  { NUM (int_of_string hex, loc_from_lexbuf lexbuf) }
+  { NUMLIT (int_of_string hex, loc_from_lexbuf lexbuf) }
 | '-'?"0b"['0' '1']+ as binary
-  { NUM (int_of_string binary, loc_from_lexbuf lexbuf) }
+  { NUMLIT (int_of_string binary, loc_from_lexbuf lexbuf) }
+| "'"_"'" as character
+  { CHARLIT ((String.get character 1), loc_from_lexbuf lexbuf) }
+| '"'[^'"''\n']*'"' as str
+  { STRINGLIT (String.sub str 1 (String.length str - 2), loc_from_lexbuf lexbuf) }
 | '('
   { LPAREN (loc_from_lexbuf lexbuf) }
 | ')'
@@ -33,6 +37,10 @@ rule token = parse
   { LBRACE (loc_from_lexbuf lexbuf) }
 | '}'
   { RBRACE (loc_from_lexbuf lexbuf) }
+| '['
+  { LBRACKET (loc_from_lexbuf lexbuf) }
+| ']'
+  { RBRACKET (loc_from_lexbuf lexbuf) }
 | ';'
   { SEMICOLON (loc_from_lexbuf lexbuf) }
 | ','
@@ -42,7 +50,7 @@ rule token = parse
 | '-'
   { MINUS (loc_from_lexbuf lexbuf) }
 | '*'
-  { TIMES (loc_from_lexbuf lexbuf) }
+  { STAR (loc_from_lexbuf lexbuf) }
 | '/'
   { DIV (loc_from_lexbuf lexbuf) }
 | '%'
@@ -52,7 +60,7 @@ rule token = parse
 | "||"
   { LOR (loc_from_lexbuf lexbuf) }
 | '&'
-  { BAND (loc_from_lexbuf lexbuf) }
+  { AMPERSAND (loc_from_lexbuf lexbuf) }
 | '|'
   { BOR (loc_from_lexbuf lexbuf) }
 | '^'
@@ -75,6 +83,22 @@ rule token = parse
   { LNOT (loc_from_lexbuf lexbuf) }
 | '='
   { ASSIGN (loc_from_lexbuf lexbuf) }
+| "+="
+  { PLUS_UPDATE (loc_from_lexbuf lexbuf) }
+| "-="
+  { MINUS_UPDATE (loc_from_lexbuf lexbuf) }
+| "*="
+  { TIMES_UPDATE (loc_from_lexbuf lexbuf) }
+| "/="
+  { DIV_UPDATE (loc_from_lexbuf lexbuf) }
+| "%="
+  { MOD_UPDATE (loc_from_lexbuf lexbuf) }
+| "&="
+  { BAND_UPDATE (loc_from_lexbuf lexbuf) }
+| "|="
+  { BOR_UPDATE (loc_from_lexbuf lexbuf) }
+| "^="
+  { BXOR_UPDATE (loc_from_lexbuf lexbuf) }
 | "++"
   { INR (loc_from_lexbuf lexbuf) }
 | "--"
@@ -93,10 +117,14 @@ rule token = parse
   { EXIT (loc_from_lexbuf lexbuf) }
 | "assert"
   { ASSERT (loc_from_lexbuf lexbuf) }
-| "int"
-  { INT (loc_from_lexbuf lexbuf) }
 | "void"
   { VOID (loc_from_lexbuf lexbuf) }
+| "int"
+  { INT (loc_from_lexbuf lexbuf) }
+| "unsigned"
+  { UNSIGNED (loc_from_lexbuf lexbuf) }
+| "char"
+  { CHAR (loc_from_lexbuf lexbuf) }
 | "#define"
   { DEFINE (loc_from_lexbuf lexbuf) }
 | ['a'-'z''A'-'Z''_']['a'-'z''A'-'Z''_''0'-'9']* as name

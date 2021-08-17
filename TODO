@@ -3,6 +3,11 @@ Hardware
   [] Fix stack memory
   [] Fix ram loader
   [] Add Zero register
+  [] New instructions (see microcode README)
+
+Assembler
+  [] change instr type to match new ISA
+    [] update everything that breaks
 
 Compiler
   [] implement optimizations for smol code

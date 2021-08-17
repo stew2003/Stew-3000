@@ -32,6 +32,8 @@ rule token = parse
   { FLAG SF }
 | "of"
   { FLAG OF }
+| "cf"
+  { FLAG CF }
 | "stack" 
   { STACK }
 | '['

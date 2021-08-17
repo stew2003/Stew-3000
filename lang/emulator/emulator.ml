@@ -24,7 +24,7 @@ let string_of_emu_err (err : emu_err) =
         (string_of_stew_3000 machine)
 
 (* [emulate_instr] emulates the effect of the given instruction
-  on the machine, by mutating the machine in-place *)
+   on the machine, by mutating the machine in-place *)
 let emulate_instr (ins : instr) (machine : stew_3000) (label_to_addr : int env)
     (addr_to_index : int num_env) (index_to_addr : int num_env)
     (verbosity : int) (warn : bool) =
@@ -84,9 +84,12 @@ let emulate_instr (ins : instr) (machine : stew_3000) (label_to_addr : int env)
     | None -> raise (InternalError "emulator: get label addr: invalid label")
   in
   (* [set_flags] sets zero, signed, and overflow flags based on the
-     result of an operation and the two values that were operated on. *)
-  let set_flags (result : int) (left : int) (right : int) =
-    let i8_result = Numbers.as_8bit_signed result in
+     result of an operation and the two values that were operated on.
+     The sub boolean indicates whether subtraction was used to obtain
+     the result. *)
+  let set_flags (unchecked_result : int) (left : int) (right : int) (sub : bool)
+      =
+    let i8_result = Numbers.as_8bit_signed unchecked_result in
     let i8_left = Numbers.as_8bit_signed left in
     let i8_right = Numbers.as_8bit_signed right in
     (* zero flag: result is 0 *)
@@ -96,7 +99,17 @@ let emulate_instr (ins : instr) (machine : stew_3000) (label_to_addr : int env)
     (* signed overflow flag: signs of left/right are same,
        but different from sign of result *)
     machine.oflag <-
-      i8_left < 0 = (i8_right < 0) && i8_result < 0 <> (i8_left < 0)
+      i8_left < 0 = (i8_right < 0) && i8_result < 0 <> (i8_left < 0);
+    (* carry flag: If the 9th bit is set, the addition CF will be set.
+       If subtraction was performed, invert this CF to get the machine's CF. *)
+    machine.cflag <-
+      (let add_cf = unchecked_result land 0b100000000 <> 0 in
+       if sub then not add_cf else add_cf)
+  in
+  (* [negate_value] takes an integer and negates it by flipping its bits
+     and adding 1. *)
+  let negate_value (value : int) : int =
+    Numbers.as_8bit_unsigned (lnot (Numbers.as_8bit_unsigned value)) + 1
   in
   (* [emulate_arithmetic] emulates binary arithmetic operators that
      may overflow, and store in a destination register. If sub is true,
@@ -107,16 +120,14 @@ let emulate_instr (ins : instr) (machine : stew_3000) (label_to_addr : int env)
        NOTE: src value (right operand) is negated if subtraction
        is to be performed. This allows the overflow flag to
        correctly determine its value assuming the result is a sum. *)
-    let i8_src_value =
-      (if sub then -1 else 1) * Numbers.as_8bit_signed src_value
-    in
+    let i8_src_value = if sub then negate_value src_value else src_value in
     let i8_dest_value = Numbers.as_8bit_signed (load_reg dest) in
-    (* interpret result as signed 8-bit *)
-    let result = Numbers.as_8bit_signed (i8_dest_value + i8_src_value) in
-    store_reg dest result;
-    set_flags result i8_dest_value i8_src_value;
+    let unchecked_result = i8_dest_value + i8_src_value in
+    store_reg dest (Numbers.as_8bit_signed unchecked_result);
+    set_flags unchecked_result i8_dest_value i8_src_value sub;
     (* emit a warning if overflow occurred *)
-    if machine.oflag then Logging.warn_arith_overflow warn ins result machine.pc
+    if machine.oflag then
+      Logging.warn_arith_overflow warn ins unchecked_result machine.pc
     else ();
     inc_pc ()
   in
@@ -128,11 +139,9 @@ let emulate_instr (ins : instr) (machine : stew_3000) (label_to_addr : int env)
     let u8_src_value = Numbers.as_8bit_unsigned src_value in
     let u8_dest_value = Numbers.as_8bit_unsigned (load_reg dest) in
     (* treat result as unsigned *)
-    let result =
-      Numbers.as_8bit_unsigned (operator u8_dest_value u8_src_value)
-    in
-    store_reg dest result;
-    set_flags result u8_dest_value u8_src_value;
+    let unchecked_result = operator u8_dest_value u8_src_value in
+    store_reg dest (Numbers.as_8bit_unsigned unchecked_result);
+    set_flags unchecked_result u8_dest_value u8_src_value false;
     inc_pc ()
   in
   (* [emulate_cmp] emulates performing a comparison between a left
@@ -140,16 +149,18 @@ let emulate_instr (ins : instr) (machine : stew_3000) (label_to_addr : int env)
   let emulate_cmp (left_value : int) (right_value : int) =
     (* treat left and right operands as signed 8-bit integers
        NOTE: to subtract right from left, we negate right and add it.
-       This allows the overflow flag to correctly compute determine
+       This allows the overflow flag to correctly determine
        whether or not signed overflow has occurred by assuming the result
        is always from adding two numbers. *)
-    let i8_left_value = Numbers.as_8bit_signed left_value in
-    let negated_i8_right_value = -1 * Numbers.as_8bit_signed right_value in
-    (* interpret result as signed 8-bit integer *)
-    let diff =
-      Numbers.as_8bit_signed (i8_left_value + negated_i8_right_value)
-    in
-    set_flags diff i8_left_value negated_i8_right_value;
+    let u8_left_value = Numbers.as_8bit_unsigned left_value in
+    (* NOTE: the negated right value is interpreted as UNsigned here, because
+       then if the addition overflows, the overflow will be present in the 9th
+       bit, and won't be propagated further. This allows us to check the 9th
+       bit for carry from addition. *)
+    let negated_u8_right_value = negate_value right_value in
+    (* allow this result value to overflow *)
+    let unchecked_result = u8_left_value + negated_u8_right_value in
+    set_flags unchecked_result u8_left_value negated_u8_right_value true;
     inc_pc ()
   in
   (* [emulate_load] emulates a load from the stack into a destination register *)
@@ -224,6 +235,18 @@ let emulate_instr (ins : instr) (machine : stew_3000) (label_to_addr : int env)
   | Jle (target, _) ->
       (* (SF ^ OF) | ZF *)
       emulate_jmp (machine.sflag <> machine.oflag || machine.zflag) target
+  | Ja (target, _) ->
+      (* ~CF & ~ZF *)
+      emulate_jmp ((not machine.cflag) && not machine.zflag) target
+  | Jae (target, _) ->
+      (* ~CF *)
+      emulate_jmp (not machine.cflag) target
+  | Jb (target, _) ->
+      (* CF *)
+      emulate_jmp machine.cflag target
+  | Jbe (target, _) ->
+      (* CF | ZF *)
+      emulate_jmp (machine.cflag || machine.zflag) target
   | Call (target, _) ->
       let fun_pc = get_label_addr target in
       let ret_addr = next_pc () in
@@ -252,9 +275,9 @@ let emulate_instr (ins : instr) (machine : stew_3000) (label_to_addr : int env)
            (sprintf "emulator: invalid instruction: %s" (string_of_instr ins)))
 
 (* [map_addr_to_index] constructs an environment mapping physical
-  addresses of the beginnings of instructions in a binary to the index
-  in pgrm at which that instruction appears, and an env implementing
-  the inverse mapping.  *)
+   addresses of the beginnings of instructions in a binary to the index
+   in pgrm at which that instruction appears, and an env implementing
+   the inverse mapping. *)
 let map_addrs_and_indices (pgrm : instr list) : int num_env * int num_env =
   let addr_to_index, index_to_addr, _ =
     List.mapi (fun i ins -> (i, ins)) pgrm
@@ -268,8 +291,8 @@ let map_addrs_and_indices (pgrm : instr list) : int num_env * int num_env =
   in
   (addr_to_index, index_to_addr)
 
-(* [get_current_ins] retrieves the current instruction to execute 
-  by indexing into the program using the machine's program counter *)
+(* [get_current_ins] retrieves the current instruction to execute
+   by indexing into the program using the machine's program counter *)
 let get_current_ins (pgrm : instr list) (machine : stew_3000)
     (addr_to_index : int num_env) : instr =
   (* lookup machine's PC to find index in instructions *)
@@ -282,9 +305,9 @@ let get_current_ins (pgrm : instr list) (machine : stew_3000)
              "emulator: get current ins: addr to index yielded bad index"))
   | None -> raise (EmulatorError (InvalidProgramCounter machine, None))
 
-(* [emulate] emulates running the given assembly program 
-  on the Stew 3000, and returns the final machine state after the run.
-  verbosity indicates how much logging should happen during the run. *)
+(* [emulate] emulates running the given assembly program
+   on the Stew 3000, and returns the final machine state after the run.
+   verbosity indicates how much logging should happen during the run. *)
 let emulate ?(verbosity = 0) ?(db_mode = false) ?(warn = false)
     (pgrm : instr list) : stew_3000 =
   (* get byte-level info on the program from the assembler *)

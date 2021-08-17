@@ -5,18 +5,46 @@ open OUnit2
 (* [norm_expr_locs] normalizes source locations in an expression *)
 let rec norm_expr_locs (exp : expr) : expr =
   match exp with
-  | Num (n, _) -> Num (n, None)
+  | NumLiteral (n, _) -> NumLiteral (n, None)
+  | CharLiteral (c, _) -> CharLiteral (c, None)
   | Var (id, _) -> Var (id, None)
   | UnOp (op, e, _) -> UnOp (op, norm_expr_locs e, None)
   | BinOp (op, l, r, _) -> BinOp (op, norm_expr_locs l, norm_expr_locs r, None)
   | Call (fn, args, _) -> Call (fn, List.map norm_expr_locs args, None)
+  | Deref (e, _) -> Deref (norm_expr_locs e, None)
+  | AddrOf (e, _) -> AddrOf (norm_expr_locs e, None)
+  | Cast (typ, e, _) -> Cast (typ, norm_expr_locs e, None)
+  | Assign (dest, exp, _) ->
+      Assign (norm_expr_locs dest, norm_expr_locs exp, None)
+  | PostfixInr (lv, _) -> PostfixInr (norm_expr_locs lv, None)
+  | PostfixDcr (lv, _) -> PostfixDcr (norm_expr_locs lv, None)
+  | SPrefixInr (e, _) -> SPrefixInr (norm_expr_locs e, None)
+  | SPrefixDcr (e, _) -> SPrefixDcr (norm_expr_locs e, None)
+  | SUpdate (dest, amount, op, _) ->
+      SUpdate (norm_expr_locs dest, norm_expr_locs amount, op, None)
+  | SSubscript (arr, idx, _) ->
+      SSubscript (norm_expr_locs arr, norm_expr_locs idx, None)
 
 (* [norm_stmt_locs] normalizes source locations in a statement *)
 and norm_stmt_locs (stmt : stmt) : stmt =
   match stmt with
-  | Let (id, typ, value, body, _) ->
-      Let (id, typ, norm_expr_locs value, norm_stmt_list_locs body, None)
-  | Assign (id, exp, _) -> Assign (id, norm_expr_locs exp, None)
+  | Declare (id, typ, value, body, _) ->
+      Declare
+        ( id,
+          typ,
+          (match value with
+          | None -> None
+          | Some value -> Some (norm_expr_locs value)),
+          norm_stmt_list_locs body,
+          None )
+  | ArrayDeclare (name, typ, size, init, body, _) ->
+      ArrayDeclare
+        ( name,
+          typ,
+          Option.map norm_expr_locs size,
+          Option.map (fun exprs -> List.map norm_expr_locs exprs) init,
+          norm_stmt_list_locs body,
+          None )
   | If (cond, thn, _) -> If (norm_expr_locs cond, norm_stmt_list_locs thn, None)
   | IfElse (cond, thn, els, _) ->
       IfElse
@@ -31,8 +59,6 @@ and norm_stmt_locs (stmt : stmt) : stmt =
   | While (cond, body, _) ->
       While (norm_expr_locs cond, norm_stmt_list_locs body, None)
   | PrintDec (e, _) -> PrintDec (norm_expr_locs e, None)
-  | Inr (name, _) -> Inr (name, None)
-  | Dcr (name, _) -> Dcr (name, None)
   | Exit (Some e, _) -> Exit (Some (norm_expr_locs e), None)
   | Exit (None, _) -> Exit (None, None)
   | Assert (e, _) -> Assert (e, None)
@@ -58,11 +84,12 @@ and norm_prog_locs (pgrm : prog) : prog =
   }
 
 (* [assert_prog_eq] asserts that an actual program equals an expected program,
-  and uses pretty printing to display a message if they are not. *)
+   and uses pretty printing to display a message if they are not. *)
 let assert_prog_eq (expected : prog) (actual : prog) =
-  assert_equal expected actual ~printer:pretty_print
+  assert_equal (norm_prog_locs expected) (norm_prog_locs actual)
+    ~printer:pretty_print
 
-(* [parse_norm] is a wrapper around parsing a source string and normalizing its 
-  source locations. *)
+(* [parse_norm] is a wrapper around parsing a source string and normalizing its
+   source locations. *)
 let parse_norm (source : string) : prog =
   source |> Compiler.Parser.parse |> norm_prog_locs

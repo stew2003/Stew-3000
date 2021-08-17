@@ -1,6 +1,14 @@
 open Util.Srcloc
 
-type ty = Void | Int
+(* Types:
+    - void: for function return types
+    - int: 8 bit signed integer (two's complement)
+    - unsigned: 8 bit unsigned integer
+    - char: 8 bit ASCII character
+    - pointer: 8 bit memory address
+    - any: used internally by the compiler to facilitate typechecking
+*)
+type ty = Void | Int | Unsigned | Char | Pointer of ty | Any
 
 type un_op = BNot | LNot
 
@@ -19,31 +27,43 @@ type bin_op =
   | Lt
   | Gte
   | Lte
+  | UnsignedGt
+  | UnsignedLt
+  | UnsignedGte
+  | UnsignedLte
   | Eq
   | Neq
 
 type expr =
-  | Num of int * maybe_loc
+  | NumLiteral of int * maybe_loc
+  | CharLiteral of char * maybe_loc
   | Var of string * maybe_loc
   | UnOp of un_op * expr * maybe_loc
   | BinOp of bin_op * expr * expr * maybe_loc
   | Call of string * expr list * maybe_loc
+  | Deref of expr * maybe_loc
+  | AddrOf of expr * maybe_loc
+  | Cast of ty * expr * maybe_loc
+  | Assign of expr * expr * maybe_loc
+  | PostfixInr of expr * maybe_loc
+  | PostfixDcr of expr * maybe_loc
+  (* Desugared expressions: *)
+  | SPrefixInr of expr * maybe_loc
+  | SPrefixDcr of expr * maybe_loc
+  | SUpdate of expr * expr * bin_op * maybe_loc
+  | SSubscript of expr * expr * maybe_loc
 
 type stmt =
-  | Let of string * ty * expr * stmt list * maybe_loc
-  | Assign of string * expr * maybe_loc
+  | Declare of string * ty * expr option * stmt list * maybe_loc
+  | ArrayDeclare of
+      string * ty * expr option * expr list option * stmt list * maybe_loc
   | If of expr * stmt list * maybe_loc
   | IfElse of expr * stmt list * stmt list * maybe_loc
+  | While of expr * stmt list * maybe_loc
   | Block of stmt list * maybe_loc
   | Return of expr option * maybe_loc
   | ExprStmt of expr * maybe_loc
-  | While of expr * stmt list * maybe_loc
-  (* sends to decimal display *)
   | PrintDec of expr * maybe_loc
-  (* Inr/Dcr mutate a variable, incrementing/decrementing *)
-  | Inr of string * maybe_loc
-  | Dcr of string * maybe_loc
-  (* Halts program, emitting expr to decimal display *)
   | Exit of expr option * maybe_loc
   | Assert of expr * maybe_loc
 
@@ -74,8 +94,14 @@ let lookup (name : string) (defns : func_defn list) : func_defn option =
   List.find_opt (fun (defn : func_defn) -> defn.name = name) defns
 
 (* [string_of_ty] turns a type into a string *)
-let string_of_ty (t : ty) : string =
-  match t with Void -> "void" | Int -> "int"
+let rec string_of_ty (t : ty) : string =
+  match t with
+  | Void -> "void"
+  | Int -> "int"
+  | Unsigned -> "unsigned"
+  | Char -> "char"
+  | Pointer typ -> Printf.sprintf "%s*" (string_of_ty typ)
+  | Any -> "any"
 
 (* [describe_bin_op] returns a description of a binary operator *)
 let describe_bin_op (op : bin_op) : string =
@@ -94,6 +120,10 @@ let describe_bin_op (op : bin_op) : string =
   | Lt -> "less than"
   | Gte -> "greater than or equal"
   | Lte -> "less than or equal"
+  | UnsignedGt -> "unsigned greater than"
+  | UnsignedLt -> "unsigned less than"
+  | UnsignedGte -> "unsigned greater than or equal"
+  | UnsignedLte -> "unsigned less than or equal"
   | Eq -> "equality"
   | Neq -> "inequality"
 
@@ -104,20 +134,58 @@ let describe_un_op (op : un_op) : string =
 (* [describe_expr] returns an abstract description of a given expression. *)
 let describe_expr (e : expr) : string =
   match e with
-  | Num _ -> "number"
+  | NumLiteral _ -> "number"
+  | CharLiteral _ -> "character"
   | Var _ -> "variable"
   | UnOp (op, _, _) -> describe_un_op op
   | BinOp (op, _, _, _) -> describe_bin_op op
   | Call _ -> "function call"
+  | Deref _ -> "dereference"
+  | AddrOf _ -> "address-of"
+  | Cast _ -> "cast"
+  | Assign _ -> "assignment"
+  | PostfixInr _ -> "postfix increment"
+  | PostfixDcr _ -> "postfix decrement"
+  | SPrefixInr _ -> "prefix increment"
+  | SPrefixDcr _ -> "prefix decrement"
+  | SUpdate _ -> "update"
+  | SSubscript _ -> "subscript"
 
 (* [loc_from_expr] extracts the source location from an expression *)
 let loc_from_expr (exp : expr) : maybe_loc =
   match exp with
-  | Num (_, loc)
+  | NumLiteral (_, loc)
+  | CharLiteral (_, loc)
   | Var (_, loc)
   | UnOp (_, _, loc)
   | BinOp (_, _, _, loc)
-  | Call (_, _, loc) ->
+  | Call (_, _, loc)
+  | Deref (_, loc)
+  | AddrOf (_, loc)
+  | Cast (_, _, loc)
+  | Assign (_, _, loc)
+  | PostfixInr (_, loc)
+  | PostfixDcr (_, loc)
+  | SPrefixInr (_, loc)
+  | SPrefixDcr (_, loc)
+  | SSubscript (_, _, loc)
+  | SUpdate (_, _, _, loc) ->
+      loc
+
+(* [loc_from_stmt] extracts the source location from a statement. *)
+let loc_from_stmt (stmt : stmt) : maybe_loc =
+  match stmt with
+  | Declare (_, _, _, _, loc)
+  | ArrayDeclare (_, _, _, _, _, loc)
+  | If (_, _, loc)
+  | IfElse (_, _, _, loc)
+  | While (_, _, loc)
+  | Block (_, loc)
+  | Return (_, loc)
+  | ExprStmt (_, loc)
+  | PrintDec (_, loc)
+  | Exit (_, loc)
+  | Assert (_, loc) ->
       loc
 
 (* [check_for_expr] determines if the program contains an
@@ -135,16 +203,35 @@ let check_for_expr (pgrm : prog) (pred : expr -> bool) : bool =
     | Call (_, args, _) ->
         List.map (fun arg -> check_expr arg pred) args
         |> List.fold_left ( || ) false
-    | Num _ | Var _ -> false
+    | Deref (e, _) -> check_expr e pred
+    | AddrOf (e, _) -> check_expr e pred
+    | Cast (_, e, _) -> check_expr e pred
+    | Assign (dest, e, _) -> check_expr dest pred || check_expr e pred
+    | PostfixInr (e, _) -> check_expr e pred
+    | PostfixDcr (e, _) -> check_expr e pred
+    | SPrefixInr (e, _) -> check_expr e pred
+    | SPrefixDcr (e, _) -> check_expr e pred
+    | SUpdate (dest, amount, _, _) ->
+        check_expr dest pred || check_expr amount pred
+    | SSubscript (arr, idx, _) -> check_expr arr pred || check_expr idx pred
+    | NumLiteral _ | CharLiteral _ | Var _ -> false
   (* [check_stmt] determines if the given statement contains an
      expression that satisfies the given predicate *)
   and check_stmt (stmt : stmt) (pred : expr -> bool) : bool =
     (* NOTE: We are checking for sub-expressions here so we
        only examine statements that contain sub-expressions. *)
     match stmt with
-    | Let (_, _, value, body, _) ->
-        check_expr value pred || check_stmt_list body pred
-    | Assign (_, value, _) -> check_expr value pred
+    | Declare (_, _, value, body, _) ->
+        (match value with None -> false | Some value -> check_expr value pred)
+        || check_stmt_list body pred
+    | ArrayDeclare (_, _, size, init, body, _) ->
+        (match size with None -> false | Some size -> check_expr size pred)
+        || (match init with
+           | None -> false
+           | Some exprs ->
+               List.map (fun e -> check_expr e pred) exprs
+               |> List.fold_left ( || ) false)
+        || check_stmt_list body pred
     | If (cond, thn, _) -> check_expr cond pred || check_stmt_list thn pred
     | IfElse (cond, thn, els, _) ->
         check_expr cond pred || check_stmt_list thn pred
@@ -156,7 +243,7 @@ let check_for_expr (pgrm : prog) (pred : expr -> bool) : bool =
     | PrintDec (value, _) -> check_expr value pred
     | Exit (Some e, _) -> check_expr e pred
     | Assert (e, _) -> check_expr e pred
-    | Return _ | Exit _ | Inr _ | Dcr _ -> false
+    | Return _ | Exit _ -> false
   (* [check_stmt_list] determines if the given statement list
      contains an expression that satisfies the predicate *)
   and check_stmt_list (stmts : stmt list) (pred : expr -> bool) : bool =
@@ -180,15 +267,14 @@ let check_for_stmt (pgrm : prog) (pred : stmt -> bool) : bool =
     (* NOTE: We are checking for sub-statements here so only
        check the statements that have them. *)
     match stmt with
-    | Let (_, _, _, body, _) -> check_stmt_list body pred
+    | Declare (_, _, _, body, _) -> check_stmt_list body pred
+    | ArrayDeclare (_, _, _, _, body, _) -> check_stmt_list body pred
     | If (_, thn, _) -> check_stmt_list thn pred
     | IfElse (_, thn, els, _) ->
         check_stmt_list thn pred || check_stmt_list els pred
     | Block (stmts, _) -> check_stmt_list stmts pred
     | While (_, body, _) -> check_stmt_list body pred
-    | Assign _ | Return _ | ExprStmt _ | PrintDec _ | Inr _ | Dcr _ | Exit _
-    | Assert _ ->
-        false
+    | Return _ | ExprStmt _ | PrintDec _ | Exit _ | Assert _ -> false
   (* [check_stmt_list] checks a list of statements for one that satisfies
      the given predicate *)
   and check_stmt_list (stmts : stmt list) (pred : stmt -> bool) : bool =

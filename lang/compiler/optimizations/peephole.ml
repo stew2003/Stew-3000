@@ -9,6 +9,7 @@ let rec eliminate_nops (instrs : instr list) : instr list =
   | Ani (-1, _, _) :: rest
   | Ani (255, _, _) :: rest
   | Ori (0, _, _) :: rest
+  | Xri (0, _, _) :: rest
   | Nop _ :: rest ->
       eliminate_nops rest
   | (Sts (reg, imm, _) as store) :: Lds (same_imm, same_reg, _) :: rest
@@ -18,6 +19,8 @@ let rec eliminate_nops (instrs : instr list) : instr list =
       eliminate_nops rest
   | Dcr (reg, _) :: Inr (same_reg, _) :: rest when reg = same_reg ->
       eliminate_nops rest
+  | Xri (255, reg, loc) :: rest | Xri (-1, reg, loc) :: rest ->
+      Not (reg, loc) :: eliminate_nops rest
   | first :: rest -> first :: eliminate_nops rest
 
 (* [replace_with_smaller] replaces single instructions with

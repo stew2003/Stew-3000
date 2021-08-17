@@ -38,7 +38,7 @@ Below is documentation for the 3000's microinstructions, as well as the full ins
 | `TS` | Select Temp-register as other operand or all 0s |
 | `CAR` | Set Carry/Borrow for addition and subtraction |
 | `SUB` | SUB ALU operation (add but with 1s compliment (2s compliment comes from setting CAR line)) |
-| `PGM` | Accessing program or instruction memory |
+| `STK` | Accessing stack or instruction memory |
 | `SO` | Stack pointer out |
 | `SI` | Stack pointer in |
 
@@ -47,156 +47,236 @@ Below is documentation for the 3000's microinstructions, as well as the full ins
 
 Note: instructions listed with opcode N/A describe the behavior of a whole class of instructions, which have specific opcodes that correspond to the use of specific registers.
 
+TODO: (stewart) implement the new instructions. Then we can unbold them here and add the opcodes in.
 
 | Instruction | Opcode | Description |
 | ------------- | ------------- | ------------- |
 | `add $r1, $r2` | N/A | $r2 = $r2 + $r1 |
-|  `add a, a` | `0x00` |
-|  `add a, b` | `0x01` |
-|  `add a, c` | `0x02` |
-|  `add a, sp` | `0x03` |
-|  `add b, a` | `0x04` |
-|  `add b, b` | `0x05` |
-|  `add b, c` | `0x06` |
-|  `add b, sp` | `0x07` |
-|  `add c, a` | `0x08` |
-|  `add c, b` | `0x09` |
-|  `add c, c` | `0x0a` |
-|  `add c, sp` | `0x0b` |
+|  `add a, a` | `OPCODE TBD` |
+|  `add a, b` | `OPCODE TBD` |
+|  `add a, c` | `OPCODE TBD` |
+|  `add a, sp` | `OPCODE TBD` |
+|  `add b, a` | `OPCODE TBD` |
+|  `add b, b` | `OPCODE TBD` |
+|  `add b, c` | `OPCODE TBD` |
+|  `add b, sp` | `OPCODE TBD` |
+|  `add c, a` | `OPCODE TBD` |
+|  `add c, b` | `OPCODE TBD` |
+|  `add c, c` | `OPCODE TBD` |
+|  `add c, sp` | `OPCODE TBD` |
 | `addi byte, $r1` | N/A | $r1 = $r1 + byte |
-|  `addi byte, a` | `0x0c` |
-|  `addi byte, b` | `0x0d` |
-|  `addi byte, c` | `0x0e` |
-|  `addi byte, sp` | `0x0f` |
+|  `addi byte, a` | `OPCODE TBD` |
+|  `addi byte, b` | `OPCODE TBD` |
+|  `addi byte, c` | `OPCODE TBD` |
+|  `addi byte, sp` | `OPCODE TBD` |
+| `addc $r1, $r2` | N/A | $r2 = $r2 + $r1 + CF |
+|  `addc a, a` | `OPCODE TBD` |
+|  `addc a, b` | `OPCODE TBD` |
+|  `addc a, c` | `OPCODE TBD` |
+|  `addc a, sp` | `OPCODE TBD` |
+|  `addc b, a` | `OPCODE TBD` |
+|  `addc b, b` | `OPCODE TBD` |
+|  `addc b, c` | `OPCODE TBD` |
+|  `addc b, sp` | `OPCODE TBD` |
+|  `addc c, a` | `OPCODE TBD` |
+|  `addc c, b` | `OPCODE TBD` |
+|  `addc c, c` | `OPCODE TBD` |
+|  `addc c, sp` | `OPCODE TBD` |
+| `addci byte, $r1` | N/A | $r1 = $r1 + byte + CF |
+|  `addci byte, a` | `OPCODE TBD` |
+|  `addci byte, b` | `OPCODE TBD` |
+|  `addci byte, c` | `OPCODE TBD` |
+|  `addci byte, sp` | `OPCODE TBD` |
 | `sub $r1, $r2` | N/A | $r2 = $r2 - $r1 |
-|  `sub b, a` | `0x10` |
-|  `sub c, a` | `0x11` |
-|  `sub a, b` | `0x12` |
-|  `sub c, b` | `0x13` |
-|  `sub a, c` | `0x14` |
-|  `sub b, c` | `0x15` |
-|  `sub a, sp` | `0x16` |
-|  `sub b, sp` | `0x17` |
-|  `sub c, sp` | `0x18` |
+|  `sub b, a` | `OPCODE TBD` |
+|  `sub c, a` | `OPCODE TBD` |
+|  `sub a, b` | `OPCODE TBD` |
+|  `sub c, b` | `OPCODE TBD` |
+|  `sub a, c` | `OPCODE TBD` |
+|  `sub b, c` | `OPCODE TBD` |
+|  `sub a, sp` | `OPCODE TBD` |
+|  `sub b, sp` | `OPCODE TBD` |
+|  `sub c, sp` | `OPCODE TBD` |
 | `subi byte, $r1` | N/A | $r1 = $r1 - byte |
-|  `subi byte, a` | `0x19` |
-|  `subi byte, b` | `0x1a` |
-|  `subi byte, c` | `0x1b` |
-|  `subi byte, sp` | `0x1c` |
+|  `subi byte, a` | `OPCODE TBD` |
+|  `subi byte, b` | `OPCODE TBD` |
+|  `subi byte, c` | `OPCODE TBD` |
+|  `subi byte, sp` | `OPCODE TBD` |
+| `subb $r1, $r2` | N/A | $r2 = $r2 - $r1 - CF|
+|  `subb b, a` | `OPCODE TBD` |
+|  `subb c, a` | `OPCODE TBD` |
+|  `subb a, b` | `OPCODE TBD` |
+|  `subb c, b` | `OPCODE TBD` |
+|  `subb a, c` | `OPCODE TBD` |
+|  `subb b, c` | `OPCODE TBD` |
+|  `subb a, sp` | `OPCODE TBD` |
+|  `subb b, sp` | `OPCODE TBD` |
+|  `subb c, sp` | `OPCODE TBD` |
+| `subbi byte, $r1` | N/A | $r1 = $r1 - byte - CF|
+|  `subbi byte, a` | `OPCODE TBD` |
+|  `subbi byte, b` | `OPCODE TBD` |
+|  `subbi byte, c` | `OPCODE TBD` |
+|  `subbi byte, sp` | `OPCODE TBD` |
 | `and $r1, $r2` | N/A | $r2 = $r2 & $r1 |
-|  `and b, a` | `0x1d` |
-|  `and c, a` | `0x1e` |
-|  `and a, b` | `0x1f` |
-|  `and c, b` | `0x20` |
-|  `and a, c` | `0x21` |
-|  `and b, c` | `0x22` |
+|  `and b, a` | `OPCODE TBD` |
+|  `and c, a` | `OPCODE TBD` |
+|  `and a, b` | `OPCODE TBD` |
+|  `and c, b` | `OPCODE TBD` |
+|  `and a, c` | `OPCODE TBD` |
+|  `and b, c` | `OPCODE TBD` |
 | `ani byte, $r1` | N/A | $r1 = $r1 & byte |
-|  `ani byte, a` | `0x23` |
-|  `ani byte, b` | `0x24` |
-|  `ani byte, c` | `0x25` |
+|  `ani byte, a` | `OPCODE TBD` |
+|  `ani byte, b` | `OPCODE TBD` |
+|  `ani byte, c` | `OPCODE TBD` |
 | `or $r1, $r2` | N/A | $r2 = $r2 | $r1 |
-|  `or b, a` | `0x26` |
-|  `or c, a` | `0x27` |
-|  `or a, b` | `0x28` |
-|  `or c, b` | `0x29` |
-|  `or a, c` | `0x2a` |
-|  `or b, c` | `0x2b` |
+|  `or b, a` | `OPCODE TBD` |
+|  `or c, a` | `OPCODE TBD` |
+|  `or a, b` | `OPCODE TBD` |
+|  `or c, b` | `OPCODE TBD` |
+|  `or a, c` | `OPCODE TBD` |
+|  `or b, c` | `OPCODE TBD` |
 | `ori byte, $r1` | N/A | $r1 = $r1 | byte |
-|  `ori byte, a` | `0x2c` |
-|  `ori byte, b` | `0x2d` |
-|  `ori byte, c` | `0x2e` |
+|  `ori byte, a` | `OPCODE TBD` |
+|  `ori byte, b` | `OPCODE TBD` |
+|  `ori byte, c` | `OPCODE TBD` |
 | `xor $r1, $r2` | N/A | $r2 = $r2 ^ $r1 |
-|  `xor b, a` | `0x2f` |
-|  `xor c, a` | `0x30` |
-|  `xor a, b` | `0x31` |
-|  `xor c, b` | `0x32` |
-|  `xor a, c` | `0x33` |
-|  `xor b, c` | `0x34` |
+|  `xor b, a` | `OPCODE TBD` |
+|  `xor c, a` | `OPCODE TBD` |
+|  `xor a, b` | `OPCODE TBD` |
+|  `xor c, b` | `OPCODE TBD` |
+|  `xor a, c` | `OPCODE TBD` |
+|  `xor b, c` | `OPCODE TBD` |
 | `xri byte, $r1` | N/A | $r1 = $r1 ^ byte |
-|  `xri byte, a` | `0x35` |
-|  `xri byte, b` | `0x36` |
-|  `xri byte, c` | `0x37` |
+|  `xri byte, a` | `OPCODE TBD` |
+|  `xri byte, b` | `OPCODE TBD` |
+|  `xri byte, c` | `OPCODE TBD` |
 | `not $r1` | N/A | $r1 = ~$r1 |
-|  `not a` | `0x38` |
-|  `not b` | `0x39` |
-|  `not c` | `0x3a` |
+|  `not a` | `OPCODE TBD` |
+|  `not b` | `OPCODE TBD` |
+|  `not c` | `OPCODE TBD` |
 | `inr $r1` | N/A | $r1 = $r1 + 1 |
-|  `inr a` | `0x3b` |
-|  `inr b` | `0x3c` |
-|  `inr c` | `0x3d` |
-|  `inr sp` | `0x3e` |
+|  `inr a` | `OPCODE TBD` |
+|  `inr b` | `OPCODE TBD` |
+|  `inr c` | `OPCODE TBD` |
+|  `inr sp` | `OPCODE TBD` |
+| **`inr2 $r1`** | N/A | $r1 = $r1 + 2 |
+|  **`inr2 a`** | `OPCODE TBD` |
+|  **`inr2 b`** | `OPCODE TBD` |
+|  **`inr2 c`** | `OPCODE TBD` |
+|  **`inr2 sp`** | `OPCODE TBD` |
+| **`inr3 $r1`** | N/A | $r1 = $r1 + 3 |
+|  **`inr3 a`** | `OPCODE TBD` |
+|  **`inr3 b`** | `OPCODE TBD` |
+|  **`inr3 c`** | `OPCODE TBD` |
+|  **`inr3 sp`** | `OPCODE TBD` |
 | `dcr $r1` | N/A | $r1 = $r1 - 1 |
-|  `dcr a` | `0x3f` |
-|  `dcr b` | `0x40` |
-|  `dcr c` | `0x41` |
-|  `dcr sp` | `0x42` |
+|  `dcr a` | `OPCODE TBD` |
+|  `dcr b` | `OPCODE TBD` |
+|  `dcr c` | `OPCODE TBD` |
+|  `dcr sp` | `OPCODE TBD` |
+| **`dcr2 $r1`** | N/A | $r1 = $r1 - 2 |
+|  **`dcr2 a`** | `OPCODE TBD` |
+|  **`dcr2 b`** | `OPCODE TBD` |
+|  **`dcr2 c`** | `OPCODE TBD` |
+|  **`dcr2 sp`** | `OPCODE TBD` |
+| **`dcr3 $r1`** | N/A | $r1 = $r1 - 3 |
+|  **`dcr3 a`** | `OPCODE TBD` |
+|  **`dcr3 b`** | `OPCODE TBD` |
+|  **`dcr3 c`** | `OPCODE TBD` |
+|  **`dcr3 sp`** | `OPCODE TBD` |
 | `mov $r1, $r2` | N/A | $r2 = $r1 |
-|  `mov a, b` | `0x43` |
-|  `mov a, c` | `0x44` |
-|  `mov b, a` | `0x45` |
-|  `mov b, c` | `0x46` |
-|  `mov c, a` | `0x47` |
-|  `mov c, b` | `0x48` |
+|  `mov a, b` | `OPCODE TBD` |
+|  `mov a, c` | `OPCODE TBD` |
+|  `mov b, a` | `OPCODE TBD` |
+|  `mov b, c` | `OPCODE TBD` |
+|  `mov c, a` | `OPCODE TBD` |
+|  `mov c, b` | `OPCODE TBD` |
+|  **`mov z, a`** | `OPCODE TBD` |
+|  **`mov z, b`** | `OPCODE TBD` |
+|  **`mov z, c`** | `OPCODE TBD` |
+|  **`mov sp, a`** | `OPCODE TBD` |
+|  **`mov sp, b`** | `OPCODE TBD` |
+|  **`mov sp, c`** | `OPCODE TBD` |
 | `mvi byte, $r1` | N/A | $r1 = byte |
-|  `mvi byte, a` | `0x49` |
-|  `mvi byte, b` | `0x4a` |
-|  `mvi byte, c` | `0x4b` |
+|  `mvi byte, a` | `OPCODE TBD` |
+|  `mvi byte, b` | `OPCODE TBD` |
+|  `mvi byte, c` | `OPCODE TBD` |
 | `ld $r1, $r2` | N/A | $r2 = RAM[$r1] |
-|  `ld a, a` | `0x4c` |
-|  `ld b, a` | `0x4d` |
-|  `ld c, a` | `0x4e` |
-|  `ld a, b` | `0x4f` |
-|  `ld b, b` | `0x50` |
-|  `ld c, b` | `0x51` |
-|  `ld a, c` | `0x52` |
-|  `ld b, c` | `0x53` |
-|  `ld c, c` | `0x54` |
+|  `ld a, a` | `OPCODE TBD` |
+|  `ld b, a` | `OPCODE TBD` |
+|  `ld c, a` | `OPCODE TBD` |
+|  `ld a, b` | `OPCODE TBD` |
+|  `ld b, b` | `OPCODE TBD` |
+|  `ld c, b` | `OPCODE TBD` |
+|  `ld a, c` | `OPCODE TBD` |
+|  `ld b, c` | `OPCODE TBD` |
+|  `ld c, c` | `OPCODE TBD` |
 | `st $r1, $r2` | N/A | RAM[$r2] = $r1 |
-|  `st a, a` | `0x55` |
-|  `st a, b` | `0x56` |
-|  `st a, c` | `0x57` |
-|  `st b, a` | `0x58` |
-|  `st b, b` | `0x59` |
-|  `st b, c` | `0x5a` |
-|  `st c, a` | `0x5b` |
-|  `st c, b` | `0x5c` |
-|  `st c, c` | `0x5d` |
+|  `st a, a` | `OPCODE TBD` |
+|  `st a, b` | `OPCODE TBD` |
+|  `st a, c` | `OPCODE TBD` |
+|  `st b, a` | `OPCODE TBD` |
+|  `st b, b` | `OPCODE TBD` |
+|  `st b, c` | `OPCODE TBD` |
+|  `st c, a` | `OPCODE TBD` |
+|  `st c, b` | `OPCODE TBD` |
+|  `st c, c` | `OPCODE TBD` |
+|  **`st z, a`** | `OPCODE TBD` |
+|  **`st z, b`** | `OPCODE TBD` |
+|  **`st z, c`** | `OPCODE TBD` |
 | `lds byte, $r1` | N/A | $r1 = RAM[sp + byte] |
-|  `lds byte, a` | `0x5e` |
-|  `lds byte, b` | `0x5f` |
-|  `lds byte, c` | `0x60` |
+|  `lds byte, a` | `OPCODE TBD` |
+|  `lds byte, b` | `OPCODE TBD` |
+|  `lds byte, c` | `OPCODE TBD` |
 | `sts $r1, byte` | N/A | RAM[sp + byte] = $r1 |
-|  `sts a, byte` | `0x61` |
-|  `sts b, byte` | `0x62` |
-|  `sts c, byte` | `0x63` |
+|  `sts a, byte` | `OPCODE TBD` |
+|  `sts b, byte` | `OPCODE TBD` |
+|  `sts c, byte` | `OPCODE TBD` |
+|  **`sts z, byte`** | `OPCODE TBD` |
+|  **`stsi byte_1, byte_2`** | `OPCODE TBD` | RAM [sp + byte_2] = byte_1
 | `cmp $r1, $r2` | N/A | Perform $r1 - $r2 and set flags |
-|  `cmp a, b` | `0x64` |
-|  `cmp a, c` | `0x65` |
-|  `cmp b, a` | `0x66` |
-|  `cmp b, c` | `0x67` |
-|  `cmp c, a` | `0x68` |
-|  `cmp c, b` | `0x69` |
+|  `cmp a, b` | `OPCODE TBD` |
+|  `cmp a, c` | `OPCODE TBD` |
+|  **`cmp a, z`** | `OPCODE TBD` |
+|  `cmp b, a` | `OPCODE TBD` |
+|  `cmp b, c` | `OPCODE TBD` |
+|  **`cmp b, z`** | `OPCODE TBD` |
+|  `cmp c, a` | `OPCODE TBD` |
+|  `cmp c, b` | `OPCODE TBD` |
+|  **`cmp c, z`** | `OPCODE TBD` |
+|  **`cmp z, a`** | `OPCODE TBD` |
+|  **`cmp z, b`** | `OPCODE TBD` |
+|  **`cmp z, c`** | `OPCODE TBD` |
 | `cmpi byte/$r1, $r1/byte` | N/A | Perform byte/$r1 - $r1/byte and set flags |
-|  `cmpi a, byte` | `0x6a` |
-|  `cmpi byte, a` | `0x6b` |
-|  `cmpi b, byte` | `0x6c` |
-|  `cmpi byte, b` | `0x6d` |
-|  `cmpi c, byte` | `0x6e` |
-|  `cmpi byte, c` | `0x6f` |
-| `jmp byte` | `0x70` | PC = byte |
-| `je/jz byte` | `0x71` | if ZF, PC = byte |
-| `jne/jnz byte` | `0x72` | if ~ZF, PC = byte |
-| `jg/jnle byte` | `0x73` | if ~(SF ^ OF) & ~ZF, PC = byte |
-| `jge/jnl byte` | `0x74` | if ~(SF ^ OF), PC = byte |
-| `jl/jnge byte` | `0x75` | if SF ^ OF, PC = byte |
-| `jle/jng byte` | `0x76` | if (SF ^ OF) \| ZF, PC = byte |
-| `call byte` |`0x77` | sp += 1, PC += 1, Stack[sp] = PC, PC = byte |
-| `ret` | `0x78` | PC = Stack[sp], sp -= 1 |
+|  `cmpi a, byte` | `OPCODE TBD` |
+|  `cmpi byte, a` | `OPCODE TBD` |
+|  `cmpi b, byte` | `OPCODE TBD` |
+|  `cmpi byte, b` | `OPCODE TBD` |
+|  `cmpi c, byte` | `OPCODE TBD` |
+|  `cmpi byte, c` | `OPCODE TBD` |
+| `jmp byte` | `OPCODE TBD` | PC = byte |
+| `je byte` | `OPCODE TBD` | if ZF, PC = byte |
+| `jne byte` | `OPCODE TBD` | if ~ZF, PC = byte |
+| `jg byte` | `OPCODE TBD` | if ~(SF ^ OF) & ~ZF, PC = byte |
+| `jge byte` | `OPCODE TBD` | if ~(SF ^ OF), PC = byte |
+| `jl byte` | `OPCODE TBD` | if (SF ^ OF), PC = byte |
+| `jle byte` | `OPCODE TBD` | if (SF ^ OF) \| ZF, PC = byte |
+|  **`ja byte`** | `OPCODE TBD` | if (~CF & ~ZF), PC = byte |
+|  **`jae byte`** | `OPCODE TBD` | if (~CF), PC = byte |
+|  **`jb byte`** | `OPCODE TBD` | if (CF), PC = byte |
+|  **`jbe byte`** | `OPCODE TBD` | if (CF \| ZF), PC = byte|
+| `call byte` |`OPCODE TBD` | sp += 1, PC += 1, Stack[sp] = PC, PC = byte |
+| `ret` | `OPCODE TBD` | PC = Stack[sp], sp -= 1 |
 | `out $r1` | N/A | Send $r1 to decimal display |
-|  `out a` | `0x79` |
-|  `out b` | `0x7a` |
-|  `out c` | `0x7b` |
-| `dic byte` | `0x7c` | Send command byte to LCD |
-| `did byte` | `0x7d` | Send data byte to LCD |
-| `hlt` | `0x7e` | Halt |
-| `nop` | `0x7f` | No operation |
+|  `out a` | `OPCODE TBD` |
+|  `out b` | `OPCODE TBD` |
+|  `out c` | `OPCODE TBD` |
+|  **`outi byte`** | `OPCODE TBD` | Send byte to decimal display
+| `dic byte` | `OPCODE TBD` | Send command byte to LCD |
+| `did byte` | `OPCODE TBD` | Send data byte to LCD |
+|  **`dd $r1`** | N/A | Send $r1 to LCD
+|  **`dd a`** | `OPCODE TBD` |
+|  **`dd b`** | `OPCODE TBD` |
+|  **`dd c`** | `OPCODE TBD` |
+| `hlt` | `OPCODE TBD` | Halt |
+| `nop` | `OPCODE TBD` | No operation |

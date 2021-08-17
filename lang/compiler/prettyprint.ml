@@ -12,35 +12,42 @@ let pretty_print_un_op ?(is_nested_in_op = false) (op : un_op)
     (if is_nested_in_op then "%s%s" else "%s(%s)")
     (pretty_un_op op) pretty_operand
 
-(* [pretty_print_bin_op] converts a binary operator into a pretty-printed string. *)
+(* [pretty_bin_op] converts a bin_op into its surface syntax form *)
+let pretty_bin_op = function
+  | Plus -> "+"
+  | Minus -> "-"
+  | Mult -> "*"
+  | Div -> "/"
+  | Mod -> "%"
+  | BAnd -> "&"
+  | BOr -> "|"
+  | BXor -> "^"
+  | Gt | UnsignedGt -> ">"
+  | Lt | UnsignedLt -> "<"
+  | Gte | UnsignedGte -> ">="
+  | Lte | UnsignedLte -> "<="
+  | Eq -> "=="
+  | Neq -> "!="
+  | LAnd -> "&&"
+  | LOr -> "||"
+
+(* [wrap_if_nested] wraps a string in parentheses if it is nested in
+   another expression *)
+let wrap_if_nested (s : string) (nested : bool) : string =
+  sprintf (if nested then "(%s)" else "%s") s
+
+(* [pretty_print_bin_op] converts a binary operator expression into a pretty-printed string. *)
 let pretty_print_bin_op ?(is_nested_in_op = false) (op : bin_op)
     (pretty_left : string) (pretty_right : string) : string =
-  let pretty_bin_op = function
-    | Plus -> "+"
-    | Minus -> "-"
-    | Mult -> "*"
-    | Div -> "/"
-    | Mod -> "%"
-    | BAnd -> "&"
-    | BOr -> "|"
-    | BXor -> "^"
-    | Gt -> ">"
-    | Lt -> "<"
-    | Gte -> ">="
-    | Lte -> "<="
-    | Eq -> "=="
-    | Neq -> "!="
-    | LAnd -> "&&"
-    | LOr -> "||"
-  in
-  sprintf
-    (if is_nested_in_op then "(%s)" else "%s")
+  wrap_if_nested
     (sprintf "%s %s %s" pretty_left (pretty_bin_op op) pretty_right)
+    is_nested_in_op
 
 (* [pretty_print_expr] converts an expression into a pretty-printed string. *)
 let rec pretty_print_expr ?(is_nested_in_op = false) (exp : expr) : string =
   match exp with
-  | Num (n, _) -> sprintf "%d" n
+  | NumLiteral (n, _) -> sprintf "%d" n
+  | CharLiteral (c, _) -> sprintf "'%c'" c
   | Var (name, _) -> name
   | UnOp (op, operand, _) ->
       pretty_print_un_op op (pretty_print_expr operand ~is_nested_in_op:true)
@@ -52,15 +59,60 @@ let rec pretty_print_expr ?(is_nested_in_op = false) (exp : expr) : string =
   | Call (name, args, _) ->
       sprintf "%s(%s)" name
         (List.map pretty_print_expr args |> String.concat ", ")
+  | Deref (e, _) -> sprintf "*%s" (pretty_print_expr ~is_nested_in_op:true e)
+  | AddrOf (e, _) -> sprintf "&%s" (pretty_print_expr ~is_nested_in_op:true e)
+  | Cast (typ, e, _) ->
+      sprintf "(%s)%s" (pretty_print_type typ)
+        (pretty_print_expr ~is_nested_in_op:true e)
+  | Assign (dest, expr, _) ->
+      wrap_if_nested
+        (sprintf "%s = %s" (pretty_print_expr dest)
+           (pretty_print_expr ~is_nested_in_op:true expr))
+        is_nested_in_op
+  | PostfixInr (lv, _) ->
+      sprintf "%s++" (pretty_print_expr ~is_nested_in_op:true lv)
+  | PostfixDcr (lv, _) ->
+      sprintf "%s--" (pretty_print_expr ~is_nested_in_op:true lv)
+  | SPrefixInr (lv, _) ->
+      sprintf "++%s" (pretty_print_expr ~is_nested_in_op:true lv)
+  | SPrefixDcr (lv, _) ->
+      sprintf "--%s" (pretty_print_expr ~is_nested_in_op:true lv)
+  | SUpdate (dest, amount, op, _) ->
+      wrap_if_nested
+        (sprintf "%s %s= %s" (pretty_print_expr dest) (pretty_bin_op op)
+           (pretty_print_expr amount))
+        is_nested_in_op
+  | SSubscript (arr, idx, _) ->
+      sprintf "%s[%s]"
+        (pretty_print_expr ~is_nested_in_op:true arr)
+        (pretty_print_expr ~is_nested_in_op:false idx)
 
 (* [pretty_print_stmt] converts a single statement into a pretty-printed string. *)
 and pretty_print_stmt (stmt : stmt) (indent_level : int) : string =
   match stmt with
-  | Let (name, typ, expr, scope, _) ->
-      sprintf "%s %s = %s;\n%s" (pretty_print_type typ) name
-        (pretty_print_expr expr)
+  | Declare (name, typ, expr, scope, _) ->
+      let initialization =
+        match expr with
+        | None -> ""
+        | Some expr ->
+            sprintf " = %s" (pretty_print_expr ~is_nested_in_op:true expr)
+      in
+      sprintf "%s %s%s;\n%s" (pretty_print_type typ) name initialization
         (pretty_print_stmt_list scope indent_level)
-  | Assign (name, expr, _) -> sprintf "%s = %s;" name (pretty_print_expr expr)
+  | ArrayDeclare (name, typ, size, init, scope, _) ->
+      let pretty_size =
+        match size with None -> "" | Some size -> pretty_print_expr size
+      in
+      let pretty_init =
+        match init with
+        | None -> ""
+        | Some exprs ->
+            sprintf " = { %s }"
+              (List.map pretty_print_expr exprs |> String.concat ", ")
+      in
+      sprintf "%s %s[%s]%s;\n%s" (pretty_print_type typ) name pretty_size
+        pretty_init
+        (pretty_print_stmt_list scope indent_level)
   | If (cond, thn, _) ->
       sprintf "if (%s) %s" (pretty_print_expr cond)
         (pretty_print_block thn indent_level)
@@ -78,8 +130,6 @@ and pretty_print_stmt (stmt : stmt) (indent_level : int) : string =
   | Exit (None, _) -> "exit();"
   | ExprStmt (expr, _) -> sprintf "%s;" (pretty_print_expr expr)
   | PrintDec (expr, _) -> sprintf "print(%s);" (pretty_print_expr expr)
-  | Inr (name, _) -> sprintf "%s++;" name
-  | Dcr (name, _) -> sprintf "%s--;" name
   | Assert (expr, _) -> sprintf "assert(%s);" (pretty_print_expr expr)
 
 (* [pretty_print_stmt_list] converts a statement list into a pretty-printed string. *)
@@ -101,8 +151,7 @@ and pretty_print_block (block : stmt list) (indent_level : int) : string =
         (indent indent_level)
 
 (* [pretty_print_type] converts a type into a pretty-printed string. *)
-and pretty_print_type (typ : ty) : string =
-  match typ with Void -> "void" | Int -> "int"
+and pretty_print_type (typ : ty) : string = string_of_ty typ
 
 (* [pretty_print_func_defn] converts a function definition into a pretty-printed string. *)
 and pretty_print_func_defn (defn : func_defn) : string =
