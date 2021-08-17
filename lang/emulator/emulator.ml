@@ -149,7 +149,7 @@ let emulate_instr (ins : instr) (machine : stew_3000) (label_to_addr : int env)
   let emulate_cmp (left_value : int) (right_value : int) =
     (* treat left and right operands as signed 8-bit integers
        NOTE: to subtract right from left, we negate right and add it.
-       This allows the overflow flag to correctly compute determine
+       This allows the overflow flag to correctly determine
        whether or not signed overflow has occurred by assuming the result
        is always from adding two numbers. *)
     let u8_left_value = Numbers.as_8bit_unsigned left_value in

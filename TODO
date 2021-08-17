@@ -25,14 +25,6 @@ Compiler
       [x] eliminate redundant instrs
       [x] replace addi 1, _ / subi 1, _ with inr/dcr
       [x] remove addi 0, subi 0, etc (no effect)
-  [] implement code gen for:
-    [x] char literals 
-    [x] dereference 
-    [x] & (address of)
-    [x] assignment
-    [x] array declarations
-    [] unsigned comparison ops
-    [x] postfix increment / decrement
 
 Docs
   [] document everything
