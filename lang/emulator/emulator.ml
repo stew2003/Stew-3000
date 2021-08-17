@@ -48,6 +48,7 @@ let emulate_instr (ins : instr) (machine : stew_3000) (label_to_addr : int env)
     | A -> machine.a
     | B -> machine.b
     | C -> machine.c
+    | Z -> 0
     | SP -> machine.sp
   in
   (* [store_reg] stores a value in a given register *)
@@ -56,6 +57,8 @@ let emulate_instr (ins : instr) (machine : stew_3000) (label_to_addr : int env)
     | A -> machine.a <- value
     | B -> machine.b <- value
     | C -> machine.c <- value
+    (* zero register doesn't actually exist, can't write to it *)
+    | Z -> ()
     | SP -> machine.sp <- value
   in
   (* [load_stack] retrieves the value on the machine's stack at
@@ -115,14 +118,21 @@ let emulate_instr (ins : instr) (machine : stew_3000) (label_to_addr : int env)
      may overflow, and store in a destination register. If sub is true,
      then the src value will be subtracted from the dest value, otherwise
      added to. *)
-  let emulate_arithmetic (src_value : int) (dest : register) (sub : bool) =
+  let emulate_arithmetic (src_value : int) (dest : register) (sub : bool)
+      (include_carry : bool) =
     (* perform arithmetic with signed 8-bit integers
        NOTE: src value (right operand) is negated if subtraction
        is to be performed. This allows the overflow flag to
        correctly determine its value assuming the result is a sum. *)
     let i8_src_value = if sub then negate_value src_value else src_value in
     let i8_dest_value = Numbers.as_8bit_signed (load_reg dest) in
-    let unchecked_result = i8_dest_value + i8_src_value in
+    let carry_in =
+      if include_carry then
+        let cf = bool_to_int machine.cflag in
+        if sub then negate_value cf else cf
+      else 0
+    in
+    let unchecked_result = i8_dest_value + i8_src_value + carry_in in
     store_reg dest (Numbers.as_8bit_signed unchecked_result);
     set_flags unchecked_result i8_dest_value i8_src_value sub;
     (* emit a warning if overflow occurred *)
@@ -188,12 +198,20 @@ let emulate_instr (ins : instr) (machine : stew_3000) (label_to_addr : int env)
   (* simulate the effects of the instruction*)
   match ins with
   (* arithmetic/logical operators *)
-  | Add (src, dest, _) -> emulate_arithmetic (load_reg src) dest false
-  | Addi (imm, dest, _) -> emulate_arithmetic imm dest false
-  | Sub (src, dest, _) -> emulate_arithmetic (load_reg src) dest true
-  | Subi (imm, dest, _) -> emulate_arithmetic imm dest true
-  | Inr (dest, _) -> emulate_arithmetic 1 dest false
-  | Dcr (dest, _) -> emulate_arithmetic 1 dest true
+  | Add (src, dest, _) -> emulate_arithmetic (load_reg src) dest false false
+  | Addc (src, dest, _) -> emulate_arithmetic (load_reg src) dest false true
+  | Addi (imm, dest, _) -> emulate_arithmetic imm dest false false
+  | Addci (imm, dest, _) -> emulate_arithmetic imm dest false true
+  | Sub (src, dest, _) -> emulate_arithmetic (load_reg src) dest true false
+  | Subb (src, dest, _) -> emulate_arithmetic (load_reg src) dest true true
+  | Subi (imm, dest, _) -> emulate_arithmetic imm dest true false
+  | Subbi (imm, dest, _) -> emulate_arithmetic imm dest true true
+  | Inr (dest, _) -> emulate_arithmetic 1 dest false false
+  | Inr2 (dest, _) -> emulate_arithmetic 2 dest false false
+  | Inr3 (dest, _) -> emulate_arithmetic 3 dest false false
+  | Dcr (dest, _) -> emulate_arithmetic 1 dest true false
+  | Dcr2 (dest, _) -> emulate_arithmetic 2 dest true false
+  | Dcr3 (dest, _) -> emulate_arithmetic 3 dest true false
   | And (src, dest, _) -> emulate_logic (load_reg src) dest ( land )
   | Ani (imm, dest, _) -> emulate_logic imm dest ( land )
   | Or (src, dest, _) -> emulate_logic (load_reg src) dest ( lor )
@@ -213,6 +231,9 @@ let emulate_instr (ins : instr) (machine : stew_3000) (label_to_addr : int env)
   | St (src, dest, _) -> emulate_store src (load_reg dest)
   | Lds (imm, dest, _) -> emulate_load (machine.sp + imm) dest
   | Sts (src, imm, _) -> emulate_store src (machine.sp + imm)
+  | Stsi (value, addr, _) ->
+      store_stack addr value;
+      inc_pc ()
   (* comparisons *)
   | Cmp (left, right, _) -> emulate_cmp (load_reg left) (load_reg right)
   | Cmpi (Imm imm, Reg right, _) -> emulate_cmp imm (load_reg right)
@@ -257,18 +278,31 @@ let emulate_instr (ins : instr) (machine : stew_3000) (label_to_addr : int env)
       let ret_addr = load_stack machine.sp in
       machine.sp <- machine.sp - 1;
       machine.pc <- ret_addr
-  (* miscellaneous *)
   | Hlt _ -> machine.halted <- true
   | Out (src, _) ->
-      (* add value to decimal display history *)
       let src_value = load_reg src in
       machine.dec_disp_history <-
         insert_at_end machine.dec_disp_history src_value;
       Logging.log_output verbosity src_value;
       inc_pc ()
+  | Outi (imm, _) ->
+      machine.dec_disp_history <- insert_at_end machine.dec_disp_history imm;
+      Logging.log_output verbosity imm;
+      inc_pc ()
+  | Dic (imm, _) ->
+      machine.lcd_disp_history <-
+        insert_at_end machine.lcd_disp_history (Command imm);
+      inc_pc ()
+  | Did (imm, _) ->
+      machine.lcd_disp_history <-
+        insert_at_end machine.lcd_disp_history (Data imm);
+      inc_pc ()
+  | Dd (reg, _) ->
+      let reg_value = load_reg reg in
+      machine.lcd_disp_history <-
+        insert_at_end machine.lcd_disp_history (Data reg_value);
+      inc_pc ()
   | Label _ | Nop _ -> inc_pc ()
-  (* XXX: Dic and Did not currently supported *)
-  | Dic _ | Did _ -> inc_pc ()
   | Cmpi (Imm _, Imm _, _) | Cmpi (Reg _, Reg _, _) ->
       raise
         (InternalError

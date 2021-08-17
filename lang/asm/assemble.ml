@@ -38,6 +38,7 @@ let assemble_instr (ins : instr) (label_map : int env) : int list =
   | ValidityError (InvalidInstr ins, maybe_loc) ->
       raise (AssembleError (InvalidInstr ins, maybe_loc)));
 
+  (* TODO: update to incorporate new instructions and new opcodes. *)
   match ins with
   (* Add src, dest *)
   | Add (A, A, _) -> [ 0x00 ]
@@ -126,7 +127,6 @@ let assemble_instr (ins : instr) (label_map : int env) : int list =
   | Mov (B, C, _) -> [ 0x46 ]
   | Mov (C, A, _) -> [ 0x47 ]
   | Mov (C, B, _) -> [ 0x48 ]
-  (* TODO: use actual opcode *)
   | Mov (SP, A, _) -> [ 0xff ]
   (* Mvi byte, dest *)
   | Mvi (imm, A, _) -> [ 0x49; imm ]
@@ -182,7 +182,6 @@ let assemble_instr (ins : instr) (label_map : int env) : int list =
   | Jge (label, loc) -> [ 0x74; to_addr label loc ]
   | Jl (label, loc) -> [ 0x75; to_addr label loc ]
   | Jle (label, loc) -> [ 0x76; to_addr label loc ]
-  (* TODO: use actual opcodes here *)
   | Ja (label, loc) -> [ 0xff; to_addr label loc ]
   | Jae (label, loc) -> [ 0xff; to_addr label loc ]
   | Jb (label, loc) -> [ 0xff; to_addr label loc ]
@@ -215,14 +214,17 @@ let size_of (ins : instr) : int =
   (* labels don't appear in assembled program *)
   | Label _ -> 0
   (* one-byte instructions *)
-  | Add _ | Sub _ | And _ | Or _ | Xor _ | Mov _ | Ld _ | St _ | Cmp _ | Not _
-  | Inr _ | Dcr _ | Ret _ | Hlt _ | Nop _ | Out _ ->
+  | Add _ | Addc _ | Sub _ | Subb _ | And _ | Or _ | Xor _ | Mov _ | Ld _ | St _
+  | Cmp _ | Not _ | Inr _ | Inr2 _ | Inr3 _ | Dcr _ | Dcr2 _ | Dcr3 _ | Ret _
+  | Hlt _ | Nop _ | Out _ | Dd _ ->
       1
   (* two-byte instructions *)
-  | Addi _ | Subi _ | Ani _ | Ori _ | Xri _ | Mvi _ | Lds _ | Sts _ | Jmp _
-  | Je _ | Jne _ | Jg _ | Jge _ | Jl _ | Jle _ | Ja _ | Jae _ | Jb _ | Jbe _
-  | Call _ | Dic _ | Did _ | Cmpi _ ->
+  | Addi _ | Addci _ | Subi _ | Subbi _ | Ani _ | Ori _ | Xri _ | Mvi _ | Lds _
+  | Sts _ | Jmp _ | Je _ | Jne _ | Jg _ | Jge _ | Jl _ | Jle _ | Ja _ | Jae _
+  | Jb _ | Jbe _ | Call _ | Dic _ | Did _ | Cmpi _ | Outi _ ->
       2
+  (* three-byte instruction *)
+  | Stsi _ -> 3
 
 (* 256 bytes is the size of our program memory *)
 let max_pgrm_size = 256
