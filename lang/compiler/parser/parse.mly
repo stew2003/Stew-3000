@@ -69,18 +69,19 @@
 
 %start <pp_define list * func_defn list> program
 
-%right ASSIGN PLUS_UPDATE MINUS_UPDATE TIMES_UPDATE DIV_UPDATE MOD_UPDATE BAND_UPDATE BOR_UPDATE BXOR_UPDATE
+%right ASSIGN PLUS_UPDATE MINUS_UPDATE TIMES_UPDATE DIV_UPDATE 
+  MOD_UPDATE BAND_UPDATE BOR_UPDATE BXOR_UPDATE
 %left LOR
 %left LAND
 %left BOR
 %left BXOR
-%nonassoc AMPERSAND
+%left AMPERSAND
 %left EQ NEQ
 %left LT LTE GT GTE
 %left PLUS MINUS
 %left STAR DIV MOD
-%right BNOT LNOT DEREF_PREC
-%nonassoc INR DCR
+%right BNOT LNOT DEREF_PREC ADDROF_PREC CAST_PREC PREFIX_INR_DCR
+%left INR DCR
 
 %%
 
@@ -277,13 +278,13 @@ expr:
     let loc = span start_loc end_loc in 
     (Deref (e, Some loc), loc)
   }
-| start_loc = AMPERSAND e = expr
+| start_loc = AMPERSAND e = expr %prec ADDROF_PREC
   {
     let (e, end_loc) = e in 
     let loc = span start_loc end_loc in 
     (AddrOf (e, Some loc), loc)
   }
-| start_loc = LPAREN t = typ RPAREN e = expr
+| start_loc = LPAREN t = typ RPAREN e = expr %prec CAST_PREC
   {
     let (t, _) = t in 
     let (e, end_loc) = e in 
@@ -397,13 +398,13 @@ expr:
     let (r, end_loc) = r in 
     let loc = span start_loc end_loc in 
     (BinOp (Neq, l, r, Some loc), loc) }
-| start_loc = INR e = expr 
+| start_loc = INR e = expr %prec PREFIX_INR_DCR
   { 
     let (e, end_loc) = e in
     let loc = span start_loc end_loc in
     (SPrefixInr (e, Some loc), loc)
   }
-| start_loc = DCR e = expr 
+| start_loc = DCR e = expr %prec PREFIX_INR_DCR
   { 
     let (e, end_loc) = e in
     let loc = span start_loc end_loc in
