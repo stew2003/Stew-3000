@@ -24,6 +24,7 @@ let run_body (body : string) : stew_3000 =
 let assert_expr (expr : string) (value : int) =
   let machine = run_body (Printf.sprintf "print(%s);" expr) in
   assert_equal [ value ] machine.dec_disp_history ~printer:string_of_dec_display
+    ~msg:(Printf.sprintf "expression %s did not evaluate to %d\n" expr value)
 
 (* [assert_dec] asserts that after running a program with
    the given body, the machine's decimal display history
@@ -132,6 +133,20 @@ let test_binops _ =
   assert_expr "0b1011 ^ 0b1110" 0b0101;
   assert_expr "0b1111 ^ 0b0000" 0b1111;
 
+  let automatic_bin_op_tests (op : int -> int -> int) (operator : string) =
+    let test_range (min : int) (max : int) =
+      for l = min to max do
+        for r = min to max do
+          assert_expr (Printf.sprintf "%d %s %d" l operator r) (op l r)
+        done
+      done
+    in
+    (* NOTE: exclude -128 as it behaves strangely *)
+    test_range 0 255;
+    test_range (-127) 127
+  in
+  let bool_to_int (b : bool) : int = if b then 1 else 0 in
+
   (* greater than *)
   assert_expr "50 > 32" 1;
   assert_expr "-9 > 9" 0;
@@ -139,14 +154,15 @@ let test_binops _ =
   assert_expr "255 > 1" 1;
   assert_expr "-128 > -127" 0;
   assert_expr "255 > 255" 0;
+  automatic_bin_op_tests (fun l r -> bool_to_int (l > r)) ">";
 
-  (* less than *)
-  assert_expr "100 < 120" 1;
+  (* less than *) assert_expr "100 < 120" 1;
   assert_expr "16 < -2" 0;
   assert_expr "88 < 88" 0;
   assert_expr "1 < 255" 1;
   assert_expr "-128 < -120" 1;
   assert_expr "0 < 255" 1;
+  automatic_bin_op_tests (fun l r -> bool_to_int (l < r)) "<";
 
   (* greater than or eq *)
   assert_expr "14 >= 12" 1;
@@ -155,6 +171,7 @@ let test_binops _ =
   assert_expr "255 >= 255" 1;
   assert_expr "255 >= 254" 1;
   assert_expr "-128 >= -121" 0;
+  automatic_bin_op_tests (fun l r -> bool_to_int (l >= r)) ">=";
 
   (* less than or eq *)
   assert_expr "7 <= 21" 1;
@@ -163,6 +180,7 @@ let test_binops _ =
   assert_expr "255 <= 255" 1;
   assert_expr "0 <= 255" 1;
   assert_expr "-128 <= 127" 1;
+  automatic_bin_op_tests (fun l r -> bool_to_int (l <= r)) "<=";
 
   (* equal *)
   assert_expr "45 == 45" 1;
@@ -171,6 +189,7 @@ let test_binops _ =
   assert_expr "-1 == -1" 1;
   assert_expr "255 == 1" 0;
   assert_expr "-128 == -128" 1;
+  automatic_bin_op_tests (fun l r -> bool_to_int (l = r)) "==";
 
   (* not equal *)
   assert_expr "16 != 90" 1;
@@ -178,7 +197,8 @@ let test_binops _ =
   assert_expr "255 != 255" 0;
   assert_expr "-128 != -128" 0;
   assert_expr "-128 != 127" 1;
-  assert_expr "255 != 0" 1
+  assert_expr "255 != 0" 1;
+  automatic_bin_op_tests (fun l r -> bool_to_int (l <> r)) "!="
 
 let test_log_ops _ =
   (* logical and *)

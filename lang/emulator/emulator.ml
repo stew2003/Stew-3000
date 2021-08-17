@@ -109,8 +109,7 @@ let emulate_instr (ins : instr) (machine : stew_3000) (label_to_addr : int env)
   (* [negate_value] takes an integer and negates it by flipping its bits
      and adding 1. *)
   let negate_value (value : int) : int =
-    Numbers.as_8bit_signed
-      (Numbers.as_8bit_unsigned (lnot (Numbers.as_8bit_unsigned value)) + 1)
+    Numbers.as_8bit_unsigned (lnot (Numbers.as_8bit_unsigned value)) + 1
   in
   (* [emulate_arithmetic] emulates binary arithmetic operators that
      may overflow, and store in a destination register. If sub is true,
@@ -158,9 +157,7 @@ let emulate_instr (ins : instr) (machine : stew_3000) (label_to_addr : int env)
        then if the addition overflows, the overflow will be present in the 9th
        bit, and won't be propagated further. This allows us to check the 9th
        bit for carry from addition. *)
-    let negated_u8_right_value =
-      Numbers.as_8bit_unsigned (negate_value right_value)
-    in
+    let negated_u8_right_value = negate_value right_value in
     (* allow this result value to overflow *)
     let unchecked_result = u8_left_value + negated_u8_right_value in
     set_flags unchecked_result u8_left_value negated_u8_right_value true;
