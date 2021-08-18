@@ -6,8 +6,7 @@ Hardware
   [] New instructions (see microcode README)
 
 Assembler
-  [] change instr type to match new ISA
-    [] update everything that breaks
+  [x] change instr type to match new ISA
 
 Compiler
   [] implement optimizations for smol code
