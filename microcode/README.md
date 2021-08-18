@@ -154,6 +154,10 @@ TODO: (stewart) implement the new instructions. Then we can unbold them here and
 |  `not a` | `OPCODE TBD` |
 |  `not b` | `OPCODE TBD` |
 |  `not c` | `OPCODE TBD` |
+| **`neg $r1`** | N/A | $r1 = ~$r1 + 1 |
+| **`neg a`** | `OPCODE TBD` |
+| **`neg b`** | `OPCODE TBD` |
+| **`neg c`** | `OPCODE TBD` |
 | `inr $r1` | N/A | $r1 = $r1 + 1 |
 |  `inr a` | `OPCODE TBD` |
 |  `inr b` | `OPCODE TBD` |

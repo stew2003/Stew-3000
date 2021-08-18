@@ -4,6 +4,7 @@ Hardware
   [] Fix ram loader
   [] Add Zero register
   [] New instructions (see microcode README)
+    [] TODO(thomas): add support for negate
 
 Assembler
   [] change instr type to match new ISA
