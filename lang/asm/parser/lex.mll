@@ -30,10 +30,18 @@ rule token = parse
   { ADD (loc_from_lexbuf lexbuf) }
 | "addi"
   { ADDI (loc_from_lexbuf lexbuf) }
+| "addc"
+  { ADDC (loc_from_lexbuf lexbuf) }
+| "addci"
+  { ADDCI (loc_from_lexbuf lexbuf) }
 | "sub"
   { SUB (loc_from_lexbuf lexbuf) }
 | "subi"
   { SUBI (loc_from_lexbuf lexbuf) }
+| "subb"
+  { SUBB (loc_from_lexbuf lexbuf) }
+| "subbi"
+  { SUBBI (loc_from_lexbuf lexbuf) }
 | "and"
   { AND (loc_from_lexbuf lexbuf) }
 | "ani"
@@ -48,10 +56,20 @@ rule token = parse
   { XRI (loc_from_lexbuf lexbuf) }
 | "not"
   { NOT (loc_from_lexbuf lexbuf) }
+| "neg"
+  { NEG (loc_from_lexbuf lexbuf) }
 | "inr"
   { INR (loc_from_lexbuf lexbuf) }
+| "inr2"
+  { INR2 (loc_from_lexbuf lexbuf) }
+| "inr3"
+  { INR3 (loc_from_lexbuf lexbuf) }
 | "dcr"
   { DCR (loc_from_lexbuf lexbuf) }
+| "dcr2"
+  { DCR2 (loc_from_lexbuf lexbuf) }
+| "dcr3"
+  { DCR3 (loc_from_lexbuf lexbuf) }
 | "mov"
   { MOV (loc_from_lexbuf lexbuf) }
 | "mvi"
@@ -64,6 +82,8 @@ rule token = parse
   { LDS (loc_from_lexbuf lexbuf) }
 | "sts"
   { STS (loc_from_lexbuf lexbuf) }
+| "stsi"
+  { STSI (loc_from_lexbuf lexbuf) }
 | "cmp"
   { CMP (loc_from_lexbuf lexbuf) }
 | "cmpi"
@@ -98,12 +118,16 @@ rule token = parse
   { DIC (loc_from_lexbuf lexbuf) }
 | "did"
   { DID (loc_from_lexbuf lexbuf) }
+| "dd"
+  { DD (loc_from_lexbuf lexbuf) }
 | "hlt"
   { HLT (loc_from_lexbuf lexbuf) }
 | "nop"
   { NOP (loc_from_lexbuf lexbuf) }
 | "out"
   { OUT (loc_from_lexbuf lexbuf) }
+| "outi"
+  { OUTI (loc_from_lexbuf lexbuf) }
 | ['a'-'z''A'-'Z']['a'-'z''A'-'Z''_''0'-'9']* as name
     { LABEL (name, (loc_from_lexbuf lexbuf)) }
 | eof

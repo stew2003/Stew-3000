@@ -29,6 +29,7 @@ type instr =
   | Xor of register * register * maybe_loc
   | Xri of immediate * register * maybe_loc
   | Not of register * maybe_loc
+  | Neg of register * maybe_loc
   | Inr of register * maybe_loc
   | Inr2 of register * maybe_loc
   | Inr3 of register * maybe_loc
@@ -110,6 +111,7 @@ let string_of_instr (ins : instr) : string =
   | Xri (imm, dst, _) ->
       sprintf "\txri %s, %s" (string_of_imm imm) (string_of_register dst)
   | Not (reg, _) -> sprintf "\tnot %s" (string_of_register reg)
+  | Neg (reg, _) -> sprintf "\tneg %s" (string_of_register reg)
   | Inr (reg, _) -> sprintf "\tinr %s" (string_of_register reg)
   | Inr2 (reg, _) -> sprintf "\tinr2 %s" (string_of_register reg)
   | Inr3 (reg, _) -> sprintf "\tinr3 %s" (string_of_register reg)
@@ -185,6 +187,7 @@ let loc_from_instr (ins : instr) : maybe_loc =
   | Xor (_, _, loc)
   | Xri (_, _, loc)
   | Not (_, loc)
+  | Neg (_, loc)
   | Inr (_, loc)
   | Inr2 (_, loc)
   | Inr3 (_, loc)

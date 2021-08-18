@@ -130,6 +130,8 @@ let validate_instr (ins : instr) =
       validate_imm imm loc
   (* Not dest *)
   | Not (A, _) | Not (B, _) | Not (C, _) -> ()
+  (* Neg dest *)
+  | Neg (A, _) | Neg (B, _) | Neg (C, _) -> ()
   (* Inr dest *)
   | Inr (A, _) | Inr (B, _) | Inr (C, _) | Inr (SP, _) -> ()
   (* Inr2 dest *)

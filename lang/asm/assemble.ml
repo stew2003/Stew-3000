@@ -215,8 +215,8 @@ let size_of (ins : instr) : int =
   | Label _ -> 0
   (* one-byte instructions *)
   | Add _ | Addc _ | Sub _ | Subb _ | And _ | Or _ | Xor _ | Mov _ | Ld _ | St _
-  | Cmp _ | Not _ | Inr _ | Inr2 _ | Inr3 _ | Dcr _ | Dcr2 _ | Dcr3 _ | Ret _
-  | Hlt _ | Nop _ | Out _ | Dd _ ->
+  | Cmp _ | Not _ | Neg _ | Inr _ | Inr2 _ | Inr3 _ | Dcr _ | Dcr2 _ | Dcr3 _
+  | Ret _ | Hlt _ | Nop _ | Out _ | Dd _ ->
       1
   (* two-byte instructions *)
   | Addi _ | Addci _ | Subi _ | Subbi _ | Ani _ | Ori _ | Xri _ | Mvi _ | Lds _

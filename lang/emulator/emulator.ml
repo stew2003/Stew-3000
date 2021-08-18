@@ -219,6 +219,7 @@ let emulate_instr (ins : instr) (machine : stew_3000) (label_to_addr : int env)
   | Xor (src, dest, _) -> emulate_logic (load_reg src) dest ( lxor )
   | Xri (imm, dest, _) -> emulate_logic imm dest ( lxor )
   | Not (dest, _) -> emulate_logic 0 dest (fun v _ -> lnot v)
+  | Neg (dest, _) -> emulate_logic 0 dest (fun v _ -> negate_value v)
   (* moves *)
   | Mov (src, dest, _) ->
       store_reg dest (load_reg src);
