@@ -349,7 +349,12 @@ and compile_func_defn (defn : func_defn) (defns : func_defn list)
 
 (* [compile] generates instructions for a complete program *)
 and compile ?(ignore_asserts = false) (program : prog) : instr list =
-  compile_stmt_list program.main.body Env.empty 1 program.funcs ignore_asserts
+  let runtime_init, runtime_subroutines =
+    Runtime.runtime program ~ignore_asserts
+  in
+  runtime_init
+  @ [ Label ("user_program_start", None) ]
+  @ compile_stmt_list program.main.body Env.empty 1 program.funcs ignore_asserts
   @ (match program.main.ctrl_reaches_end with
     | Some reaches_end -> if reaches_end then [ Hlt None ] else []
     | None ->
@@ -360,4 +365,4 @@ and compile ?(ignore_asserts = false) (program : prog) : instr list =
   @ List.concat_map
       (fun defn -> compile_func_defn defn program.funcs ignore_asserts)
       program.funcs
-  @ Runtime.runtime program ~ignore_asserts
+  @ runtime_subroutines
