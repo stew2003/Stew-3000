@@ -13,6 +13,10 @@ let runtime_sign_utils = parse [%blob "sign_utils.3000.s"]
 
 let runtime_assert = parse [%blob "assert.3000.s"]
 
+let runtime_lcd_init = parse [%blob "lcd_init.3000.s"]
+
+let runtime_print_lcd = parse [%blob "print_lcd.3000.s"]
+
 (* [uses_mult] determines if a program uses multiplication *)
 let uses_mult (pgrm : prog) =
   check_for_expr pgrm (function BinOp (Mult, _, _, _) -> true | _ -> false)

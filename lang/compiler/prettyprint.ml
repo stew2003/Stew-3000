@@ -130,6 +130,7 @@ and pretty_print_stmt (stmt : stmt) (indent_level : int) : string =
   | Exit (None, _) -> "exit();"
   | ExprStmt (expr, _) -> sprintf "%s;" (pretty_print_expr expr)
   | PrintDec (expr, _) -> sprintf "print(%s);" (pretty_print_expr expr)
+  | PrintLcd (expr, _) -> sprintf "print_lcd(%s);" (pretty_print_expr expr)
   | Assert (expr, _) -> sprintf "assert(%s);" (pretty_print_expr expr)
 
 (* [pretty_print_stmt_list] converts a statement list into a pretty-printed string. *)

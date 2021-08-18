@@ -284,6 +284,8 @@ and compile_stmt (statement : stmt) (bindings : int env) (si : int)
       @ [ Ret None ]
   | PrintDec (expr, _) ->
       compile_expr expr bindings si defns @ [ Out (A, None) ]
+  | PrintLcd (expr, _) ->
+      compile_expr expr bindings si defns @ call_runtime "runtime_print_lcd" si
   | Assert _ when ignore_asserts -> []
   | Assert (expr, _) ->
       compile_expr expr bindings si defns @ call_runtime "runtime_assert" si

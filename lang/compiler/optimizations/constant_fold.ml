@@ -129,6 +129,7 @@ and fold_stmt (stmt : stmt) (emit_warning : compiler_warn_handler) : stmt =
       | folded_cond -> While (folded_cond, fold_stmt_list body emit_warning, loc)
       )
   | PrintDec (expr, loc) -> PrintDec (fold_expr expr emit_warning, loc)
+  | PrintLcd (expr, loc) -> PrintLcd (fold_expr expr emit_warning, loc)
   | Exit (Some expr, loc) -> Exit (Some (fold_expr expr emit_warning), loc)
   | Assert (expr, loc) -> Assert (fold_expr expr emit_warning, loc)
   | Return _ | Exit _ -> stmt
