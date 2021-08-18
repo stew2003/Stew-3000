@@ -6,6 +6,7 @@
 %token REG_A
 %token REG_B
 %token REG_C
+%token REG_Z
 %token REG_SP
 %token <Util.Srcloc.src_loc> ADD
 %token <Util.Srcloc.src_loc> ADDI
@@ -79,6 +80,8 @@ reg:
   { B }
 | REG_C
   { C }
+| REG_Z
+  { Z }
 | REG_SP
   { SP }
 

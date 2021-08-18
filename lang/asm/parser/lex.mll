@@ -24,6 +24,8 @@ rule token = parse
   { REG_B }
 | "c"
   { REG_C }
+| "z"
+  { REG_Z }
 | "sp"
   { REG_SP }
 | "add"
