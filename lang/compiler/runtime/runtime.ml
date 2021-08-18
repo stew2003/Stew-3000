@@ -33,6 +33,10 @@ let uses_mod (pgrm : prog) =
 let uses_assert (pgrm : prog) =
   check_for_stmt pgrm (function Assert _ -> true | _ -> false)
 
+(* [uses_print_lcd] determines if a program uses print_lcd() *)
+let uses_print_lcd (pgrm : prog) =
+  check_for_stmt pgrm (function PrintLcd _ -> true | _ -> false)
+
 (* [conditionally_include] returns either the given code or an empty program,
    depending on whether the given condition is true or not. *)
 let conditionally_include (code : instr list) (condition : bool) : instr list =
@@ -50,16 +54,19 @@ let runtime ?(ignore_asserts = false) (program : prog) : instr list * instr list
      use the same division algorithm *)
   let needs_mult_code = uses_mult program in
   let needs_div_code = uses_div program || uses_mod program in
+  let needs_lcd = uses_print_lcd program in
 
-  let init = [] in
+  (* Initialization code *)
+  let init = conditionally_include runtime_lcd_init needs_lcd in
 
-  (* only include what this program needs. ~~ zero cost abstraction ~~ *)
+  (* Runtime code *)
   let subroutines =
     conditionally_include runtime_sign_utils (needs_mult_code || needs_div_code)
     @ conditionally_include runtime_multiply needs_mult_code
     @ conditionally_include runtime_divide needs_div_code
     @ conditionally_include runtime_assert
         (uses_assert program && not ignore_asserts)
+    @ conditionally_include runtime_print_lcd needs_lcd
   in
 
   (init, subroutines)

@@ -2,6 +2,7 @@ open OUnit2
 open Compiler
 open Compiler.Ast
 open Asm.Isa
+open Testing_utils
 
 let pgrm_from_body (body : string) : prog =
   Parser.parse (Printf.sprintf "void main() { %s }" body)
@@ -28,17 +29,6 @@ let test_expr_detection _ =
 (* [runtime_from_src] gets the runtime code generated for a given source program. *)
 let runtime_from_src (source : string) : instr list * instr list =
   Runtime.runtime (Parser.parse source)
-
-(* [includes_label] determines if the given asm program contains
-   a declaration of the given label. *)
-let rec includes_label (instrs : instr list) (label : string) : bool =
-  match instrs with
-  | [] -> false
-  | ins :: rest -> (
-      match ins with
-      | Label (ins_label, _) ->
-          if ins_label = label then true else includes_label rest label
-      | _ -> includes_label rest label)
 
 let test_empty_runtime _ =
   assert_equal ([], [])
@@ -82,6 +72,17 @@ let test_runtime_ignore_asserts _ =
   assert_bool "runtime assert is not included"
     (not (includes_label rt "runtime_assert"))
 
+let test_runtime_print_lcd _ = 
+  let rt_init, rt_subroutines = runtime_from_src "
+    void main() {
+      char s[] = \"string literal\";
+      print_lcd(s);
+    }
+  " in 
+  assert_bool "lcd_init is included in init" (includes_label rt_init "runtime_lcd_init");
+  assert_bool "print_lcd is included" (includes_label rt_subroutines "runtime_print_lcd")
+  [@@ocamlformat "disable"]
+
 let suite =
   "Runtime Tests"
   >::: [
@@ -91,6 +92,7 @@ let suite =
          "test_runtime_divide" >:: test_runtime_divide;
          "test_runtime_assert" >:: test_runtime_assert;
          "test_runtime_ignore_asserts" >:: test_runtime_ignore_asserts;
+         "test_runtime_print_lcd" >:: test_runtime_print_lcd;
        ]
 
 let () = run_test_tt_main suite

@@ -1,7 +1,7 @@
 open OUnit2
 open Compiler
 open Emulator__Machine
-open Asm.Isa
+open Testing_utils
 
 (* [run] parses a source program, checks it, compiles it, and runs
    the generated instructions in the emulator, returning
@@ -255,11 +255,17 @@ let test_ignore_asserts _ =
     let pgrm = Check.check pgrm in
     Compile.compile ~ignore_asserts:true pgrm
   in
-  assert_equal [ Hlt None ]
-    (compile_with_ignore_asserts "void main() { assert(0); }");
-  assert_equal [ Hlt None ]
-    (compile_with_ignore_asserts
-       "void main() { assert(1 == 2); assert(1); assert(41 - 1 == 40); }")
+  assert_bool "assert is not included"
+    (not
+       (includes_label
+          (compile_with_ignore_asserts "void main() { assert(0); }")
+          "runtime_assert"));
+  assert_bool "assert is not included"
+    (not
+       (includes_label
+          (compile_with_ignore_asserts
+             "void main() { assert(1 == 2); assert(1); assert(41 - 1 == 40); }")
+          "runtime_assert"))
 
 let test_char_literals  _ = 
   assert_dec "
