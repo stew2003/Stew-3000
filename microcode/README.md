@@ -128,14 +128,14 @@ TODO: (stewart) implement the new instructions. Then we can unbold them here and
 |  `ani byte, a` | `0x40` |
 |  `ani byte, b` | `0x41` |
 |  `ani byte, c` | `0x42` |
-| `or $r1, $r2` | N/A | $r2 = $r2 | $r1 |
+| `or $r1, $r2` | N/A | $r2 = $r2 \| $r1 |
 |  `or b, a` | `0x43` |
 |  `or c, a` | `0x44` |
 |  `or a, b` | `0x45` |
 |  `or c, b` | `0x46` |
 |  `or a, c` | `0x47` |
 |  `or b, c` | `0x48` |
-| `ori byte, $r1` | N/A | $r1 = $r1 | byte |
+| `ori byte, $r1` | N/A | $r1 = $r1 \| byte |
 |  `ori byte, a` | `0x49` |
 |  `ori byte, b` | `0x4a` |
 |  `ori byte, c` | `0x4b` |
