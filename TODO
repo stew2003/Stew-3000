@@ -1,8 +1,8 @@
 
 Hardware
-  [] Fix stack memory
-  [] Fix ram loader
-  [] Add Zero register
+  [x] Fix stack memory
+  [x] Fix ram loader
+  [x] Add Zero register
   [] New instructions (see microcode README)
 
 Assembler

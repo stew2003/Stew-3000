@@ -39,36 +39,36 @@ EEPROM_programmer programmer(2, 3, 4, 5, 12, 13, 8192);
 #define SI  0b00000000000000000000000000010000
 #define STK 0b00000000000000000000000000001000  
 
-const int INSTRUCTION_STEPS = 8;
+const int INSTRUCTION_STEPS = 16;
 const int FETCH_STEPS = 2;
 
-const int NUM_FLAGS = 3;
+const int NUM_FLAGS = 4;
 const int FLAG_CONFIGURATIONS = pow(2, NUM_FLAGS);
 
-const int NUM_INSTRUCTIONS = 122;
-const int NUM_CONDITIONAL_INSTRUCTIONS = 6;
+const int NUM_INSTRUCTIONS = 161;
+const int NUM_CONDITIONAL_INSTRUCTIONS = 39;
 
 const int INSTRUCTION_ARR_LENGTH = 1 + (INSTRUCTION_STEPS - FETCH_STEPS);
 
 const uint32_t PROGMEM fetch_cycle[2] = { PCO|MI, RO|II|PCE };
 
 const uint32_t PROGMEM microcode[NUM_INSTRUCTIONS][INSTRUCTION_ARR_LENGTH] = {
-  // ADD $r1, $r2: $r2 = $r2 + $r1
-  { 0x00, AO|TI, AO|TS|SUM|EI|FI, EO|AI, RST, 0, 0 }, // ADD A, A
-  { 0x01, AO|TI, BO|TS|SUM|EI|FI, EO|BI, RST, 0, 0 }, // ADD A, B
-  { 0x02, AO|TI, CO|TS|SUM|EI|FI, EO|CI, RST, 0, 0 }, // ADD A, C
-  { 0x03, AO|TI, SO|TS|SUM|EI|FI, EO|SI, RST, 0, 0 }, // ADD A, SP
-  { 0x04, BO|TI, AO|TS|SUM|EI|FI, EO|AI, RST, 0, 0 }, // ADD B, A
-  { 0x05, BO|TI, BO|TS|SUM|EI|FI, EO|BI, RST, 0, 0 }, // ADD B, B
-  { 0x06, BO|TI, CO|TS|SUM|EI|FI, EO|CI, RST, 0, 0 }, // ADD B, C
-  { 0x07, BO|TI, SO|TS|SUM|EI|FI, EO|SI, RST, 0, 0 }, // ADD B, SP
-  { 0x08, CO|TI, AO|TS|SUM|EI|FI, EO|AI, RST, 0, 0 }, // ADD C, A
-  { 0x09, CO|TI, BO|TS|SUM|EI|FI, EO|BI, RST, 0, 0 }, // ADD C, B
-  { 0x0a, CO|TI, CO|TS|SUM|EI|FI, EO|CI, RST, 0, 0 }, // ADD C, C
-  { 0x0b, CO|TI, SO|TS|SUM|EI|FI, EO|SI, RST, 0, 0 }, // ADD C, SP
+  // add $r1, $r2: $r2 = $r2 + $r1
+  { 0x00, AO|TI, AO|TS|SUM|EI|FI, EO|AI, RST, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, // add a, a
+  { 0x01, AO|TI, BO|TS|SUM|EI|FI, EO|BI, RST, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, // add a, b
+  { 0x02, AO|TI, CO|TS|SUM|EI|FI, EO|CI, RST, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, // add a, c
+  { 0x03, AO|TI, SO|TS|SUM|EI|FI, EO|SI, RST, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, // add a, sp
+  { 0x04, BO|TI, AO|TS|SUM|EI|FI, EO|AI, RST, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, // add b, a
+  { 0x05, BO|TI, BO|TS|SUM|EI|FI, EO|BI, RST, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, // add b, b
+  { 0x06, BO|TI, CO|TS|SUM|EI|FI, EO|CI, RST, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, // add b, c
+  { 0x07, BO|TI, SO|TS|SUM|EI|FI, EO|SI, RST, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, // add b, sp
+  { 0x08, CO|TI, AO|TS|SUM|EI|FI, EO|AI, RST, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, // add c, a
+  { 0x09, CO|TI, BO|TS|SUM|EI|FI, EO|BI, RST, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, // add c, b
+  { 0x0a, CO|TI, CO|TS|SUM|EI|FI, EO|CI, RST, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, // add c, c
+  { 0x0b, CO|TI, SO|TS|SUM|EI|FI, EO|SI, RST, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, // add c, sp
   
 
-  // ADDI byte, $r1: $r1 = $r1 + byte
+  // addi byte, $r1: $r1 = $r1 + byte
   { 0x0c, PCO|MI, RO|TI, AO|TS|SUM|EI|FI, EO|AI|PCE, RST, 0 }, // ADDI byte, A
   { 0x0d, PCO|MI, RO|TI, BO|TS|SUM|EI|FI, EO|BI|PCE, RST, 0 }, // ADDI byte, B
   { 0x0e, PCO|MI, RO|TI, CO|TS|SUM|EI|FI, EO|CI|PCE, RST, 0 }, // ADDI byte, C
