@@ -17,7 +17,7 @@ runtime_divide:
   ; normalize signs to positive
   call runtime_normalize_signs
   sts c, 1 ; store sign of quotient on stack
-  mvi 0, c ; now use c as a counter
+  mov z, c ; now use c as a counter
 
   ; repeatedly subtract b from a
 runtime_divide_loop:
