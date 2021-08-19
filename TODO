@@ -25,7 +25,7 @@ Compiler
       [x] replace addi 1, _ / subi 1, _ with inr/dcr
       [x] remove addi 0, subi 0, etc (no effect)
   [x] update runtime to take advantage of new instructions
-  [] update peephole optimizations
+  [x] update peephole optimizations
 
 Docs
   [] document everything
