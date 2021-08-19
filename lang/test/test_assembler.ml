@@ -12,7 +12,7 @@ let assert_assembles_to (instrs : instr list) (bin : int list) =
 let test_simple_pgrm _ =
   assert_assembles_to
     [ Mvi (5, A, None); Dcr (A, None); Hlt None ]
-    [ 0x49; 0x05; 0x3f; 0x7e ]
+    [ 0x7f; 0x05; 0x67; 0xc7 ]
 
 let test_longer_pgrm _ =
   assert_assembles_to
@@ -26,7 +26,7 @@ let test_longer_pgrm _ =
       Out (B, None);
       Jmp ("loop", None);
     ]
-    [ 0x7f; 0x7f; 0x49; 10; 0x61; 1; 0x5f; 1; 0x7a; 0x70; 2 ]
+    [ 0xc8; 0xc8; 0x7f; 10; 0x9a; 1; 0x98; 1; 0xbf; 0xb1; 2 ]
 
 let test_invalid_instr _ =
   assert_raises
