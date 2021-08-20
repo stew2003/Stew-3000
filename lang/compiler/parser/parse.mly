@@ -55,6 +55,7 @@
 %token <Util.Srcloc.src_loc> RETURN
 
 %token <Util.Srcloc.src_loc> PRINT
+%token <Util.Srcloc.src_loc> PRINTLCD
 %token <Util.Srcloc.src_loc> EXIT
 %token <Util.Srcloc.src_loc> ASSERT
 
@@ -224,6 +225,9 @@ stmt:
 | start_loc = PRINT LPAREN arg = expr end_loc = RPAREN
   { let (arg, _) = arg in 
     PrintDec (arg, Some (span start_loc end_loc)) }
+| start_loc = PRINTLCD LPAREN arg = expr end_loc = RPAREN
+  { let (arg, _) = arg in 
+    PrintLcd (arg, Some (span start_loc end_loc)) }
 | start_loc = EXIT LPAREN arg = option(expr) end_loc = RPAREN
   { let arg = Option.map (fun (a, _) -> a) arg in 
     Exit (arg, Some (span start_loc end_loc)) }

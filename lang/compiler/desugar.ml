@@ -69,6 +69,7 @@ let desugar (pgrm : prog) : prog =
     | Return (Some e, loc) -> Return (Some (desugar_expr e), loc)
     | ExprStmt (e, loc) -> ExprStmt (desugar_expr e, loc)
     | PrintDec (e, loc) -> PrintDec (desugar_expr e, loc)
+    | PrintLcd (e, loc) -> PrintLcd (desugar_expr e, loc)
     | Exit (Some e, loc) -> Exit (Some (desugar_expr e), loc)
     | Assert (e, loc) -> Assert (desugar_expr e, loc)
     | Return _ | Exit _ -> stmt

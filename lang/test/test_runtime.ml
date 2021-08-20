@@ -2,6 +2,7 @@ open OUnit2
 open Compiler
 open Compiler.Ast
 open Asm.Isa
+open Testing_utils
 
 let pgrm_from_body (body : string) : prog =
   Parser.parse (Printf.sprintf "void main() { %s }" body)
@@ -26,59 +27,61 @@ let test_expr_detection _ =
   assert_equal false (Runtime.uses_mod (Parser.parse "void main() { 10 / 3; }"))
 
 (* [runtime_from_src] gets the runtime code generated for a given source program. *)
-let runtime_from_src (source : string) : instr list =
+let runtime_from_src (source : string) : instr list * instr list =
   Runtime.runtime (Parser.parse source)
 
-(* [includes_label] determines if the given asm program contains
-  a declaration of the given label. *)
-let rec includes_label (instrs : instr list) (label : string) : bool =
-  match instrs with
-  | [] -> false
-  | ins :: rest -> (
-      match ins with
-      | Label (ins_label, _) ->
-          if ins_label = label then true else includes_label rest label
-      | _ -> includes_label rest label)
-
 let test_empty_runtime _ =
-  assert_equal []
+  assert_equal ([], [])
     (runtime_from_src "void main() { int x = 5; x++; exit(x + 3); }")
 
 let test_runtime_multiply _ =
-  let rt =
+  let _, rt =
     runtime_from_src
       "void main() { if (10 * 2 > 5) { print(1); } else { print(0); } }"
   in
   assert_bool "multiply is included" (includes_label rt "runtime_multiply");
-  let rt =
+  let _, rt =
     runtime_from_src "void main() { while (5 < 10) { int x = 0; x++; } }"
   in
   assert_bool "multiply is not included"
     (not (includes_label rt "runtime_multiply"))
 
 let test_runtime_divide _ =
-  let rt = runtime_from_src "void main() { exit(5 / 10); }" in
+  let _, rt = runtime_from_src "void main() { exit(5 / 10); }" in
   assert_bool "divide is included" (includes_label rt "runtime_divide");
-  let rt = runtime_from_src "void main() { int x = 4; int y = x + 1; y--; }" in
+  let _, rt =
+    runtime_from_src "void main() { int x = 4; int y = x + 1; y--; }"
+  in
   assert_bool "divide is not included"
     (not (includes_label rt "runtime_divide"))
 
 let test_runtime_assert _ =
-  let rt =
+  let _, rt =
     runtime_from_src "void main() { if (5 > 10) { assert(1 + 2 == 3); } }"
   in
   assert_bool "assert is included" (includes_label rt "runtime_assert");
-  let rt = runtime_from_src "void main() { int x = 4; exit(5 * 2 / x); }" in
+  let _, rt = runtime_from_src "void main() { int x = 4; exit(5 * 2 / x); }" in
   assert_bool "assert is not included"
     (not (includes_label rt "runtime_assert"))
 
 let test_runtime_ignore_asserts _ =
-  let rt =
+  let _, rt =
     Runtime.runtime ~ignore_asserts:true
       (Parser.parse "void main() { assert(100 == 50); exit(0); assert(0); }")
   in
   assert_bool "runtime assert is not included"
     (not (includes_label rt "runtime_assert"))
+
+let test_runtime_print_lcd _ = 
+  let rt_init, rt_subroutines = runtime_from_src "
+    void main() {
+      char s[] = \"string literal\";
+      print_lcd(s);
+    }
+  " in 
+  assert_bool "lcd_init is included in init" (includes_label rt_init "runtime_lcd_init");
+  assert_bool "print_lcd is included" (includes_label rt_subroutines "runtime_print_lcd")
+  [@@ocamlformat "disable"]
 
 let suite =
   "Runtime Tests"
@@ -89,6 +92,7 @@ let suite =
          "test_runtime_divide" >:: test_runtime_divide;
          "test_runtime_assert" >:: test_runtime_assert;
          "test_runtime_ignore_asserts" >:: test_runtime_ignore_asserts;
+         "test_runtime_print_lcd" >:: test_runtime_print_lcd;
        ]
 
 let () = run_test_tt_main suite

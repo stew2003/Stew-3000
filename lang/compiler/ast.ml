@@ -64,6 +64,7 @@ type stmt =
   | Return of expr option * maybe_loc
   | ExprStmt of expr * maybe_loc
   | PrintDec of expr * maybe_loc
+  | PrintLcd of expr * maybe_loc
   | Exit of expr option * maybe_loc
   | Assert of expr * maybe_loc
 
@@ -184,6 +185,7 @@ let loc_from_stmt (stmt : stmt) : maybe_loc =
   | Return (_, loc)
   | ExprStmt (_, loc)
   | PrintDec (_, loc)
+  | PrintLcd (_, loc)
   | Exit (_, loc)
   | Assert (_, loc) ->
       loc
@@ -241,6 +243,7 @@ let check_for_expr (pgrm : prog) (pred : expr -> bool) : bool =
     | ExprStmt (value, _) -> check_expr value pred
     | While (cond, body, _) -> check_expr cond pred || check_stmt_list body pred
     | PrintDec (value, _) -> check_expr value pred
+    | PrintLcd (value, _) -> check_expr value pred
     | Exit (Some e, _) -> check_expr e pred
     | Assert (e, _) -> check_expr e pred
     | Return _ | Exit _ -> false
@@ -274,7 +277,8 @@ let check_for_stmt (pgrm : prog) (pred : stmt -> bool) : bool =
         check_stmt_list thn pred || check_stmt_list els pred
     | Block (stmts, _) -> check_stmt_list stmts pred
     | While (_, body, _) -> check_stmt_list body pred
-    | Return _ | ExprStmt _ | PrintDec _ | Exit _ | Assert _ -> false
+    | Return _ | ExprStmt _ | PrintDec _ | PrintLcd _ | Exit _ | Assert _ ->
+        false
   (* [check_stmt_list] checks a list of statements for one that satisfies
      the given predicate *)
   and check_stmt_list (stmts : stmt list) (pred : stmt -> bool) : bool =

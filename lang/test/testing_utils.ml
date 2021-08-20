@@ -1,5 +1,6 @@
 open Compiler.Ast
 open Compiler.Prettyprint
+open Asm.Isa
 open OUnit2
 
 (* [norm_expr_locs] normalizes source locations in an expression *)
@@ -59,6 +60,7 @@ and norm_stmt_locs (stmt : stmt) : stmt =
   | While (cond, body, _) ->
       While (norm_expr_locs cond, norm_stmt_list_locs body, None)
   | PrintDec (e, _) -> PrintDec (norm_expr_locs e, None)
+  | PrintLcd (e, _) -> PrintLcd (norm_expr_locs e, None)
   | Exit (Some e, _) -> Exit (Some (norm_expr_locs e), None)
   | Exit (None, _) -> Exit (None, None)
   | Assert (e, _) -> Assert (e, None)
@@ -93,3 +95,14 @@ let assert_prog_eq (expected : prog) (actual : prog) =
    source locations. *)
 let parse_norm (source : string) : prog =
   source |> Compiler.Parser.parse |> norm_prog_locs
+
+(* [includes_label] determines if the given asm program contains
+   a declaration of the given label. *)
+let rec includes_label (instrs : instr list) (label : string) : bool =
+  match instrs with
+  | [] -> false
+  | ins :: rest -> (
+      match ins with
+      | Label (ins_label, _) ->
+          if ins_label = label then true else includes_label rest label
+      | _ -> includes_label rest label)

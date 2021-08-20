@@ -438,6 +438,11 @@ let type_check (defn : func_defn) (defns : func_defn list)
     | PrintDec (expr, loc) ->
         (* must print only signed integers on decimal display *)
         PrintDec (ensure_type_satisfies (ConstrainedTo Int) expr env loc, loc)
+    | PrintLcd (expr, loc) ->
+        (* must print only char* (strings) on LCD display *)
+        PrintLcd
+          ( ensure_type_satisfies (ConstrainedTo (Pointer Char)) expr env loc,
+            loc )
     | ExprStmt (expr, loc) ->
         (* as long as expression internally type checks, we are good *)
         let _, expr_tc = type_check_expr expr env in
@@ -476,7 +481,7 @@ let ctrl_reaches_end (defn : func_defn) : bool =
     (* Return and exit *cannot* be passed. *)
     | Return _ | Exit _ -> false
     (* All of the following statements can be passed. *)
-    | If _ | ExprStmt _ | While _ | PrintDec _ | Assert _ -> true
+    | If _ | ExprStmt _ | While _ | PrintDec _ | PrintLcd _ | Assert _ -> true
   and ctrl_reaches_end_stmt_list (stmts : stmt list) : bool =
     match stmts with
     | [] -> true

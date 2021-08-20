@@ -113,6 +113,8 @@ rule token = parse
   { RETURN (loc_from_lexbuf lexbuf) }
 | "print"
   { PRINT (loc_from_lexbuf lexbuf) }
+| "print_lcd"
+  { PRINTLCD (loc_from_lexbuf lexbuf) }
 | "exit"
   { EXIT (loc_from_lexbuf lexbuf) }
 | "assert"
