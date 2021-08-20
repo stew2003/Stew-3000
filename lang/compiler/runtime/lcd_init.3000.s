@@ -7,3 +7,5 @@ runtime_lcd_init:
   dic 0b00001111
   ; entry mode set: increment (write left-to-right), no display shift
   dic 0b00000110
+  ; clear display
+  dic 0b00000001
