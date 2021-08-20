@@ -1,12 +1,6 @@
 
 Hardware
-  [x] Fix stack memory
-  [x] Fix ram loader
-  [x] Add Zero register
-  [] New instructions (see microcode README)
-
-Assembler
-  [x] change instr type to match new ISA
+  [] debug new instruction set
 
 Compiler
   [] implement optimizations for smol code
@@ -16,16 +10,7 @@ Compiler
       [] omit (+warn) unused vars and functions
       [] omit (+warn) dead code
     During compile:
-      [x] special-case compilation of conditions (if/while)
       [] use more immediate instructions to reduce stack instructions
-      [] var == 0 is same as !var 
-      [] "compile to" given register (reduce movs)
-    Post-compile:
-      [x] eliminate redundant instrs
-      [x] replace addi 1, _ / subi 1, _ with inr/dcr
-      [x] remove addi 0, subi 0, etc (no effect)
-  [x] update runtime to take advantage of new instructions
-  [x] update peephole optimizations
 
 Docs
   [] document everything
