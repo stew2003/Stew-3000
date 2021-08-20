@@ -16,9 +16,9 @@ runtime_multiply:
   ; make a and b positive, keep sign info on stack
   call runtime_normalize_signs
   sts c, 1
-  mvi 0, c
+  mov z, c
 runtime_multiply_loop:
-  cmpi b, 0
+  cmp b, z
   je runtime_multiply_done
   dcr b
   add a, c

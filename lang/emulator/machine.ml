@@ -1,8 +1,10 @@
 open Printf
 
+type lcd_byte = Command of int | Data of int
+
 (* stew_3000 models the programmer-visible state of the machine
    NOTE: dec_disp_history is a record of every byte that has
-   been sent to the decimal display so far *)
+   been sent to the decimal display so far. Likewise for lcd_disp_history *)
 type stew_3000 = {
   mutable a : int;
   mutable b : int;
@@ -14,6 +16,7 @@ type stew_3000 = {
   mutable cflag : bool;
   mutable stack : int array;
   mutable dec_disp_history : int list;
+  mutable lcd_disp_history : lcd_byte list;
   mutable pc : int;
   mutable halted : bool;
 }
@@ -44,9 +47,10 @@ let string_of_all_regs (machine : stew_3000) =
   ]
   |> String.concat "\n"
 
+let bool_to_int (b : bool) = if b then 1 else 0
+
 (* [string_of_flag] formats a flag's value in a string *)
 let string_of_flag (name : string) (contents : bool) =
-  let bool_to_int (b : bool) = if b then 1 else 0 in
   sprintf "%s: %d" name (bool_to_int contents)
 
 (* [string_of_all_flags] formats all a machine's flags for printing *)
@@ -130,6 +134,7 @@ let new_stew_3000 _ : stew_3000 =
     cflag = false;
     stack = Array.make stack_size 0;
     dec_disp_history = [];
+    lcd_disp_history = [];
     pc = 0;
     halted = false;
   }

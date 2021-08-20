@@ -6,11 +6,16 @@
 %token REG_A
 %token REG_B
 %token REG_C
+%token REG_Z
 %token REG_SP
 %token <Util.Srcloc.src_loc> ADD
 %token <Util.Srcloc.src_loc> ADDI
+%token <Util.Srcloc.src_loc> ADDC
+%token <Util.Srcloc.src_loc> ADDCI
 %token <Util.Srcloc.src_loc> SUB
 %token <Util.Srcloc.src_loc> SUBI
+%token <Util.Srcloc.src_loc> SUBB
+%token <Util.Srcloc.src_loc> SUBBI
 %token <Util.Srcloc.src_loc> AND
 %token <Util.Srcloc.src_loc> ANI
 %token <Util.Srcloc.src_loc> OR
@@ -18,14 +23,20 @@
 %token <Util.Srcloc.src_loc> XOR
 %token <Util.Srcloc.src_loc> XRI
 %token <Util.Srcloc.src_loc> NOT
+%token <Util.Srcloc.src_loc> NEG
 %token <Util.Srcloc.src_loc> INR
+%token <Util.Srcloc.src_loc> INR2
+%token <Util.Srcloc.src_loc> INR3
 %token <Util.Srcloc.src_loc> DCR
+%token <Util.Srcloc.src_loc> DCR2
+%token <Util.Srcloc.src_loc> DCR3
 %token <Util.Srcloc.src_loc> MOV
 %token <Util.Srcloc.src_loc> MVI
 %token <Util.Srcloc.src_loc> LD
 %token <Util.Srcloc.src_loc> ST
 %token <Util.Srcloc.src_loc> LDS
 %token <Util.Srcloc.src_loc> STS
+%token <Util.Srcloc.src_loc> STSI
 %token <Util.Srcloc.src_loc> CMP
 %token <Util.Srcloc.src_loc> CMPI
 %token <Util.Srcloc.src_loc> JMP
@@ -43,9 +54,11 @@
 %token <Util.Srcloc.src_loc> RET
 %token <Util.Srcloc.src_loc> DIC
 %token <Util.Srcloc.src_loc> DID
+%token <Util.Srcloc.src_loc> DD
 %token <Util.Srcloc.src_loc> HLT
 %token <Util.Srcloc.src_loc> NOP
 %token <Util.Srcloc.src_loc> OUT
+%token <Util.Srcloc.src_loc> OUTI
 %token <string * Util.Srcloc.src_loc> LABEL
 
 %token COLON
@@ -67,6 +80,8 @@ reg:
   { B }
 | REG_C
   { C }
+| REG_Z
+  { Z }
 | REG_SP
   { SP }
 
@@ -75,10 +90,18 @@ instr:
   { Add(src, dest, Some loc) }
 | loc = ADDI src = IMM COMMA dest = reg
   { Addi(src, dest, Some loc) }
+| loc = ADDC src = reg COMMA dest = reg
+  { Addc(src, dest, Some loc) }
+| loc = ADDCI src = IMM COMMA dest = reg
+  { Addci(src, dest, Some loc) }
 | loc = SUB src = reg COMMA dest = reg
   { Sub(src, dest, Some loc) }
 | loc = SUBI src = IMM COMMA dest = reg
   { Subi(src, dest, Some loc) }
+| loc = SUBB src = reg COMMA dest = reg
+  { Subb(src, dest, Some loc) }
+| loc = SUBBI src = IMM COMMA dest = reg
+  { Subbi(src, dest, Some loc) }
 | loc = AND src = reg COMMA dest = reg
   { And(src, dest, Some loc) }
 | loc = ANI src = IMM COMMA dest = reg
@@ -93,10 +116,20 @@ instr:
   { Xri(src, dest, Some loc) }
 | loc = NOT r = reg
   { Not(r, Some loc) }
+| loc = NEG r = reg
+  { Neg(r, Some loc) }
 | loc = INR r = reg
   { Inr(r, Some loc) }
+| loc = INR2 r = reg
+  { Inr2(r, Some loc) }
+| loc = INR3 r = reg
+  { Inr3(r, Some loc) }
 | loc = DCR r = reg
   { Dcr(r, Some loc) }
+| loc = DCR2 r = reg
+  { Dcr2(r, Some loc) }
+| loc = DCR3 r = reg
+  { Dcr3(r, Some loc) }
 | loc = MOV src = reg COMMA dest = reg
   { Mov(src, dest, Some loc) }
 | loc = MVI src = IMM COMMA dest = reg
@@ -109,6 +142,8 @@ instr:
   { Lds(src, dest, Some loc) }
 | loc = STS src = reg COMMA dest = IMM
   { Sts(src, dest, Some loc) }
+| loc = STSI src = IMM COMMA dest = IMM
+  { Stsi(src, dest, Some loc) }
 | loc = CMP left = reg COMMA right = reg
   { Cmp(left, right, Some loc) }
 | loc = CMPI left = IMM COMMA right = reg
@@ -160,9 +195,13 @@ instr:
   { Dic(imm, Some loc) }
 | loc = DID imm = IMM
   { Did(imm, Some loc) }
+| loc = DD src = reg
+  { Dd(src, Some loc) }
 | loc = HLT
   { Hlt (Some loc) }
 | loc = NOP
   { Nop (Some loc) }
 | loc = OUT r = reg
   { Out(r, Some loc) }
+| loc = OUTI imm = IMM
+  { Outi(imm, Some loc) }

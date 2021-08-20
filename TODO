@@ -1,13 +1,12 @@
 
 Hardware
-  [] Fix stack memory
-  [] Fix ram loader
-  [] Add Zero register
+  [x] Fix stack memory
+  [x] Fix ram loader
+  [x] Add Zero register
   [] New instructions (see microcode README)
 
 Assembler
-  [] change instr type to match new ISA
-    [] update everything that breaks
+  [x] change instr type to match new ISA
 
 Compiler
   [] implement optimizations for smol code
@@ -25,6 +24,8 @@ Compiler
       [x] eliminate redundant instrs
       [x] replace addi 1, _ / subi 1, _ with inr/dcr
       [x] remove addi 0, subi 0, etc (no effect)
+  [x] update runtime to take advantage of new instructions
+  [x] update peephole optimizations
 
 Docs
   [] document everything
