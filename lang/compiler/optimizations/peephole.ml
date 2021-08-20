@@ -32,10 +32,33 @@ let rec replace_with_smaller (instrs : instr list) : instr list =
   | Subi (-1, reg, loc) :: rest
   | Subi (255, reg, loc) :: rest ->
       Inr (reg, loc) :: replace_with_smaller rest
+  | Addi (2, reg, loc) :: rest
+  | Subi (-2, reg, loc) :: rest
+  | Subi (254, reg, loc) :: rest ->
+      Inr2 (reg, loc) :: replace_with_smaller rest
+  | Addi (3, reg, loc) :: rest
+  | Subi (-3, reg, loc) :: rest
+  | Subi (253, reg, loc) :: rest ->
+      Inr3 (reg, loc) :: replace_with_smaller rest
   | Addi (-1, reg, loc) :: rest
   | Subi (1, reg, loc) :: rest
   | Addi (255, reg, loc) :: rest ->
       Dcr (reg, loc) :: replace_with_smaller rest
+  | Addi (-2, reg, loc) :: rest
+  | Subi (2, reg, loc) :: rest
+  | Addi (254, reg, loc) :: rest ->
+      Dcr2 (reg, loc) :: replace_with_smaller rest
+  | Addi (-3, reg, loc) :: rest
+  | Subi (3, reg, loc) :: rest
+  | Addi (253, reg, loc) :: rest ->
+      Dcr3 (reg, loc) :: replace_with_smaller rest
+  | Not (reg1, loc) :: Inr (reg2, _) :: rest when reg1 = reg2 ->
+      Neg (reg1, loc) :: replace_with_smaller rest
+  | Mvi (0, reg, loc) :: rest -> Mov (Z, reg, loc) :: replace_with_smaller rest
+  | Cmpi (Imm 0, Reg reg, loc) :: rest ->
+      Cmp (Z, reg, loc) :: replace_with_smaller rest
+  | Cmpi (Reg reg, Imm 0, loc) :: rest ->
+      Cmp (reg, Z, loc) :: replace_with_smaller rest
   | first :: rest -> first :: replace_with_smaller rest
 
 (* [peephole_optimize] applies all peephole optimizations to the given program *)

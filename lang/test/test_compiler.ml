@@ -2,6 +2,7 @@ open OUnit2
 open Compiler
 open Emulator__Machine
 open Testing_utils
+open Emulator__Numbers
 
 (* [run] parses a source program, checks it, compiles it, and runs
    the generated instructions in the emulator, returning
@@ -21,17 +22,29 @@ let run_body (body : string) : stew_3000 =
 
 (* [assert_expr] asserts that a given expression evaluates to
    a given value. *)
-let assert_expr (expr : string) (value : int) =
+let assert_expr ?(interpret_as_unsigned = false) (expr : string) (value : int) =
+  let interpret v =
+    if interpret_as_unsigned then as_8bit_unsigned v else as_8bit_signed v
+  in
   let machine = run_body (Printf.sprintf "print(%s);" expr) in
-  assert_equal [ value ] machine.dec_disp_history ~printer:string_of_dec_display
+  assert_equal (interpret value)
+    (interpret (List.hd machine.dec_disp_history))
+    ~printer:string_of_int
     ~msg:(Printf.sprintf "expression %s did not evaluate to %d\n" expr value)
 
 (* [assert_dec] asserts that after running a program with
    the given body, the machine's decimal display history
    will equal the given list. *)
-let assert_dec (body : string) (dec_history : int list) =
+let assert_dec ?(interpret_as_unsigned = false) (body : string)
+    (dec_history : int list) =
+  let interpret v =
+    if interpret_as_unsigned then as_8bit_unsigned v else as_8bit_signed v
+  in
+  let interpret_dec dec = List.map interpret dec in
   let machine = run_body body in
-  assert_equal dec_history machine.dec_disp_history
+  assert_equal
+    (interpret_dec dec_history)
+    (interpret_dec machine.dec_disp_history)
     ~printer:string_of_dec_display
 
 let test_let _ =
@@ -96,8 +109,8 @@ let test_nums _ =
 
 let test_unops _ =
   (* bitwise not *)
-  assert_expr "~0b00001011" 0b11110100;
-  assert_expr "~0b00000110" 0b011111001
+  assert_expr "~0b00001011" 0b11110100 ~interpret_as_unsigned:true;
+  assert_expr "~0b00000110" 0b011111001 ~interpret_as_unsigned:true
 
 let test_binops _ =
   (* addition *)
@@ -148,6 +161,7 @@ let test_binops _ =
   let bool_to_int (b : bool) : int = if b then 1 else 0 in
 
   (* greater than *)
+  assert_expr "1 > 0" 1;
   assert_expr "50 > 32" 1;
   assert_expr "-9 > 9" 0;
   assert_expr "14 > 14" 0;

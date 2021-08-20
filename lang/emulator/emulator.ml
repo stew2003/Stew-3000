@@ -106,7 +106,7 @@ let emulate_instr (ins : instr) (machine : stew_3000) (label_to_addr : int env)
     (* carry flag: If the 9th bit is set, the addition CF will be set.
        If subtraction was performed, invert this CF to get the machine's CF. *)
     machine.cflag <-
-      (let add_cf = unchecked_result land 0b100000000 <> 0 in
+      (let add_cf = unchecked_result > 255 || unchecked_result < -128 in
        if sub then not add_cf else add_cf)
   in
   (* [negate_value] takes an integer and negates it by flipping its bits
@@ -124,7 +124,9 @@ let emulate_instr (ins : instr) (machine : stew_3000) (label_to_addr : int env)
        NOTE: src value (right operand) is negated if subtraction
        is to be performed. This allows the overflow flag to
        correctly determine its value assuming the result is a sum. *)
-    let i8_src_value = if sub then negate_value src_value else src_value in
+    let i8_src_value =
+      Numbers.as_8bit_signed (if sub then negate_value src_value else src_value)
+    in
     let i8_dest_value = Numbers.as_8bit_signed (load_reg dest) in
     let carry_in =
       if include_carry then
@@ -167,10 +169,12 @@ let emulate_instr (ins : instr) (machine : stew_3000) (label_to_addr : int env)
        then if the addition overflows, the overflow will be present in the 9th
        bit, and won't be propagated further. This allows us to check the 9th
        bit for carry from addition. *)
-    let negated_u8_right_value = negate_value right_value in
+    let negated_right_value =
+      negate_value (Numbers.as_8bit_unsigned right_value)
+    in
     (* allow this result value to overflow *)
-    let unchecked_result = u8_left_value + negated_u8_right_value in
-    set_flags unchecked_result u8_left_value negated_u8_right_value true;
+    let unchecked_result = u8_left_value + negated_right_value in
+    set_flags unchecked_result u8_left_value negated_right_value true;
     inc_pc ()
   in
   (* [emulate_load] emulates a load from the stack into a destination register *)
@@ -281,14 +285,16 @@ let emulate_instr (ins : instr) (machine : stew_3000) (label_to_addr : int env)
       machine.pc <- ret_addr
   | Hlt _ -> machine.halted <- true
   | Out (src, _) ->
-      let src_value = load_reg src in
+      let src_value = Numbers.as_8bit_signed (load_reg src) in
       machine.dec_disp_history <-
         insert_at_end machine.dec_disp_history src_value;
       Logging.log_output verbosity src_value;
       inc_pc ()
   | Outi (imm, _) ->
-      machine.dec_disp_history <- insert_at_end machine.dec_disp_history imm;
-      Logging.log_output verbosity imm;
+      let signed_imm = Numbers.as_8bit_signed imm in
+      machine.dec_disp_history <-
+        insert_at_end machine.dec_disp_history signed_imm;
+      Logging.log_output verbosity signed_imm;
       inc_pc ()
   | Dic (imm, _) ->
       machine.lcd_disp_history <-
