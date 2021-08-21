@@ -8,8 +8,8 @@ const int NUM_CONDITIONAL_INSTRUCTIONS = 39;
 typedef struct flags_t {
     uint8_t carry;
     uint8_t over_flow;
-    uint8_t sign;
     uint8_t zero;
+    uint8_t sign;
 } flags_t;
 
 typedef struct conditional_t {
@@ -21,8 +21,8 @@ typedef struct conditional_t {
 void extract_flags(uint8_t flags_num, flags_t* flags) {
     flags->carry = flags_num & 0b0001;
     flags->over_flow = (flags_num & 0b0010) >> 1;
-    flags->sign = (flags_num & 0b0100) >> 2;
-    flags->zero = (flags_num & 0b1000) >> 3;
+    flags->zero = (flags_num & 0b0100) >> 2;
+    flags->sign = (flags_num & 0b1000) >> 3;
 }
 
 uint8_t carry(flags_t* flags) {
@@ -70,7 +70,7 @@ uint8_t jbe(flags_t* flags) {
 }
 
 //  0   0   0   0
-//  ZF  SF  OF  CF
+//  SF  ZF  OF  CF
 const conditional_t conditionals[NUM_CONDITIONAL_INSTRUCTIONS] = {
     // addc $r1, $r2
     { 0x10, carry }, // addc a, a
@@ -140,6 +140,13 @@ const conditional_t conditionals[NUM_CONDITIONAL_INSTRUCTIONS] = {
     { 0xbb, jbe }
 };
 
+byte reverse_bits(byte b) {
+   b = (b & 0xF0) >> 4 | (b & 0x0F) << 4;
+   b = (b & 0xCC) >> 2 | (b & 0x33) << 2;
+   b = (b & 0xAA) >> 1 | (b & 0x55) << 1;
+   return b;
+}
+
 void program_conditionals() {
     for (int instr_index = 0; instr_index < NUM_CONDITIONAL_INSTRUCTIONS; instr_index++) {
         for (int flags_num = 0; flags_num < pow(2, NUM_FLAGS); flags_num++) {
@@ -156,7 +163,7 @@ void program_conditionals() {
 void setup() {
     Serial.begin(57600);
     Serial.println("Beginning erasing EEPROM.");
-    programmer.erase();
+//    programmer.erase();
     Serial.println("Finished erasing EEPROM.");
     program_conditionals();
     programmer.print_contents();

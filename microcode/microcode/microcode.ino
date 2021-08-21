@@ -153,10 +153,10 @@ const uint32_t PROGMEM microcode[NUM_INSTRUCTIONS][INSTRUCTION_ARR_LENGTH] = {
   { 0x62, SO|SUM|CAR|EI, EO|SUM|CAR|EI|FI, EO|SI, RST }, // inr2 sp
 
   // inr3 $r1: $r1 = $r1 + 3
-  { 0x63, AO|SUM|CAR|EI, EO|SUM|CAR|EI, EO|SUM|CAR|EI|FI, EO|AI, RST }, // inr2 a
-  { 0x64, BO|SUM|CAR|EI, EO|SUM|CAR|EI, EO|SUM|CAR|EI|FI, EO|BI, RST }, // inr2 b
-  { 0x65, CO|SUM|CAR|EI, EO|SUM|CAR|EI, EO|SUM|CAR|EI|FI, EO|CI, RST }, // inr2 c
-  { 0x66, SO|SUM|CAR|EI, EO|SUM|CAR|EI, EO|SUM|CAR|EI|FI, EO|SI, RST }, // inr2 sp
+  { 0x63, AO|SUM|CAR|EI, EO|SUM|CAR|EI, EO|SUM|CAR|EI|FI, EO|AI, RST }, // inr3 a
+  { 0x64, BO|SUM|CAR|EI, EO|SUM|CAR|EI, EO|SUM|CAR|EI|FI, EO|BI, RST }, // inr3 b
+  { 0x65, CO|SUM|CAR|EI, EO|SUM|CAR|EI, EO|SUM|CAR|EI|FI, EO|CI, RST }, // inr3 c
+  { 0x66, SO|SUM|CAR|EI, EO|SUM|CAR|EI, EO|SUM|CAR|EI|FI, EO|SI, RST }, // inr3 sp
 
   // dcr $r1: $r1 = $r1 - 1
   { 0x67, AO|SUM|SUB|EI|FI, EO|AI, RST }, // dcr a
@@ -260,7 +260,7 @@ const uint32_t PROGMEM microcode[NUM_INSTRUCTIONS][INSTRUCTION_ARR_LENGTH] = {
   { 0xb1, PCO|MI, RO|PCI, RST },
 
   // call byte: sp +=1, sp + 1, Stack[sp] = pc, pc = byte
-  { 0xbc, PCO|MI, RO|TI, SO|SUM|CAR|EI, EO|SI|MI|PCE|STK, STK|PCO|RI, STK|TO|PCI },
+  { 0xbc, PCO|MI, RO|TI, SO|SUM|CAR|EI, EO|SI|MI|PCE|STK, STK|PCO|RI, STK|TO|PCI, RST },
   
   // ret: pc = Stack[sp], sp -= 1
   { 0xbd, SO|MI, STK|RO|PCI, SO|SUM|SUB|EI, EO|SI, RST },

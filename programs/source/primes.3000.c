@@ -27,10 +27,7 @@ void main() {
 int is_prime(int n) {
     assert(n >= 0);
 
-    // neither 0 nor 1 are prime
-    if (n == 0 || n == 1) { return 0; }
-
-    int k = n - 1;
+    int k = n / 2;
 
     while (k > 1) {
         // k divides n, so n is not prime

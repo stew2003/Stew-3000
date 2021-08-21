@@ -1,4 +1,10 @@
 entry:
-    mvi 0x80, b
-    add b, a
+    mvi 0, a
+    mvi 1, b
+    cmp a, b
+    jae stop
+    outi -1
+    hlt
+stop:
+    outi 1
     hlt
