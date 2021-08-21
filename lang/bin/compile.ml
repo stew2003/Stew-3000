@@ -2,6 +2,7 @@ open Core
 open Compiler
 open Asm.Isa
 open Asm.Assemble
+open Asm.Warnings
 open Compiler.Optimizations
 open Compiler.Warnings
 open Err
@@ -50,7 +51,10 @@ let command =
           | None -> ()
           | Some bin_file ->
               (* assemble and write binary *)
-              let assembled = assemble instrs in
+              let assembled =
+                assemble instrs ~emit_warning:(fun w ->
+                    print_warning (message_of_asm_warn w "" ""))
+              in
               let bin_out = Out_channel.create bin_file in
               Out_channel.output_bytes bin_out assembled;
               Out_channel.close bin_out

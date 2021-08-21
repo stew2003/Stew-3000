@@ -18,17 +18,19 @@ let message_of_compiler_warn (warning : compiler_warn) (source_text : string)
   match warning with
   | DivisionByZero div_expr ->
       ( "division by zero (undefined behavior)",
-        Some
-          (string_of_maybe_loc (loc_from_expr div_expr) source_text
-             source_filename),
+        Option.map
+          (fun loc -> string_of_src_loc loc source_text source_filename)
+          (loc_from_expr div_expr),
         None )
   | ZeroSizeArray (arr, decl) ->
       ( sprintf "array `%s` has zero size" arr,
-        Some
-          (string_of_maybe_loc (loc_from_stmt decl) source_text source_filename),
+        Option.map
+          (fun loc -> string_of_src_loc loc source_text source_filename)
+          (loc_from_stmt decl),
         None )
   | EmptyInitializer (arr, decl) ->
       ( sprintf "array `%s` has an empty initializer" arr,
-        Some
-          (string_of_maybe_loc (loc_from_stmt decl) source_text source_filename),
+        Option.map
+          (fun loc -> string_of_src_loc loc source_text source_filename)
+          (loc_from_stmt decl),
         Some "consider omitting the initializer entirely" )

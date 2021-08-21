@@ -20,5 +20,7 @@ let message_of_asm_warn (warning : asm_warn) (source_text : string)
         Some "consider reducing program size" )
   | OutOfBoundsLabel (label, addr, loc) ->
       ( Printf.sprintf "out of bounds label `%s` (at byte 0x%x)" label addr,
-        Some (string_of_maybe_loc loc source_text source_filename),
+        Option.map
+          (fun loc -> string_of_src_loc loc source_text source_filename)
+          loc,
         Some "reduce program size" )
