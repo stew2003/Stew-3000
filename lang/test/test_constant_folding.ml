@@ -81,19 +81,6 @@ let test_lnot _ =
   assert_body_const_folds_to "!100;" "0;";
   assert_body_const_folds_to "!0;" "1;"
 
-let test_if _ =
-  assert_body_const_folds_to "if (1) { print(50); }" "{ print(50); }";
-  assert_body_const_folds_to "if (0) { exit(1 + 2); }" "{}"
-
-let test_if_else _ =
-  assert_body_const_folds_to "if (1) { 5; } else { 10; }" "{ 5; }";
-  assert_body_const_folds_to "if (0) { 5; } else { 10; }" "{ 10; }"
-
-let test_while _ =
-  assert_body_const_folds_to "while (0) { print(100); }" "{}";
-  assert_body_const_folds_to "while (5 + 10) { print(100); }"
-    "while (15) { print(100); }"
-
 let test_does_not_fold_vars _ =
   assert_body_const_folds_to "int x = 15; 1 + 2 + x;" "int x = 15; 3 + x;"
 
@@ -117,9 +104,6 @@ let suite =
          "test_land" >:: test_land;
          "test_lor" >:: test_lor;
          "test_lnot" >:: test_lnot;
-         "test_if" >:: test_if;
-         "test_if_else" >:: test_if_else;
-         "test_while" >:: test_while;
          "test_does_not_fold_vars" >:: test_does_not_fold_vars;
        ]
 

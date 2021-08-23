@@ -1,12 +1,13 @@
-
-
-void f(int x) {
-    return;
-    print(40);
+// unused function
+unsigned f(int x) {
+    return (unsigned)x;
 }
 
 void main() {
-    while (0) {
-        f(10);
+    int count = 0;
+    while (1) {
+        print(count++);
     }
+    char done[] = "done";
+    print_lcd(done);
 }
