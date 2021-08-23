@@ -60,11 +60,12 @@ and expand_in_stmt (define : pp_define) (stmt : stmt) : stmt =
   | ExprStmt (expr, loc) -> ExprStmt (expand_in_expr define expr, loc)
   | While (cond, body, loc) ->
       While (expand_in_expr define cond, expand_in_stmt_list define body, loc)
+  | Loop (body, loc) -> Loop (expand_in_stmt_list define body, loc)
   | PrintDec (expr, loc) -> PrintDec (expand_in_expr define expr, loc)
   | PrintLcd (expr, loc) -> PrintLcd (expand_in_expr define expr, loc)
   | Exit (Some expr, loc) -> Exit (Some (expand_in_expr define expr), loc)
   | Assert (expr, loc) -> Assert (expand_in_expr define expr, loc)
-  | Return _ | Exit _ -> stmt
+  | Return _ | Exit _ | NopStmt _ -> stmt
 
 (* [expand_in_stmt_list] expands a #define directive in every statement
    in a list. *)

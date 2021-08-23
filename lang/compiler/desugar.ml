@@ -65,6 +65,7 @@ let desugar (pgrm : prog) : prog =
           (desugar_expr cond, desugar_stmt_list thn, desugar_stmt_list els, loc)
     | While (cond, body, loc) ->
         While (desugar_expr cond, desugar_stmt_list body, loc)
+    | Loop (body, loc) -> Loop (desugar_stmt_list body, loc)
     | Block (scope, loc) -> Block (desugar_stmt_list scope, loc)
     | Return (Some e, loc) -> Return (Some (desugar_expr e), loc)
     | ExprStmt (e, loc) -> ExprStmt (desugar_expr e, loc)
@@ -72,7 +73,7 @@ let desugar (pgrm : prog) : prog =
     | PrintLcd (e, loc) -> PrintLcd (desugar_expr e, loc)
     | Exit (Some e, loc) -> Exit (Some (desugar_expr e), loc)
     | Assert (e, loc) -> Assert (desugar_expr e, loc)
-    | Return _ | Exit _ -> stmt
+    | Return _ | Exit _ | NopStmt _ -> stmt
   and desugar_stmt_list (stmts : stmt list) : stmt list =
     List.map desugar_stmt stmts
   and desugar_func_defn (defn : func_defn) : func_defn =

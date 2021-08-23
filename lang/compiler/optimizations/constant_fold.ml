@@ -128,11 +128,12 @@ and fold_stmt (stmt : stmt) (emit_warning : compiler_warn_handler) : stmt =
       | NumLiteral (0, _) -> Block ([], loc)
       | folded_cond -> While (folded_cond, fold_stmt_list body emit_warning, loc)
       )
+  | Loop (body, loc) -> Loop (fold_stmt_list body emit_warning, loc)
   | PrintDec (expr, loc) -> PrintDec (fold_expr expr emit_warning, loc)
   | PrintLcd (expr, loc) -> PrintLcd (fold_expr expr emit_warning, loc)
   | Exit (Some expr, loc) -> Exit (Some (fold_expr expr emit_warning), loc)
   | Assert (expr, loc) -> Assert (fold_expr expr emit_warning, loc)
-  | Return _ | Exit _ -> stmt
+  | Return _ | Exit _ | NopStmt _ -> stmt
 
 (* [fold_stmt_list] performs constant folding on a list of statements. *)
 and fold_stmt_list (stmts : stmt list) (emit_warning : compiler_warn_handler) :

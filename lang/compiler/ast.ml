@@ -60,6 +60,7 @@ type stmt =
   | If of expr * stmt list * maybe_loc
   | IfElse of expr * stmt list * stmt list * maybe_loc
   | While of expr * stmt list * maybe_loc
+  | Loop of stmt list * maybe_loc
   | Block of stmt list * maybe_loc
   | Return of expr option * maybe_loc
   | ExprStmt of expr * maybe_loc
@@ -67,6 +68,7 @@ type stmt =
   | PrintLcd of expr * maybe_loc
   | Exit of expr option * maybe_loc
   | Assert of expr * maybe_loc
+  | NopStmt of maybe_loc
 
 type func_defn = {
   name : string;
@@ -181,13 +183,15 @@ let loc_from_stmt (stmt : stmt) : maybe_loc =
   | If (_, _, loc)
   | IfElse (_, _, _, loc)
   | While (_, _, loc)
+  | Loop (_, loc)
   | Block (_, loc)
   | Return (_, loc)
   | ExprStmt (_, loc)
   | PrintDec (_, loc)
   | PrintLcd (_, loc)
   | Exit (_, loc)
-  | Assert (_, loc) ->
+  | Assert (_, loc)
+  | NopStmt loc ->
       loc
 
 (* [check_for_expr] determines if the program contains an
@@ -242,11 +246,12 @@ let check_for_expr (pgrm : prog) (pred : expr -> bool) : bool =
     | Return (Some value, _) -> check_expr value pred
     | ExprStmt (value, _) -> check_expr value pred
     | While (cond, body, _) -> check_expr cond pred || check_stmt_list body pred
+    | Loop (body, _) -> check_stmt_list body pred
     | PrintDec (value, _) -> check_expr value pred
     | PrintLcd (value, _) -> check_expr value pred
     | Exit (Some e, _) -> check_expr e pred
     | Assert (e, _) -> check_expr e pred
-    | Return _ | Exit _ -> false
+    | Return _ | Exit _ | NopStmt _ -> false
   (* [check_stmt_list] determines if the given statement list
      contains an expression that satisfies the predicate *)
   and check_stmt_list (stmts : stmt list) (pred : expr -> bool) : bool =
@@ -277,7 +282,9 @@ let check_for_stmt (pgrm : prog) (pred : stmt -> bool) : bool =
         check_stmt_list thn pred || check_stmt_list els pred
     | Block (stmts, _) -> check_stmt_list stmts pred
     | While (_, body, _) -> check_stmt_list body pred
-    | Return _ | ExprStmt _ | PrintDec _ | PrintLcd _ | Exit _ | Assert _ ->
+    | Loop (body, _) -> check_stmt_list body pred
+    | Return _ | ExprStmt _ | PrintDec _ | PrintLcd _ | Exit _ | Assert _
+    | NopStmt _ ->
         false
   (* [check_stmt_list] checks a list of statements for one that satisfies
      the given predicate *)

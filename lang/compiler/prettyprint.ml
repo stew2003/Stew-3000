@@ -123,6 +123,7 @@ and pretty_print_stmt (stmt : stmt) (indent_level : int) : string =
   | While (cond, body, _) ->
       sprintf "while (%s) %s" (pretty_print_expr cond)
         (pretty_print_block body indent_level)
+  | Loop (body, _) -> sprintf "loop %s" (pretty_print_block body indent_level)
   | Block (body, _) -> pretty_print_block body indent_level
   | Return (Some expr, _) -> sprintf "return %s;" (pretty_print_expr expr)
   | Return (None, _) -> "return;"
@@ -132,6 +133,7 @@ and pretty_print_stmt (stmt : stmt) (indent_level : int) : string =
   | PrintDec (expr, _) -> sprintf "print(%s);" (pretty_print_expr expr)
   | PrintLcd (expr, _) -> sprintf "print_lcd(%s);" (pretty_print_expr expr)
   | Assert (expr, _) -> sprintf "assert(%s);" (pretty_print_expr expr)
+  | NopStmt _ -> ""
 
 (* [pretty_print_stmt_list] converts a statement list into a pretty-printed string. *)
 and pretty_print_stmt_list (stmts : stmt list) (indent_level : int) : string =

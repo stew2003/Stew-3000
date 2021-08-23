@@ -405,6 +405,7 @@ let type_check (defn : func_defn) (defns : func_defn list)
         let cond_ty, cond_tc = type_check_expr cond env in
         expect_non_void cond cond_ty;
         While (cond_tc, type_check_stmt_list body env, loc)
+    | Loop (body, loc) -> Loop (type_check_stmt_list body env, loc)
     | Block (scope, loc) -> Block (type_check_stmt_list scope env, loc)
     | Return (maybe_expr, loc) ->
         let expr_tc =
@@ -451,6 +452,7 @@ let type_check (defn : func_defn) (defns : func_defn list)
         let cond_ty, cond_tc = type_check_expr cond env in
         expect_non_void cond cond_ty;
         Assert (cond_tc, loc)
+    | NopStmt loc -> NopStmt loc
   (* [type_check_stmt_list] checks a list of statements for type errors *)
   and type_check_stmt_list (stmts : stmt list) (env : ty env) : stmt list =
     List.map (fun stmt -> type_check_stmt stmt env) stmts
@@ -478,10 +480,13 @@ let ctrl_reaches_end (defn : func_defn) : bool =
     | IfElse (_, thn, els, _) ->
         ctrl_reaches_end_stmt_list thn || ctrl_reaches_end_stmt_list els
     | Block (scope, _) -> ctrl_reaches_end_stmt_list scope
-    (* Return and exit *cannot* be passed. *)
-    | Return _ | Exit _ -> false
+    (* Return and exit *cannot* be passed. Neither can loop because it loops
+       forever (NOTE: if we implement break, this should change!) *)
+    | Return _ | Exit _ | Loop _ -> false
     (* All of the following statements can be passed. *)
-    | If _ | ExprStmt _ | While _ | PrintDec _ | PrintLcd _ | Assert _ -> true
+    | If _ | ExprStmt _ | While _ | PrintDec _ | PrintLcd _ | Assert _
+    | NopStmt _ ->
+        true
   and ctrl_reaches_end_stmt_list (stmts : stmt list) : bool =
     match stmts with
     | [] -> true

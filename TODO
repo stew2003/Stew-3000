@@ -11,6 +11,9 @@ Compiler
       [] omit (+warn) dead code
     During compile:
       [] use more immediate instructions to reduce stack instructions
+  [x] AST
+    [x] loop
+    [x] nop statement
 
 Docs
   [] document everything
