@@ -51,6 +51,7 @@ let eliminate_unused ?(emit_warning : compiler_warn_handler = fun _ -> ())
 (* [eliminate_dead_code] removes dead / unused code from the given program. *)
 let eliminate_dead_code ?(emit_warning : compiler_warn_handler = fun _ -> ())
     (pgrm : prog) : prog =
+  (* [dce_stmt] eliminates dead code in a single statement. *)
   let rec dce_stmt (stmt : stmt) : stmt =
     match stmt with
     (* conditional construct with constant conditions can cause dead code *)
@@ -76,13 +77,17 @@ let eliminate_dead_code ?(emit_warning : compiler_warn_handler = fun _ -> ())
         | _ -> IfElse (cond, dce_stmt_list thn, dce_stmt_list els, loc))
     | While (cond, body, loc) -> (
         match cond with
-        | NumLiteral (0, _) ->
-            (* NOTE: only warn if condition is always 0, as while (1) is a
-               valid way to get an infinite loop. *)
-            emit_warning (ConstantCondition (0, stmt));
-            emit_warning (DeadCode body);
-            NopStmt loc
-        | _ -> Loop (dce_stmt_list body, loc))
+        | NumLiteral (cond_value, _) ->
+            if cond_value = 0 then (
+              (* NOTE: only warn if condition is always 0, as while (1) is a
+                 valid way to get an infinite loop. *)
+              emit_warning (ConstantCondition (0, stmt));
+              emit_warning (DeadCode body);
+              NopStmt loc)
+            else
+              (* Convert while with truthy condition into an unconditional loop *)
+              Loop (dce_stmt_list body, loc)
+        | _ -> While (cond, dce_stmt_list body, loc))
     (* recursively eliminate dead code in sub-statements *)
     | Loop (body, loc) -> Loop (dce_stmt_list body, loc)
     | Block (body, loc) -> Block (dce_stmt_list body, loc)
@@ -90,9 +95,13 @@ let eliminate_dead_code ?(emit_warning : compiler_warn_handler = fun _ -> ())
         Declare (name, typ, init, dce_stmt_list scope, loc)
     | ArrayDeclare (name, typ, size, init, scope, loc) ->
         ArrayDeclare (name, typ, size, init, dce_stmt_list scope, loc)
+    (* no change *)
     | Return _ | Exit _ | ExprStmt _ | PrintDec _ | PrintLcd _ | Assert _
     | NopStmt _ ->
         stmt
+  (* [dce_stmt_list] eliminates dead code in a list of statements. If it
+     encounters a statement that cannot be passed, it will elide all the
+     following statements. It also recursively invokes DCE on substatements *)
   and dce_stmt_list (stmts : stmt list) : stmt list =
     match stmts with
     | [] -> []
@@ -105,6 +114,8 @@ let eliminate_dead_code ?(emit_warning : compiler_warn_handler = fun _ -> ())
             else (
               (match rest with [] -> () | _ -> emit_warning (DeadCode rest));
               [ stmt_dce ]))
+  (* [dce_func_defn] performs dead code elimination on a function definition
+     by processing its body of statements. *)
   and dce_func_defn (defn : func_defn) : func_defn =
     { defn with body = dce_stmt_list defn.body }
   in
