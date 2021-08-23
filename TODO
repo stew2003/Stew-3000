@@ -7,13 +7,8 @@ Compiler
     Pre-compile: 
       [x] constant folding 
         [] consider what happens on overflow
-      [x] omit (+warn) unused vars and functions
-      [x] omit (+warn) dead code
     During compile:
       [] use more immediate instructions to reduce stack instructions
-  [x] AST
-    [x] loop
-    [x] nop statement
 
 Docs
   [] document everything
