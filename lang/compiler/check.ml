@@ -5,6 +5,7 @@ open Util.Err
 open Printf
 open Warnings
 open Optimizations.Constant_fold
+open Optimizations
 
 (* A type constraint indicates whether the type of a given expression
    is constrained to a particular type, or if it could be various types. *)
@@ -470,31 +471,6 @@ let type_check (defn : func_defn) (defns : func_defn list)
   (* type check the definition's body *)
   { defn with body = type_check_stmt_list defn.body env }
 
-(* [ctrl_reaches_end] determines if the control flow of a function's
-   body can reach the end of the function without encountering a return. *)
-let ctrl_reaches_end (defn : func_defn) : bool =
-  let rec can_pass_stmt (stmt : stmt) : bool =
-    match stmt with
-    | Declare (_, _, _, scope, _) | ArrayDeclare (_, _, _, _, scope, _) ->
-        ctrl_reaches_end_stmt_list scope
-    | IfElse (_, thn, els, _) ->
-        ctrl_reaches_end_stmt_list thn || ctrl_reaches_end_stmt_list els
-    | Block (scope, _) -> ctrl_reaches_end_stmt_list scope
-    (* Return and exit *cannot* be passed. Neither can loop because it loops
-       forever (NOTE: if we implement break, this should change!) *)
-    | Return _ | Exit _ | Loop _ -> false
-    (* All of the following statements can be passed. *)
-    | If _ | ExprStmt _ | While _ | PrintDec _ | PrintLcd _ | Assert _
-    | NopStmt _ ->
-        true
-  and ctrl_reaches_end_stmt_list (stmts : stmt list) : bool =
-    match stmts with
-    | [] -> true
-    | stmt :: rest ->
-        if can_pass_stmt stmt then ctrl_reaches_end_stmt_list rest else false
-  in
-  ctrl_reaches_end_stmt_list defn.body
-
 (* [check_funcs_are_unique] checks that function names are unique *)
 let rec check_funcs_are_unique (defns : func_defn list) =
   match defns with
@@ -531,7 +507,7 @@ let check ?(emit_warning : compiler_warn_handler = fun _ -> ()) (pgrm : prog) :
 
   let check_defn (defn : func_defn) : func_defn =
     (* check whether control can reach the end of each definition *)
-    let reaches_end = ctrl_reaches_end defn in
+    let reaches_end = Dead_code_elimination.can_pass_stmt_list defn.body in
     defn.ctrl_reaches_end <- Some reaches_end;
 
     (* control must not reach end of non-void function *)

@@ -103,31 +103,19 @@ and fold_stmt (stmt : stmt) (emit_warning : compiler_warn_handler) : stmt =
             init,
           fold_stmt_list scope emit_warning,
           loc )
-  | If (cond, body, loc) -> (
-      match fold_expr cond emit_warning with
-      | NumLiteral (cond_value, _) ->
-          if cond_value = 0 then Block ([], loc)
-          else Block (fold_stmt_list body emit_warning, loc)
-      | folded_cond -> If (folded_cond, fold_stmt_list body emit_warning, loc))
-  | IfElse (cond, thn, els, loc) -> (
-      match fold_expr cond emit_warning with
-      | NumLiteral (cond_value, _) ->
-          if cond_value = 0 then Block (fold_stmt_list els emit_warning, loc)
-          else Block (fold_stmt_list thn emit_warning, loc)
-      | folded_cond ->
-          IfElse
-            ( folded_cond,
-              fold_stmt_list thn emit_warning,
-              fold_stmt_list els emit_warning,
-              loc ))
+  | If (cond, body, loc) ->
+      If (fold_expr cond emit_warning, fold_stmt_list body emit_warning, loc)
+  | IfElse (cond, thn, els, loc) ->
+      IfElse
+        ( fold_expr cond emit_warning,
+          fold_stmt_list thn emit_warning,
+          fold_stmt_list els emit_warning,
+          loc )
   | Block (body, loc) -> Block (fold_stmt_list body emit_warning, loc)
   | Return (Some expr, loc) -> Return (Some (fold_expr expr emit_warning), loc)
   | ExprStmt (expr, loc) -> ExprStmt (fold_expr expr emit_warning, loc)
-  | While (cond, body, loc) -> (
-      match fold_expr cond emit_warning with
-      | NumLiteral (0, _) -> Block ([], loc)
-      | folded_cond -> While (folded_cond, fold_stmt_list body emit_warning, loc)
-      )
+  | While (cond, body, loc) ->
+      While (fold_expr cond emit_warning, fold_stmt_list body emit_warning, loc)
   | Loop (body, loc) -> Loop (fold_stmt_list body emit_warning, loc)
   | PrintDec (expr, loc) -> PrintDec (fold_expr expr emit_warning, loc)
   | PrintLcd (expr, loc) -> PrintLcd (fold_expr expr emit_warning, loc)
