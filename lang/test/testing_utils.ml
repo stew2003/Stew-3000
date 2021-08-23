@@ -59,11 +59,13 @@ and norm_stmt_locs (stmt : stmt) : stmt =
   | ExprStmt (e, _) -> ExprStmt (norm_expr_locs e, None)
   | While (cond, body, _) ->
       While (norm_expr_locs cond, norm_stmt_list_locs body, None)
+  | Loop (body, _) -> Loop (norm_stmt_list_locs body, None)
   | PrintDec (e, _) -> PrintDec (norm_expr_locs e, None)
   | PrintLcd (e, _) -> PrintLcd (norm_expr_locs e, None)
   | Exit (Some e, _) -> Exit (Some (norm_expr_locs e), None)
   | Exit (None, _) -> Exit (None, None)
   | Assert (e, _) -> Assert (e, None)
+  | NopStmt _ -> NopStmt None
 
 (* [norm_stmt_list_locs] normalizes source locations in a statement list *)
 and norm_stmt_list_locs (stmts : stmt list) : stmt list =

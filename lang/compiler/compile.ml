@@ -309,6 +309,12 @@ and compile_stmt (statement : stmt) (bindings : int env) (si : int)
       @ compile_cond cond condition_failed bindings si defns
       @ compile_stmt_list body bindings si defns ignore_asserts
       @ [ Jmp (start_while, None); Label (condition_failed, None) ]
+  | Loop (body, _) ->
+      let start_loop = gensym "start_loop" in
+      [ Label (start_loop, None) ]
+      @ compile_stmt_list body bindings si defns ignore_asserts
+      @ [ Jmp (start_loop, None) ]
+  | NopStmt _ -> []
 
 (* [compile_stmt_list] generates instructions for a list of statements,
    in an environment and stack index *)

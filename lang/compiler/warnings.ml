@@ -7,6 +7,9 @@ type compiler_warn =
   | DivisionByZero of expr
   | ZeroSizeArray of string * stmt
   | EmptyInitializer of string * stmt
+  | ConstantCondition of int * stmt
+  | DeadCode of stmt list
+  | UnusedFunction of func_defn
 
 (* Type for a function that is passed into the compiler to handle warnings. *)
 type compiler_warn_handler = compiler_warn -> unit
@@ -34,3 +37,30 @@ let message_of_compiler_warn (warning : compiler_warn) (source_text : string)
           (fun loc -> string_of_src_loc loc source_text source_filename)
           (loc_from_stmt decl),
         Some "consider omitting the initializer entirely" )
+  | ConstantCondition (cond_value, stmt) ->
+      ( sprintf "condition is a constant value (always %d)" cond_value,
+        Option.map
+          (fun loc -> string_of_src_loc loc source_text source_filename)
+          (loc_from_stmt stmt),
+        None )
+  | DeadCode stmts ->
+      let span_loc =
+        List.fold_left
+          (fun loc stmt ->
+            match (loc, loc_from_stmt stmt) with
+            | None, Some loc | Some loc, None -> Some loc
+            | Some so_far, Some loc -> Some (span so_far loc)
+            | None, None -> None)
+          None stmts
+      in
+      ( "dead code",
+        Option.map
+          (fun loc -> string_of_src_loc loc source_text source_filename)
+          span_loc,
+        Some "this code is unreachable, consider removing it" )
+  | UnusedFunction defn ->
+      ( sprintf "unused function `%s`" defn.name,
+        Option.map
+          (fun loc -> string_of_src_loc loc source_text source_filename)
+          defn.loc,
+        None )

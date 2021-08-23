@@ -5,6 +5,7 @@ open Util.Err
 open Printf
 open Warnings
 open Optimizations.Constant_fold
+open Optimizations
 
 (* A type constraint indicates whether the type of a given expression
    is constrained to a particular type, or if it could be various types. *)
@@ -405,6 +406,7 @@ let type_check (defn : func_defn) (defns : func_defn list)
         let cond_ty, cond_tc = type_check_expr cond env in
         expect_non_void cond cond_ty;
         While (cond_tc, type_check_stmt_list body env, loc)
+    | Loop (body, loc) -> Loop (type_check_stmt_list body env, loc)
     | Block (scope, loc) -> Block (type_check_stmt_list scope env, loc)
     | Return (maybe_expr, loc) ->
         let expr_tc =
@@ -451,6 +453,7 @@ let type_check (defn : func_defn) (defns : func_defn list)
         let cond_ty, cond_tc = type_check_expr cond env in
         expect_non_void cond cond_ty;
         Assert (cond_tc, loc)
+    | NopStmt loc -> NopStmt loc
   (* [type_check_stmt_list] checks a list of statements for type errors *)
   and type_check_stmt_list (stmts : stmt list) (env : ty env) : stmt list =
     List.map (fun stmt -> type_check_stmt stmt env) stmts
@@ -467,28 +470,6 @@ let type_check (defn : func_defn) (defns : func_defn list)
 
   (* type check the definition's body *)
   { defn with body = type_check_stmt_list defn.body env }
-
-(* [ctrl_reaches_end] determines if the control flow of a function's
-   body can reach the end of the function without encountering a return. *)
-let ctrl_reaches_end (defn : func_defn) : bool =
-  let rec can_pass_stmt (stmt : stmt) : bool =
-    match stmt with
-    | Declare (_, _, _, scope, _) | ArrayDeclare (_, _, _, _, scope, _) ->
-        ctrl_reaches_end_stmt_list scope
-    | IfElse (_, thn, els, _) ->
-        ctrl_reaches_end_stmt_list thn || ctrl_reaches_end_stmt_list els
-    | Block (scope, _) -> ctrl_reaches_end_stmt_list scope
-    (* Return and exit *cannot* be passed. *)
-    | Return _ | Exit _ -> false
-    (* All of the following statements can be passed. *)
-    | If _ | ExprStmt _ | While _ | PrintDec _ | PrintLcd _ | Assert _ -> true
-  and ctrl_reaches_end_stmt_list (stmts : stmt list) : bool =
-    match stmts with
-    | [] -> true
-    | stmt :: rest ->
-        if can_pass_stmt stmt then ctrl_reaches_end_stmt_list rest else false
-  in
-  ctrl_reaches_end_stmt_list defn.body
 
 (* [check_funcs_are_unique] checks that function names are unique *)
 let rec check_funcs_are_unique (defns : func_defn list) =
@@ -526,8 +507,8 @@ let check ?(emit_warning : compiler_warn_handler = fun _ -> ()) (pgrm : prog) :
 
   let check_defn (defn : func_defn) : func_defn =
     (* check whether control can reach the end of each definition *)
-    let reaches_end = ctrl_reaches_end defn in
-    defn.ctrl_reaches_end <- Some reaches_end;
+    let reaches_end = Dead_code_elimination.can_pass_stmt_list defn.body in
+    let defn = { defn with ctrl_reaches_end = Some reaches_end } in
 
     (* control must not reach end of non-void function *)
     if reaches_end && defn.return_ty <> Void then

@@ -7,8 +7,6 @@ Compiler
     Pre-compile: 
       [x] constant folding 
         [] consider what happens on overflow
-      [] omit (+warn) unused vars and functions
-      [] omit (+warn) dead code
     During compile:
       [] use more immediate instructions to reduce stack instructions
 
