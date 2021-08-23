@@ -25,28 +25,63 @@ and can_pass_stmt_list (stmts : stmt list) : bool =
   | stmt :: rest ->
       if can_pass_stmt stmt then can_pass_stmt_list rest else false
 
+(* [eliminate_unused] eliminates unused functions in the given program. *)
+let eliminate_unused ?(emit_warning : compiler_warn_handler = fun _ -> ())
+    (pgrm : prog) : prog =
+  (* [defn_is_used] determines if a function definition is used by
+     checking for calls to it. *)
+  let defn_is_used (defn : func_defn) (pgrm : prog) : bool =
+    check_for_expr pgrm (function
+      | Call (name, _, _) when name = defn.name -> true
+      | _ -> false)
+  in
+  (* [eliminate_unused_defns] eliminates function definitions that are never
+     used by the given program. *)
+  let rec eliminate_unused_defns (defns : func_defn list) : func_defn list =
+    match defns with
+    | [] -> []
+    | defn :: rest ->
+        if defn_is_used defn pgrm then defn :: eliminate_unused_defns rest
+        else (
+          emit_warning (UnusedFunction defn);
+          eliminate_unused_defns rest)
+  in
+  { pgrm with funcs = eliminate_unused_defns pgrm.funcs }
+
 (* [eliminate_dead_code] removes dead / unused code from the given program. *)
 let eliminate_dead_code ?(emit_warning : compiler_warn_handler = fun _ -> ())
     (pgrm : prog) : prog =
   let rec dce_stmt (stmt : stmt) : stmt =
-    (* TODO: warnings! *)
     match stmt with
     (* conditional construct with constant conditions can cause dead code *)
     | If (cond, body, loc) -> (
         match cond with
         | NumLiteral (cond_value, _) ->
-            if cond_value = 0 then NopStmt loc
+            emit_warning (ConstantCondition (cond_value, stmt));
+            if cond_value = 0 then (
+              emit_warning (DeadCode body);
+              NopStmt loc)
             else Block (dce_stmt_list body, loc)
         | _ -> If (cond, dce_stmt_list body, loc))
     | IfElse (cond, thn, els, loc) -> (
         match cond with
         | NumLiteral (cond_value, _) ->
-            if cond_value = 0 then Block (dce_stmt_list els, loc)
-            else Block (dce_stmt_list thn, loc)
+            emit_warning (ConstantCondition (cond_value, stmt));
+            if cond_value = 0 then (
+              emit_warning (DeadCode thn);
+              Block (dce_stmt_list els, loc))
+            else (
+              emit_warning (DeadCode els);
+              Block (dce_stmt_list thn, loc))
         | _ -> IfElse (cond, dce_stmt_list thn, dce_stmt_list els, loc))
     | While (cond, body, loc) -> (
         match cond with
-        | NumLiteral (0, _) -> NopStmt loc
+        | NumLiteral (0, _) ->
+            (* NOTE: only warn if condition is always 0, as while (1) is a
+               valid way to get an infinite loop. *)
+            emit_warning (ConstantCondition (0, stmt));
+            emit_warning (DeadCode body);
+            NopStmt loc
         | _ -> Loop (dce_stmt_list body, loc))
     (* recursively eliminate dead code in sub-statements *)
     | Loop (body, loc) -> Loop (dce_stmt_list body, loc)
@@ -67,12 +102,23 @@ let eliminate_dead_code ?(emit_warning : compiler_warn_handler = fun _ -> ())
         | Block ([], _) | NopStmt _ -> dce_stmt_list rest
         | _ ->
             if can_pass_stmt stmt_dce then stmt_dce :: dce_stmt_list rest
-            else [ stmt_dce ])
+            else (
+              (match rest with [] -> () | _ -> emit_warning (DeadCode rest));
+              [ stmt_dce ]))
   and dce_func_defn (defn : func_defn) : func_defn =
     { defn with body = dce_stmt_list defn.body }
   in
-  {
-    pgrm with
-    funcs = List.map dce_func_defn pgrm.funcs;
-    main = dce_func_defn pgrm.main;
-  }
+  (* First, eliminate unused definitions and emit warnings *)
+  let pgrm = eliminate_unused ~emit_warning pgrm in
+  (* Eliminate dead code *)
+  let pgrm =
+    {
+      pgrm with
+      funcs = List.map dce_func_defn pgrm.funcs;
+      main = dce_func_defn pgrm.main;
+    }
+  in
+  (* Again, eliminate unused functions which may have become unused because
+     of DCE. This time, don't emit warnings, however, because it might
+     confuse the user. *)
+  eliminate_unused pgrm

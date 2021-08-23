@@ -38,7 +38,6 @@ let assemble_instr (ins : instr) (label_map : int env) : int list =
   | ValidityError (InvalidInstr ins, maybe_loc) ->
       raise (AssembleError (InvalidInstr ins, maybe_loc)));
 
-  (* TODO: update to incorporate new instructions and new opcodes. *)
   match ins with
   (* Add src, dest *)
   | Add (A, A, _) -> [ 0x00 ]

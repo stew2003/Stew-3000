@@ -27,7 +27,7 @@ let command =
           let pgrm = Preprocess.preprocess pgrm in
           let pgrm = Desugar.desugar pgrm in
 
-          Printf.printf "%s\n" (Prettyprint.pretty_print pgrm);
+          Printf.printf "After desugar:\n%s\n" (Prettyprint.pretty_print pgrm);
 
           (* On warnings, print them *)
           let warning_handler (w : compiler_warn) =
@@ -38,6 +38,14 @@ let command =
           let pgrm =
             Constant_fold.constant_fold ~emit_warning:warning_handler pgrm
           in
+          let pgrm =
+            Dead_code_elimination.eliminate_dead_code
+              ~emit_warning:warning_handler pgrm
+          in
+
+          Printf.printf "After optimizing AST:\n%s\n"
+            (Prettyprint.pretty_print pgrm);
+
           let instrs = Compile.compile pgrm ~ignore_asserts in
 
           (* optimize the generated instructions *)

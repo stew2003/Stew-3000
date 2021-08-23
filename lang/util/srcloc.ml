@@ -29,7 +29,7 @@ let span (min_loc : src_loc) (max_loc : src_loc) : src_loc =
 
 (* the periphery is how many lines above and below the source
    location are printed when the location is printed *)
-let periphery = 2
+let periphery = 1
 
 (* [string_of_src_loc] converts a source location and a source file
    contents into a message indicating the position in the source file *)
