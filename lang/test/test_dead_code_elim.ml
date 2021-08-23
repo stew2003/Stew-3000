@@ -1,9 +1,14 @@
 open OUnit2
 open Compiler.Optimizations.Dead_code_elimination
+open Compiler
 open Testing_utils
 
 let assert_eliminates_to (before : string) (after : string) =
-  assert_prog_eq (parse_norm after) (eliminate_dead_code (parse_norm before))
+  (* NOTE: this runs everything through the checker to ensure
+     the ctrl_reaches_end field is set. *)
+  assert_prog_eq
+    (Check.check (parse_norm after))
+    (eliminate_dead_code (Check.check (parse_norm before)))
 
 let main_from_body (body : string) : string =
   Printf.sprintf "void main() { %s }" body
@@ -31,7 +36,7 @@ let test_while _ =
           params = [];
           body = [ Loop ([ PrintDec (NumLiteral (100, None), None) ], None) ];
           return_ty = Void;
-          ctrl_reaches_end = None;
+          ctrl_reaches_end = Some false;
           loc = None;
         };
     }

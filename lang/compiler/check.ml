@@ -508,7 +508,7 @@ let check ?(emit_warning : compiler_warn_handler = fun _ -> ()) (pgrm : prog) :
   let check_defn (defn : func_defn) : func_defn =
     (* check whether control can reach the end of each definition *)
     let reaches_end = Dead_code_elimination.can_pass_stmt_list defn.body in
-    defn.ctrl_reaches_end <- Some reaches_end;
+    let defn = { defn with ctrl_reaches_end = Some reaches_end } in
 
     (* control must not reach end of non-void function *)
     if reaches_end && defn.return_ty <> Void then

@@ -77,7 +77,7 @@ type func_defn = {
   return_ty : ty;
   (* Can control flow reach the end of this function's body? This is
      initialized to None by the parser, but is set during checking *)
-  mutable ctrl_reaches_end : bool option;
+  ctrl_reaches_end : bool option;
   loc : maybe_loc;
 }
 

@@ -117,7 +117,14 @@ let eliminate_dead_code ?(emit_warning : compiler_warn_handler = fun _ -> ())
   (* [dce_func_defn] performs dead code elimination on a function definition
      by processing its body of statements. *)
   and dce_func_defn (defn : func_defn) : func_defn =
-    { defn with body = dce_stmt_list defn.body }
+    let dce_body = dce_stmt_list defn.body in
+    {
+      defn with
+      body = dce_body;
+      (* NOTE: also update the ctrl_reaches_end field, as constant folding +
+         dead code elimination may have made it impossible to reach the end now. *)
+      ctrl_reaches_end = Some (can_pass_stmt_list dce_body);
+    }
   in
   (* First, eliminate unused definitions and emit warnings *)
   let pgrm = eliminate_unused ~emit_warning pgrm in
