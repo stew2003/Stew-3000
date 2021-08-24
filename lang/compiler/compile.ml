@@ -39,6 +39,14 @@ let compile_un_op (op : un_op) =
         Label (continue, None);
       ]
 
+(* [is_compare] determines if a bin_op is a comparison operator *)
+let is_compare (op : bin_op) : bool =
+  match op with
+  | Gt | Gte | Lt | Lte | UnsignedGt | UnsignedGte | UnsignedLt | UnsignedLte
+  | Eq | Neq ->
+      true
+  | _ -> false
+
 type which_const = LeftConst | RightConst
 
 (* [compile_bin_op] generates code for a binary operator
@@ -46,16 +54,35 @@ type which_const = LeftConst | RightConst
    is in the b register *)
 let rec compile_bin_op (op : bin_op) (left : expr) (right : expr)
     (bindings : int env) (si : int) (defns : func_defn list) =
+  (* [label_from_bin_op] creates a label that is relevant to the given bin_op *)
+  let label_from_bin_op (op : bin_op) : string =
+    String.map (function ' ' -> '_' | c -> c) (describe_bin_op op)
+  in
   (* [comparison] generates code for a binary comparison
      operator, given a function that creates the corresponding
      jump instruction *)
-  let comparison (operation : string) (make_jmp : string -> instr) (cmp : instr)
-      =
-    let success = gensym operation in
+  let comparison (op : bin_op) =
+    let success = gensym (label_from_bin_op op) in
     let continue = gensym "continue" in
+    let jmp_success =
+      match op with
+      | Gt -> Jg (success, None)
+      | Gte -> Jge (success, None)
+      | Lt -> Jl (success, None)
+      | Lte -> Jle (success, None)
+      | UnsignedGt -> Ja (success, None)
+      | UnsignedGte -> Jae (success, None)
+      | UnsignedLt -> Jb (success, None)
+      | UnsignedLte -> Jbe (success, None)
+      | Eq -> Je (success, None)
+      | Neq -> Jne (success, None)
+      | _ ->
+          raise
+            (InternalError
+               "compiler: tried to get jump of non-comparison operator")
+    in
     [
-      cmp;
-      make_jmp success;
+      jmp_success;
       Mvi (0, A, None);
       Jmp (continue, None);
       Label (success, None);
@@ -67,11 +94,6 @@ let rec compile_bin_op (op : bin_op) (left : expr) (right : expr)
   | NumLiteral (const, _), non_const | non_const, NumLiteral (const, _) -> (
       let which =
         match left with NumLiteral _ -> LeftConst | _ -> RightConst
-      in
-      let cmp =
-        match which with
-        | LeftConst -> Cmpi (Imm const, Reg A, None)
-        | RightConst -> Cmpi (Reg A, Imm const, None)
       in
       compile_expr non_const bindings si defns
       @
@@ -100,32 +122,19 @@ let rec compile_bin_op (op : bin_op) (left : expr) (right : expr)
       | BAnd -> [ Ani (const, A, None) ]
       | BOr -> [ Ori (const, A, None) ]
       | BXor -> [ Xri (const, A, None) ]
-      | Gt -> comparison "greater" (fun success -> Jg (success, None)) cmp
-      | Lt -> comparison "less" (fun success -> Jl (success, None)) cmp
-      | Gte ->
-          comparison "greater_than_eq" (fun success -> Jge (success, None)) cmp
-      | Lte ->
-          comparison "less_than_eq" (fun success -> Jle (success, None)) cmp
-      | UnsignedGt ->
-          comparison "unsigned_greater" (fun success -> Ja (success, None)) cmp
-      | UnsignedLt ->
-          comparison "unsigned_less" (fun success -> Jb (success, None)) cmp
-      | UnsignedGte ->
-          comparison "unsigned_greater_than_eq"
-            (fun success -> Jae (success, None))
-            cmp
-      | UnsignedLte ->
-          comparison "unsigned_less_than_eq"
-            (fun success -> Jbe (success, None))
-            cmp
-      | Eq -> comparison "equal" (fun success -> Je (success, None)) cmp
-      | Neq -> comparison "not_equal" (fun success -> Jne (success, None)) cmp
-      | LAnd | LOr ->
+      | op when is_compare op ->
+          [
+            (match which with
+            | LeftConst -> Cmpi (Imm const, Reg A, None)
+            | RightConst -> Cmpi (Reg A, Imm const, None));
+          ]
+          @ comparison op
+      | _ ->
           raise
             (InternalError
-               "attemped to compile logical and/or as normal binary operator"))
+               (Printf.sprintf "compiler: got invalid bin_op: %s"
+                  (describe_bin_op op))))
   | _ -> (
-      let cmp = Cmp (A, B, None) in
       compile_expr right bindings si defns
       @ [ Sts (A, si, None) ]
       @ compile_expr left bindings (si + 1) defns
@@ -140,42 +149,17 @@ let rec compile_bin_op (op : bin_op) (left : expr) (right : expr)
       | BAnd -> [ And (B, A, None) ]
       | BOr -> [ Or (B, A, None) ]
       | BXor -> [ Xor (B, A, None) ]
-      | Gt -> comparison "greater" (fun success -> Jg (success, None)) cmp
-      | Lt -> comparison "less" (fun success -> Jl (success, None)) cmp
-      | Gte ->
-          comparison "greater_than_eq" (fun success -> Jge (success, None)) cmp
-      | Lte ->
-          comparison "less_than_eq" (fun success -> Jle (success, None)) cmp
-      | UnsignedGt ->
-          comparison "unsigned_greater" (fun success -> Ja (success, None)) cmp
-      | UnsignedLt ->
-          comparison "unsigned_less" (fun success -> Jb (success, None)) cmp
-      | UnsignedGte ->
-          comparison "unsigned_greater_than_eq"
-            (fun success -> Jae (success, None))
-            cmp
-      | UnsignedLte ->
-          comparison "unsigned_less_than_eq"
-            (fun success -> Jbe (success, None))
-            cmp
-      | Eq -> comparison "equal" (fun success -> Je (success, None)) cmp
-      | Neq -> comparison "not_equal" (fun success -> Jne (success, None)) cmp
-      | LAnd | LOr ->
+      | op when is_compare op -> [ Cmp (A, B, None) ] @ comparison op
+      | _ ->
           raise
             (InternalError
-               "attemped to compile logical and/or as normal binary operator"))
+               (Printf.sprintf "compiler: got invalid bin_op: %s"
+                  (describe_bin_op op))))
 
 (* [compile_cond] generates instructions for specifically compiling
    conditions in ifs and whiles*)
 and compile_cond (cond : expr) (condition_failed : string) (bindings : int env)
     (si : int) (defns : func_defn list) : instr list =
-  let is_compare (op : bin_op) : bool =
-    match op with
-    | Gt | Gte | Lt | Lte | UnsignedGt | UnsignedGte | UnsignedLt | UnsignedLte
-    | Eq | Neq ->
-        true
-    | _ -> false
-  in
   match cond with
   | BinOp (op, left, right, _) when is_compare op -> (
       (* When comparison ops are in condition-position, we eliminate the
