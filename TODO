@@ -8,7 +8,7 @@ Compiler
       [x] constant folding 
         [] consider what happens on overflow
     During compile:
-      [] use more immediate instructions to reduce stack instructions
+      [x] use more immediate instructions to reduce stack instructions
 
 Docs
   [] document everything
