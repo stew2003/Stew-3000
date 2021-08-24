@@ -4,6 +4,15 @@ open Util.Env
 open Util.Names
 open Util.Err
 
+(* [lookup_var] extracts stack index from a given variable in the bindings.
+   Errors if the variable is unbound *)
+let lookup_var (name : string) (bindings : int env) : int =
+  match Env.find_opt name bindings with
+  | Some si -> si
+  | None ->
+      raise
+        (InternalError (Printf.sprintf "compiler: unbound variable %s" name))
+
 (* [call_runtime] adjusts the stack pointer and calls
    a runtime function, then adjusts the stack pointer back *)
 let call_runtime (func : string) (si : int) =
@@ -30,18 +39,22 @@ let compile_un_op (op : un_op) =
         Label (continue, None);
       ]
 
+type which_const = LeftConst | RightConst
+
 (* [compile_bin_op] generates code for a binary operator
    Note: assumes left operand is in the a register, right
    is in the b register *)
-let compile_bin_op (op : bin_op) (si : int) =
+let rec compile_bin_op (op : bin_op) (left : expr) (right : expr)
+    (bindings : int env) (si : int) (defns : func_defn list) =
   (* [comparison] generates code for a binary comparison
      operator, given a function that creates the corresponding
      jump instruction *)
-  let comparison (operation : string) (make_jmp : string -> instr) =
+  let comparison (operation : string) (make_jmp : string -> instr) (cmp : instr)
+      =
     let success = gensym operation in
     let continue = gensym "continue" in
     [
-      Cmp (A, B, None);
+      cmp;
       make_jmp success;
       Mvi (0, A, None);
       Jmp (continue, None);
@@ -50,45 +63,165 @@ let compile_bin_op (op : bin_op) (si : int) =
       Label (continue, None);
     ]
   in
-  match op with
-  | Plus -> [ Add (B, A, None) ]
-  | Minus -> [ Sub (B, A, None) ]
-  | Mult -> call_runtime "runtime_multiply" si @ [ Mov (C, A, None) ]
-  | Div -> call_runtime "runtime_divide" si @ [ Mov (C, A, None) ]
-  | Mod -> call_runtime "runtime_divide" si
-  | BAnd -> [ And (B, A, None) ]
-  | BOr -> [ Or (B, A, None) ]
-  | BXor -> [ Xor (B, A, None) ]
-  | Gt -> comparison "greater" (fun success -> Jg (success, None))
-  | Lt -> comparison "less" (fun success -> Jl (success, None))
-  | Gte -> comparison "greater_than_eq" (fun success -> Jge (success, None))
-  | Lte -> comparison "less_than_eq" (fun success -> Jle (success, None))
-  | UnsignedGt ->
-      comparison "unsigned_greater" (fun success -> Ja (success, None))
-  | UnsignedLt -> comparison "unsigned_less" (fun success -> Jb (success, None))
-  | UnsignedGte ->
-      comparison "unsigned_greater_than_eq" (fun success -> Jae (success, None))
-  | UnsignedLte ->
-      comparison "unsigned_less_than_eq" (fun success -> Jbe (success, None))
-  | Eq -> comparison "equal" (fun success -> Je (success, None))
-  | Neq -> comparison "not_equal" (fun success -> Jne (success, None))
-  | LAnd | LOr ->
-      raise
-        (InternalError
-           "attemped to compile logical and/or as normal binary operator")
+  match (left, right) with
+  | NumLiteral (const, _), non_const | non_const, NumLiteral (const, _) -> (
+      let which =
+        match left with NumLiteral _ -> LeftConst | _ -> RightConst
+      in
+      let cmp =
+        match which with
+        | LeftConst -> Cmpi (Imm const, Reg A, None)
+        | RightConst -> Cmpi (Reg A, Imm const, None)
+      in
+      compile_expr non_const bindings si defns
+      @
+      match op with
+      | Plus -> [ Addi (const, A, None) ]
+      | Minus -> (
+          match which with
+          | LeftConst ->
+              [ Mvi (const, B, None); Sub (A, B, None); Mov (B, A, None) ]
+          | RightConst -> [ Subi (const, A, None) ])
+      | Mult ->
+          [ Mvi (const, B, None) ]
+          @ call_runtime "runtime_multiply" si
+          @ [ Mov (C, A, None) ]
+      | Div ->
+          (match which with
+          | LeftConst -> [ Mov (A, B, None); Mvi (const, A, None) ]
+          | RightConst -> [ Mvi (const, B, None) ])
+          @ call_runtime "runtime_divide" si
+          @ [ Mov (C, A, None) ]
+      | Mod ->
+          (match which with
+          | LeftConst -> [ Mov (A, B, None); Mvi (const, A, None) ]
+          | RightConst -> [ Mvi (const, B, None) ])
+          @ call_runtime "runtime_divide" si
+      | BAnd -> [ Ani (const, A, None) ]
+      | BOr -> [ Ori (const, A, None) ]
+      | BXor -> [ Xri (const, A, None) ]
+      | Gt -> comparison "greater" (fun success -> Jg (success, None)) cmp
+      | Lt -> comparison "less" (fun success -> Jl (success, None)) cmp
+      | Gte ->
+          comparison "greater_than_eq" (fun success -> Jge (success, None)) cmp
+      | Lte ->
+          comparison "less_than_eq" (fun success -> Jle (success, None)) cmp
+      | UnsignedGt ->
+          comparison "unsigned_greater" (fun success -> Ja (success, None)) cmp
+      | UnsignedLt ->
+          comparison "unsigned_less" (fun success -> Jb (success, None)) cmp
+      | UnsignedGte ->
+          comparison "unsigned_greater_than_eq"
+            (fun success -> Jae (success, None))
+            cmp
+      | UnsignedLte ->
+          comparison "unsigned_less_than_eq"
+            (fun success -> Jbe (success, None))
+            cmp
+      | Eq -> comparison "equal" (fun success -> Je (success, None)) cmp
+      | Neq -> comparison "not_equal" (fun success -> Jne (success, None)) cmp
+      | LAnd | LOr ->
+          raise
+            (InternalError
+               "attemped to compile logical and/or as normal binary operator"))
+  | _ -> (
+      let cmp = Cmp (A, B, None) in
+      compile_expr right bindings si defns
+      @ [ Sts (A, si, None) ]
+      @ compile_expr left bindings (si + 1) defns
+      @ [ Lds (si, B, None) ]
+      @
+      match op with
+      | Plus -> [ Add (B, A, None) ]
+      | Minus -> [ Sub (B, A, None) ]
+      | Mult -> call_runtime "runtime_multiply" si @ [ Mov (C, A, None) ]
+      | Div -> call_runtime "runtime_divide" si @ [ Mov (C, A, None) ]
+      | Mod -> call_runtime "runtime_divide" si
+      | BAnd -> [ And (B, A, None) ]
+      | BOr -> [ Or (B, A, None) ]
+      | BXor -> [ Xor (B, A, None) ]
+      | Gt -> comparison "greater" (fun success -> Jg (success, None)) cmp
+      | Lt -> comparison "less" (fun success -> Jl (success, None)) cmp
+      | Gte ->
+          comparison "greater_than_eq" (fun success -> Jge (success, None)) cmp
+      | Lte ->
+          comparison "less_than_eq" (fun success -> Jle (success, None)) cmp
+      | UnsignedGt ->
+          comparison "unsigned_greater" (fun success -> Ja (success, None)) cmp
+      | UnsignedLt ->
+          comparison "unsigned_less" (fun success -> Jb (success, None)) cmp
+      | UnsignedGte ->
+          comparison "unsigned_greater_than_eq"
+            (fun success -> Jae (success, None))
+            cmp
+      | UnsignedLte ->
+          comparison "unsigned_less_than_eq"
+            (fun success -> Jbe (success, None))
+            cmp
+      | Eq -> comparison "equal" (fun success -> Je (success, None)) cmp
+      | Neq -> comparison "not_equal" (fun success -> Jne (success, None)) cmp
+      | LAnd | LOr ->
+          raise
+            (InternalError
+               "attemped to compile logical and/or as normal binary operator"))
 
-(* [lookup_var] extracts stack index from a given variable in the bindings.
-   Errors if the variable is unbound *)
-let lookup_var (name : string) (bindings : int env) : int =
-  match Env.find_opt name bindings with
-  | Some si -> si
-  | None ->
-      raise
-        (InternalError (Printf.sprintf "compiler: unbound variable %s" name))
+(* [compile_cond] generates instructions for specifically compiling
+   conditions in ifs and whiles*)
+and compile_cond (cond : expr) (condition_failed : string) (bindings : int env)
+    (si : int) (defns : func_defn list) : instr list =
+  let is_compare (op : bin_op) : bool =
+    match op with
+    | Gt | Gte | Lt | Lte | UnsignedGt | UnsignedGte | UnsignedLt | UnsignedLte
+    | Eq | Neq ->
+        true
+    | _ -> false
+  in
+  match cond with
+  | BinOp (op, left, right, _) when is_compare op -> (
+      (* When comparison ops are in condition-position, we eliminate the
+         need for two cmps and two jmps by doing a single cmp and choosing
+         the right kind of jmp (for the comparison op) to the condition_failed
+         label. If one of the operands is also an immediate, we use a cmpi
+         instruction to eliminate extra stack operations *)
+      (match (left, right) with
+      | NumLiteral (const, _), non_const ->
+          compile_expr non_const bindings si defns
+          @ [ Cmpi (Imm const, Reg A, None) ]
+      | non_const, NumLiteral (const, _) ->
+          compile_expr non_const bindings si defns
+          @ [ Cmpi (Reg A, Imm const, None) ]
+      | _ ->
+          compile_expr right bindings si defns
+          @ [ Sts (A, si, None) ]
+          @ compile_expr left bindings (si + 1) defns
+          @ [ Lds (si, B, None) ]
+          @ [ Cmp (A, B, None) ])
+      @
+      (* NOTE: the opposite jumps are used here, because they are
+         jumps to the condition_failed label. *)
+      match op with
+      | Gt -> [ Jle (condition_failed, None) ]
+      | Gte -> [ Jl (condition_failed, None) ]
+      | Lt -> [ Jge (condition_failed, None) ]
+      | Lte -> [ Jg (condition_failed, None) ]
+      | UnsignedGt -> [ Jbe (condition_failed, None) ]
+      | UnsignedGte -> [ Jb (condition_failed, None) ]
+      | UnsignedLt -> [ Jae (condition_failed, None) ]
+      | UnsignedLte -> [ Ja (condition_failed, None) ]
+      | Eq -> [ Jne (condition_failed, None) ]
+      | Neq -> [ Je (condition_failed, None) ]
+      | _ ->
+          raise
+            (InternalError "compile: got impossible non-comparison operator"))
+  | _ ->
+      (* For non-comparison expressions in condition-position, we just compile them
+         normally and jump to condition_failed if the expr's value is 0. *)
+      compile_expr cond bindings si defns
+      @ [ Cmpi (Reg A, Imm 0, None); Je (condition_failed, None) ]
 
 (* [compile_expr] generates instructions for the given expression
    in a given environment and stack index *)
-let rec compile_expr (expression : expr) (bindings : int env) (si : int)
+and compile_expr (expression : expr) (bindings : int env) (si : int)
     (defns : func_defn list) : instr list =
   (* [compile_log_bin_op] generates code for logical and/or,
      given a function that produces the correct kind of
@@ -113,18 +246,17 @@ let rec compile_expr (expression : expr) (bindings : int env) (si : int)
       compile_log_bin_op left right (fun continue -> Je (continue, None))
   | BinOp (LOr, left, right, _) ->
       compile_log_bin_op left right (fun continue -> Jne (continue, None))
-  | BinOp (op, left, right, _) ->
-      compile_expr right bindings si defns
-      @ [ Sts (A, si, None) ]
-      @ compile_expr left bindings (si + 1) defns
-      @ [ Lds (si, B, None) ]
-      @ compile_bin_op op si
+  | BinOp (op, left, right, _) -> compile_bin_op op left right bindings si defns
   | Call (func, args, _) ->
       let stack_base = si - 1 in
       (args
       |> List.mapi (fun i arg ->
              let arg_si = si + i + 1 in
-             compile_expr arg bindings arg_si defns @ [ Sts (A, arg_si, None) ])
+             match arg with
+             | NumLiteral (num, _) -> [ Stsi (num, arg_si, None) ]
+             | _ ->
+                 compile_expr arg bindings arg_si defns
+                 @ [ Sts (A, arg_si, None) ])
       |> List.concat)
       @ [
           Addi (stack_base, SP, None);
@@ -142,14 +274,22 @@ let rec compile_expr (expression : expr) (bindings : int env) (si : int)
             (InternalError "compiler: tried to take address of a non l-value"))
   | Assign (lv, expr, _) -> (
       match lv with
-      | Var (name, _) ->
-          compile_expr expr bindings si defns
-          @ [ Sts (A, lookup_var name bindings, None) ]
-      | Deref (dest, _) ->
-          compile_expr dest bindings si defns
-          @ [ Sts (A, si, None) ]
-          @ compile_expr expr bindings (si + 1) defns
-          @ [ Lds (si, B, None); St (A, B, None) ]
+      | Var (name, _) -> (
+          let var_si = lookup_var name bindings in
+          match expr with
+          | NumLiteral (num, _) -> [ Stsi (num, var_si, None) ]
+          | _ -> compile_expr expr bindings si defns @ [ Sts (A, var_si, None) ]
+          )
+      | Deref (dest, _) -> (
+          let compiled_dest = compile_expr dest bindings si defns in
+          match expr with
+          | NumLiteral (num, _) ->
+              compiled_dest @ [ Mvi (num, B, None); St (B, A, None) ]
+          | _ ->
+              compiled_dest
+              @ [ Sts (A, si, None) ]
+              @ compile_expr expr bindings (si + 1) defns
+              @ [ Lds (si, B, None); St (A, B, None) ])
       | _ -> raise (InternalError "compiler: assignment of invalid l-value"))
   | PostfixInr (lv, _) | PostfixDcr (lv, _) -> (
       (* [make_crement] constructs the appropriate 'crement instruction, depending on
@@ -191,43 +331,6 @@ let rec compile_expr (expression : expr) (bindings : int env) (si : int)
            (Printf.sprintf "encountered sugar expression in compiler: %s"
               (describe_expr expression)))
 
-(* [compile_cond] generates instructions for specifically compiling
-   conditions in ifs and whiles*)
-and compile_cond (cond : expr) (condition_failed : string) (bindings : int env)
-    (si : int) (defns : func_defn list) : instr list =
-  (* For non-comparison expressions in condition-position, we just compile them
-     normally and jump to condition_failed if the expr's value is 0. *)
-  let default_compile_cond _ =
-    compile_expr cond bindings si defns
-    @ [ Cmpi (Reg A, Imm 0, None); Je (condition_failed, None) ]
-  in
-  match cond with
-  | BinOp (op, left, right, _) -> (
-      (* When comparison ops are in condition-position, we eliminate the
-         need for two cmps and two jmps by doing a single cmp and choosing
-         the right kind of jmp (for the comparison op) to the condition_failed
-         label. *)
-      let compile_comparison (make_jump : string -> instr) =
-        compile_expr right bindings si defns
-        @ [ Sts (A, si, None) ]
-        @ compile_expr left bindings (si + 1) defns
-        @ [ Lds (si, B, None) ]
-        @ [ Cmp (A, B, None); make_jump condition_failed ]
-      in
-      match op with
-      | Gt -> compile_comparison (fun label -> Jle (label, None))
-      | Gte -> compile_comparison (fun label -> Jl (label, None))
-      | Lt -> compile_comparison (fun label -> Jge (label, None))
-      | Lte -> compile_comparison (fun label -> Jg (label, None))
-      | UnsignedGt -> compile_comparison (fun label -> Jbe (label, None))
-      | UnsignedGte -> compile_comparison (fun label -> Jb (label, None))
-      | UnsignedLt -> compile_comparison (fun label -> Jae (label, None))
-      | UnsignedLte -> compile_comparison (fun label -> Ja (label, None))
-      | Eq -> compile_comparison (fun label -> Jne (label, None))
-      | Neq -> compile_comparison (fun label -> Je (label, None))
-      | _ -> default_compile_cond ())
-  | _ -> default_compile_cond ()
-
 (* [compile_stmt] generates instructions for a single statement,
    in a given environment and stack index *)
 and compile_stmt (statement : stmt) (bindings : int env) (si : int)
@@ -238,6 +341,7 @@ and compile_stmt (statement : stmt) (bindings : int env) (si : int)
       let initialization =
         match init with
         | None -> []
+        | Some (NumLiteral (num, _)) -> [ Stsi (num, si, None) ]
         | Some init ->
             compile_expr init bindings si defns @ [ Sts (A, si, None) ]
       in
@@ -258,8 +362,11 @@ and compile_stmt (statement : stmt) (bindings : int env) (si : int)
       | Some exprs ->
           exprs
           |> List.mapi (fun i expr ->
-                 compile_expr expr bindings (si + i + 1) defns
-                 @ [ Sts (A, si + i + 1, None) ])
+                 match expr with
+                 | NumLiteral (num, _) -> [ Stsi (num, si + i + 1, None) ]
+                 | _ ->
+                     compile_expr expr bindings (si + i + 1) defns
+                     @ [ Sts (A, si + i + 1, None) ])
           |> List.concat
       | None -> [])
       (* create pointer to beginning of the array (stored at si, points at si+1) *)
@@ -274,6 +381,7 @@ and compile_stmt (statement : stmt) (bindings : int env) (si : int)
   | ExprStmt (expr, _) -> compile_expr expr bindings si defns
   | Exit (expr, _) ->
       (match expr with
+      | Some (NumLiteral (num, _)) -> [ Outi (num, None) ]
       | Some expr -> compile_expr expr bindings si defns @ [ Out (A, None) ]
       | None -> [])
       @ [ Hlt None ]
@@ -282,8 +390,10 @@ and compile_stmt (statement : stmt) (bindings : int env) (si : int)
       | Some expr -> compile_expr expr bindings si defns
       | None -> [])
       @ [ Ret None ]
-  | PrintDec (expr, _) ->
-      compile_expr expr bindings si defns @ [ Out (A, None) ]
+  | PrintDec (expr, _) -> (
+      match expr with
+      | NumLiteral (num, _) -> [ Outi (num, None) ]
+      | _ -> compile_expr expr bindings si defns @ [ Out (A, None) ])
   | PrintLcd (expr, _) ->
       compile_expr expr bindings si defns @ call_runtime "runtime_print_lcd" si
   | Assert _ when ignore_asserts -> []
