@@ -30,4 +30,4 @@ let command =
           printf "%s\n" (Emulator__Machine.string_of_stew_3000 final_state)
         with err -> handle_err err source_text filename)
 
-let () = Command.run ~version:"1.0" command
+let () = Command.run ~version:"1.0.0" command

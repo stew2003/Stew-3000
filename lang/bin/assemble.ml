@@ -77,4 +77,4 @@ let command =
           else ()
         with err -> handle_err err source_text asm_filename)
 
-let () = Command.run ~version:"1.0" command
+let () = Command.run ~version:"1.0.0" command
