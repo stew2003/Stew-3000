@@ -2,13 +2,5 @@
 Hardware
   [] debug new instruction set
 
-Compiler
-  [] implement optimizations for smol code
-    Pre-compile: 
-      [x] constant folding 
-        [] consider what happens on overflow
-    During compile:
-      [x] use more immediate instructions to reduce stack instructions
-
 Docs
   [] document everything

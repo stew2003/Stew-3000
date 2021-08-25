@@ -1,9 +1,10 @@
 open Util
+open Util.Srcloc
 open Printf
 
 (* [print_warning] displays a warning to stderr given a tuple of warning info.
-    The message is a short sentence describing the nature of the warning. The 
-    extra and help are both optional and contain extra info to be printed 
+    The message is a short sentence describing the nature of the warning. The
+    extra and help are both optional and contain extra info to be printed
     (such as src locs) and a help suggestion, respectively. *)
 let print_warning
     ((message, extra, help) : string * string option * string option) =
@@ -21,22 +22,30 @@ let print_err (err_type : string) (msg : string) (loc : string option) =
     (Colors.bold (Colors.white msg))
     (match loc with None -> "" | Some loc -> sprintf "%s\n" loc)
 
-(* [print_arbitrary_err] prints an arbitrary exception type 
+(* [print_arbitrary_err] prints an arbitrary exception type
     as a string error message to stderr *)
 let print_arbitrary_err (error : exn) =
   print_err "Error" (Core.Exn.to_string error) None
 
 (* [try_read_source] attempst to read an entire file and return its
-  contents, but handles any errors that occur in doing so and exits. *)
+   contents, but handles any errors that occur in doing so and exits. *)
 let try_read_source (filename : string) : string =
   try Core.In_channel.read_all filename
   with err ->
     print_arbitrary_err err;
     exit 1
 
-(* [handle_err] handles an arbitrary error (via printing) that might have 
-  originated in parsing, assembling, emulating, compiling, etc. It could also 
-  be a system error or otherwise that was not thrown by our code. *)
+(* [map_to_loc] converts a Some loc to a string describing the location, but
+   leaves None untouched *)
+let map_to_loc (maybe_loc : maybe_loc) (source_text : string)
+    (source_filename : string) : string option =
+  Option.map
+    (fun loc -> Srcloc.string_of_src_loc loc source_text source_filename)
+    maybe_loc
+
+(* [handle_err] handles an arbitrary error (via printing) that might have
+   originated in parsing, assembling, emulating, compiling, etc. It could also
+   be a system error or otherwise that was not thrown by our code. *)
 let handle_err (error : exn) (source_text : string) (source_filename : string) =
   match error with
   | Asm.Parser.AsmParseError (msg, loc) ->
@@ -45,17 +54,22 @@ let handle_err (error : exn) (source_text : string) (source_filename : string) =
   | Asm.Assemble.AssembleError (err, maybe_loc) ->
       print_err "Assembler Error"
         (Asm.Assemble.string_of_asm_err err)
-        (Some (Srcloc.string_of_maybe_loc maybe_loc source_text source_filename))
+        (map_to_loc maybe_loc source_text source_filename)
   | Compiler.Parser.CompilerParseError (msg, maybe_loc) ->
       print_err "Parse Error" msg
-        (Some (Srcloc.string_of_maybe_loc maybe_loc source_text source_filename))
+        (map_to_loc maybe_loc source_text source_filename)
   | Compiler.Check.CheckError (err, maybe_loc) ->
       print_err "Check Error"
         (Compiler.Check.string_of_check_err err)
-        (Some (Srcloc.string_of_maybe_loc maybe_loc source_text source_filename))
+        (map_to_loc maybe_loc source_text source_filename)
+  | Compiler.Optimizations.Constant_fold.ConstantFoldErr (err, maybe_loc) ->
+      (* Just present this as a check error to eliminate confusion *)
+      print_err "Check Error"
+        (Compiler.Optimizations.Constant_fold.string_of_fold_err err)
+        (map_to_loc maybe_loc source_text source_filename)
   | Emulator.EmulatorError (err, maybe_loc) ->
       print_err "Emulator Error"
         (Emulator.string_of_emu_err err)
-        (Some (Srcloc.string_of_maybe_loc maybe_loc source_text source_filename))
+        (map_to_loc maybe_loc source_text source_filename)
   | Err.InternalError msg -> print_err "Internal Error" msg None
   | err -> print_arbitrary_err err

@@ -1,6 +1,24 @@
 open Ast
 open Warnings
 open Util.Err
+open Util.Srcloc
+
+type fold_err = FoldsToUnrepresentable of int
+
+(* [string_of_fold_err] converts a folding error into a string explaining it. *)
+let string_of_fold_err (err : fold_err) : string =
+  match err with
+  | FoldsToUnrepresentable n ->
+      Printf.sprintf "expression evaluates to unrepresentable value: %d" n
+
+exception ConstantFoldErr of fold_err with_loc_opt
+
+(* [validate_folded_value] checks that a folded constant is still
+   representable, and errors if not. If it is, the value is returned. *)
+let validate_folded_value (n : int) (loc : maybe_loc) : int =
+  if n < -128 || n > 255 then
+    raise (ConstantFoldErr (FoldsToUnrepresentable n, loc));
+  n
 
 (* [fold_expr] performs constant folding on a given expression.
    NOTE: character literals are not explicitly folded here because they
@@ -27,9 +45,15 @@ let rec fold_expr (exp : expr) (emit_warning : compiler_warn_handler) : expr =
       | _, NumLiteral (left_value, left_loc), NumLiteral (right_value, right_loc)
         -> (
           match op with
-          | Plus -> NumLiteral (left_value + right_value, loc)
-          | Minus -> NumLiteral (left_value - right_value, loc)
-          | Mult -> NumLiteral (left_value * right_value, loc)
+          | Plus ->
+              NumLiteral
+                (validate_folded_value (left_value + right_value) loc, loc)
+          | Minus ->
+              NumLiteral
+                (validate_folded_value (left_value - right_value) loc, loc)
+          | Mult ->
+              NumLiteral
+                (validate_folded_value (left_value * right_value) loc, loc)
           | Div | Mod ->
               if right_value = 0 then (
                 emit_warning (DivisionByZero exp);
@@ -41,8 +65,10 @@ let rec fold_expr (exp : expr) (emit_warning : compiler_warn_handler) : expr =
                     loc ))
               else
                 NumLiteral
-                  ( (match op with Div -> ( / ) | _ -> ( mod ))
-                      left_value right_value,
+                  ( validate_folded_value
+                      ((match op with Div -> ( / ) | _ -> ( mod ))
+                         left_value right_value)
+                      loc,
                     loc )
           | BAnd -> NumLiteral (left_value land right_value, loc)
           | BOr -> NumLiteral (left_value lor right_value, loc)
