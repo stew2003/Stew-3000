@@ -49,9 +49,7 @@ let is_compare (op : bin_op) : bool =
 
 type which_const = LeftConst | RightConst
 
-(* [compile_bin_op] generates code for a binary operator
-   Note: assumes left operand is in the a register, right
-   is in the b register *)
+(* [compile_bin_op] generates code for a binary operator *)
 let rec compile_bin_op (op : bin_op) (left : expr) (right : expr)
     (bindings : int env) (si : int) (defns : func_defn list) =
   (* [label_from_bin_op] creates a label that is relevant to the given bin_op *)
