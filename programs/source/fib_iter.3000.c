@@ -5,15 +5,15 @@
  */
 void main() {
     unsigned n = 0;
-    unsigned a = 0;
-    unsigned b = 1;
+    unsigned prev = 0;
+    unsigned cur = 1;
 
-    // a will be <= b until b overflows
-    while (a <= b) {
-        print(b);
+    // prev will be <= cur until cur overflows
+    while (prev <= cur) {
+        print(cur);
 
-        unsigned tmp = a;
-        a = b;
-        b = tmp + b;
+        unsigned tmp = prev;
+        prev = cur;
+        cur = tmp + cur;
     }
 }

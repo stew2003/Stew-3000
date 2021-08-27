@@ -36,7 +36,7 @@ let command =
     let binary = List.rev binary in
     List.map2 instrs binary ~f:(fun ins (addr, byte_line) ->
         (* print address of line in hex, bytes for line, then text instruction *)
-        Printf.printf "%s %6s | %s\n"
+        Printf.printf "%s %9s | %s\n"
           (match addr with None -> "   " | Some addr -> sprintf "%02x:" addr)
           (string_of_byte_line byte_line)
           (string_of_instr ins))
