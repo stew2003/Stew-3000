@@ -26,7 +26,7 @@
 ;   if (isNeg) {
 ;       str[cur++] = '-';   
 ;   }
-;   str[cur] = '\0';
+;   str[cur] = 0;
 ;
 ;   int start = 0;
 ;   int end = --cur;
@@ -41,3 +41,6 @@
 ; }
 runtime_itoa:
     sts b, 1;
+    mvi 10, b;
+    call runtime_divide;
+    

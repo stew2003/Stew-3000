@@ -3,7 +3,9 @@ char* itoa (int num, char* str) {
    int isNeg = 0;
 
    if (num < 0) {
+       print(-1);
        isNeg = 1;
+       print(isNeg);
    }
 
     print(isNeg);
