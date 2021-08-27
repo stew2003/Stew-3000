@@ -9,6 +9,7 @@ type command =
   | PrintRegs
   | PrintFlags
   | PrintDecHistory
+  | PrintLCDHistory
   | PrintStack
   | PrintFullState
   | PrintCurrentIns

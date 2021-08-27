@@ -18,6 +18,7 @@ let help_message =
     help_line "print regs" "print all register contents";
     help_line "print flags" "print all flag info";
     help_line "print dec" "print decimal display history";
+    help_line "print lcd" "print LCD display history";
     help_line "print stack" "print full stack";
     help_line "print machine" "print full machine state";
     help_line "print ins" "print instruction about to be executed";
@@ -60,6 +61,8 @@ let exec_command (cmd : command) (machine : stew_3000) (ins : instr) =
   | PrintFlags -> print_endline (string_of_all_flags machine)
   | PrintDecHistory ->
       print_endline (string_of_dec_display machine.dec_disp_history)
+  | PrintLCDHistory ->
+      print_endline (string_of_lcd_display machine.lcd_disp_history)
   | PrintStack -> print_endline (string_of_stack machine.stack)
   | PrintFullState -> print_endline (string_of_stew_3000 machine)
   | PrintCurrentIns ->

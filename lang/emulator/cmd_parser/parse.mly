@@ -13,6 +13,7 @@
 %token FLAGS
 %token MACHINE
 %token DEC
+%token LCD
 %token INS
 %token HALTED
 %token PRINT
@@ -51,6 +52,8 @@ print_cmd:
   { PrintFlags }
 | PRINT DEC
   { PrintDecHistory }
+| PRINT LCD 
+  { PrintLCDHistory }
 | PRINT STACK
   { PrintStack }
 | PRINT MACHINE

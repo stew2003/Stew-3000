@@ -48,6 +48,8 @@ rule token = parse
   { MACHINE }
 | "dec"
   { DEC }
+| "lcd"
+  { LCD }
 | "ins"
   { INS }
 | "halted"

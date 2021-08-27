@@ -81,6 +81,26 @@ let string_of_dec_display (history : int list) =
         history
       |> String.concat ""
 
+(* [string_of_lcd_display] produces a string of the LCD display history *)
+let string_of_lcd_display (history : lcd_byte list) : string =
+  match history with
+  | [] -> "(no output)"
+  | _ ->
+      let last = List.length history - 1 in
+      List.mapi
+        (fun i value ->
+          let str =
+            match value with
+            | Command b -> sprintf "(cmd) 0x%02x" (Numbers.as_8bit_unsigned b)
+            | Data b ->
+                sprintf "(data) '%c'" (char_of_int (Numbers.as_8bit_unsigned b))
+          in
+          if (i + 1) mod 8 = 0 then sprintf "%s\n" str
+          else if i = last then sprintf "%s" str
+          else sprintf "%s, " str)
+        history
+      |> String.concat ""
+
 (* [string_of_stack_at_addr] gets a string of the stack contents
    at a given address. The address is always interpreted as unsigned 8-bit *)
 let string_of_stack_at_addr (stack : int array) (addr : int) =
@@ -112,11 +132,14 @@ let string_of_stew_3000 (machine : stew_3000) : string =
      halted? %s\n\n\
      == Decimal Display History == (most recent last)\n\
      %s\n\n\
+     == LCD Display History == (most recent last)\n\
+     %s\n\n\
      == Stack ==%s\n"
     (string_of_all_regs machine)
     (string_of_all_flags machine)
     (string_of_halted machine.halted)
     (string_of_dec_display machine.dec_disp_history)
+    (string_of_lcd_display machine.lcd_disp_history)
     (string_of_stack machine.stack)
 
 let stack_size = 256
