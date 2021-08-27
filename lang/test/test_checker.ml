@@ -100,10 +100,7 @@ let test_type_err _ =
     "void main() {} int f() { return g(); } void g() {}";
   assert_raises_check_err
     (TypeError (Call ("g", [], None), Int, Void))
-    "void main() { exit(g()); } void g() {}";
-  assert_raises_check_err
-    (TypeError (Call ("g", [], None), Int, Void))
-    "void main() { print(g()); } void g() {}"
+    "void main() { exit(g()); } void g() {}"
 
 let test_invalid_type_err _ =
   assert_raises_check_err
@@ -117,7 +114,10 @@ let test_invalid_type_err _ =
     "void main() { 2 + g(); } void g(){}";
   assert_raises_check_err
     (InvalidTypeError (Call ("f", [], None), Void))
-    "void main() { f() ^ 0x4; } void f(){}"
+    "void main() { f() ^ 0x4; } void f(){}";
+  assert_raises_check_err
+    (InvalidTypeError (Call ("g", [], None), Void))
+    "void main() { print(g()); } void g() {}"
 
 let test_type_mismatch _ =
   assert_raises_check_err

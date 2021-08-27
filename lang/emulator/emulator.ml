@@ -237,7 +237,7 @@ let emulate_instr (ins : instr) (machine : stew_3000) (label_to_addr : int env)
   | Lds (imm, dest, _) -> emulate_load (machine.sp + imm) dest
   | Sts (src, imm, _) -> emulate_store src (machine.sp + imm)
   | Stsi (value, addr, _) ->
-      store_stack addr value;
+      store_stack (machine.sp + addr) value;
       inc_pc ()
   (* comparisons *)
   | Cmp (left, right, _) -> emulate_cmp (load_reg left) (load_reg right)

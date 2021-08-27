@@ -437,9 +437,15 @@ let type_check (defn : func_defn) (defns : func_defn list)
           | None -> None
         in
         Exit (expr_tc, loc)
-    | PrintDec (expr, loc) ->
-        (* must print only signed integers on decimal display *)
-        PrintDec (ensure_type_satisfies (ConstrainedTo Int) expr env loc, loc)
+    | PrintDec (expr, loc) -> (
+        (* decimal display expects either signed/unsigned integer types *)
+        let expr_ty, expr_tc = type_check_expr expr env in
+        expect_non_void expr expr_ty;
+        match expr_ty with
+        | ConstrainedTo Unsigned | ConstrainedTo Int | Unconstrained ->
+            PrintDec (expr_tc, loc)
+        | ConstrainedTo actual_ty ->
+            raise (CheckError (InvalidTypeError (expr, actual_ty), loc)))
     | PrintLcd (expr, loc) ->
         (* must print only char* (strings) on LCD display *)
         PrintLcd

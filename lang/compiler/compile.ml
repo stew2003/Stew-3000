@@ -203,8 +203,8 @@ and compile_cond (cond : expr) (condition_failed : string) (bindings : int env)
 
 (* [compile_expr] generates instructions for the given expression
    in a given environment and stack index *)
-and compile_expr (expression : expr) (bindings : int env) (si : int)
-    (defns : func_defn list) : instr list =
+and compile_expr ?(value_ignored = false) (expression : expr)
+    (bindings : int env) (si : int) (defns : func_defn list) : instr list =
   (* [compile_log_bin_op] generates code for logical and/or,
      given a function that produces the correct kind of
      jump to the end of the logical operator's code *)
@@ -259,20 +259,36 @@ and compile_expr (expression : expr) (bindings : int env) (si : int)
       | Var (name, _) -> (
           let var_si = lookup_var name bindings in
           match expr with
-          | NumLiteral (num, _) -> [ Stsi (num, var_si, None) ]
+          | NumLiteral (num, _) when value_ignored ->
+              [ Stsi (num, var_si, None) ]
           | _ -> compile_expr expr bindings si defns @ [ Sts (A, var_si, None) ]
           )
       | Deref (dest, _) -> (
           let compiled_dest = compile_expr dest bindings si defns in
           match expr with
           | NumLiteral (num, _) ->
-              compiled_dest @ [ Mvi (num, B, None); St (B, A, None) ]
+              if value_ignored then
+                compiled_dest @ [ Mvi (num, B, None); St (B, A, None) ]
+              else
+                compiled_dest
+                @ [ Mov (A, B, None); Mvi (num, A, None); St (A, B, None) ]
           | _ ->
               compiled_dest
               @ [ Sts (A, si, None) ]
               @ compile_expr expr bindings (si + 1) defns
               @ [ Lds (si, B, None); St (A, B, None) ])
       | _ -> raise (InternalError "compiler: assignment of invalid l-value"))
+  (* when the value is ignored anyway, convert postfix increment/decrement into
+     prefix, since it takes less code. *)
+  | (PostfixInr (lv, loc) | PostfixDcr (lv, loc)) as postfix when value_ignored
+    ->
+      let desugared =
+        Desugar.desugar_expr
+          (match postfix with
+          | PostfixInr _ -> SPrefixInr (lv, loc)
+          | _ -> SPrefixDcr (lv, loc))
+      in
+      compile_expr ~value_ignored desugared bindings si defns
   | PostfixInr (lv, _) | PostfixDcr (lv, _) -> (
       (* [make_crement] constructs the appropriate 'crement instruction, depending on
          whether this is a postfix INcrement or DEcrement. *)
@@ -360,7 +376,8 @@ and compile_stmt (statement : stmt) (bindings : int env) (si : int)
           defns ignore_asserts
   | Block (stmt_list, _) ->
       compile_stmt_list stmt_list bindings si defns ignore_asserts
-  | ExprStmt (expr, _) -> compile_expr expr bindings si defns
+  | ExprStmt (expr, _) ->
+      compile_expr ~value_ignored:true expr bindings si defns
   | Exit (expr, _) ->
       (match expr with
       | Some (NumLiteral (num, _)) -> [ Outi (num, None) ]
