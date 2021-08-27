@@ -3,6 +3,8 @@
 
 This repository holds all the code behind the Stew-3000: A homemade 8-bit breadboard computer heavily inspired by Ben Eater.
 
+![Stew 3000 diagram](https://raw.githubusercontent.com/wiki/stew2003/Stew-3000/images/full_diagram.jpeg)
+
 ## Project Structure
 
 Here's a quick guide to how things are laid out:
