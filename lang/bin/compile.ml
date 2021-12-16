@@ -23,22 +23,47 @@ let command =
       and disable_opt =
         flag "-disable-opt" no_arg ~doc:"do not apply extra optimizations"
       and show_opt_ast =
-        flag "-show-opt-ast" no_arg ~doc:"print the optimized AST"
+        flag "-show-opt-ast" (optional string)
+          ~doc:
+            "stage print the optimized AST after a given stage in the pipeline \
+             (preprocess, desugar, check, opt)"
+      and no_code_gen =
+        flag "-no-code-gen" no_arg ~doc:"aborts before code generation"
+      and no_warnings =
+        flag "-no-warn" no_arg ~doc:"do not print compiler warnings"
       in
+
       fun () ->
+        (* [print_ast_if_stage_matches] prints the given program AST if the
+           stage indicated by argument show_opt_ast matches the given stage. *)
+        let print_ast_if_stage_matches (stage : string) (pgrm : Ast.prog) =
+          match show_opt_ast with
+          | None -> ()
+          | Some chosen_stage ->
+              if String.equal stage chosen_stage then (
+                Printf.printf "%s"
+                  (Colors.bold (Printf.sprintf "==== Stage: %s ====\n" stage));
+                Printf.printf "%s\n" (pretty_print pgrm))
+        in
+
         (* read input file into string *)
         let source_text = try_read_source src_file in
         try
           let pgrm = Parser.parse source_text in
           let pgrm = Preprocess.preprocess pgrm in
+          print_ast_if_stage_matches "preprocess" pgrm;
+
           let pgrm = Desugar.desugar pgrm in
+          print_ast_if_stage_matches "desugar" pgrm;
 
           (* On warnings, print them *)
           let warning_handler (w : compiler_warn) =
-            print_warning (message_of_compiler_warn w source_text src_file)
+            if not no_warnings then
+              print_warning (message_of_compiler_warn w source_text src_file)
           in
 
           let pgrm = Check.check ~emit_warning:warning_handler pgrm in
+          print_ast_if_stage_matches "check" pgrm;
 
           let pgrm =
             if disable_opt then pgrm
@@ -51,8 +76,10 @@ let command =
                 ~emit_warning:warning_handler pgrm
           in
 
-          (* print the optimized AST before code generation *)
-          if show_opt_ast then Printf.printf "%s\n" (pretty_print pgrm);
+          print_ast_if_stage_matches "opt" pgrm;
+
+          (* not doing code generation, stop here *)
+          if no_code_gen then exit 0;
 
           let instrs = Compile.compile pgrm ~ignore_asserts in
 
