@@ -5,6 +5,7 @@ open Asm.Assemble
 open Asm.Warnings
 open Compiler.Optimizations
 open Compiler.Warnings
+open Compiler.Prettyprint
 open Err
 open Util
 
@@ -21,6 +22,8 @@ let command =
         flag "-ignore-asserts" no_arg ~doc:"do not generate code for asserts"
       and disable_opt =
         flag "-disable-opt" no_arg ~doc:"do not apply extra optimizations"
+      and show_opt_ast =
+        flag "-show-opt-ast" no_arg ~doc:"print the optimized AST"
       in
       fun () ->
         (* read input file into string *)
@@ -47,6 +50,9 @@ let command =
               Dead_code_elimination.eliminate_dead_code
                 ~emit_warning:warning_handler pgrm
           in
+
+          (* print the optimized AST before code generation *)
+          if show_opt_ast then Printf.printf "%s\n" (pretty_print pgrm);
 
           let instrs = Compile.compile pgrm ~ignore_asserts in
 
