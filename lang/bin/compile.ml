@@ -42,7 +42,8 @@ let command =
           | Some chosen_stage ->
               if String.equal stage chosen_stage then (
                 Printf.printf "%s"
-                  (Colors.bold (Printf.sprintf "==== Stage: %s ====\n" stage));
+                  (Colors.bold
+                     (Printf.sprintf "==== AST at stage: %s ====\n" stage));
                 Printf.printf "%s\n" (pretty_print pgrm))
         in
 
