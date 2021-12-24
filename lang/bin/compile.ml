@@ -23,7 +23,7 @@ let command =
       and disable_opt =
         flag "-disable-opt" no_arg ~doc:"do not apply extra optimizations"
       and show_opt_ast =
-        flag "-show-opt-ast" (optional string)
+        flag "-show-ast" (optional string)
           ~doc:
             "stage print the optimized AST after a given stage in the pipeline \
              (preprocess, desugar, check, opt)"
