@@ -18,6 +18,7 @@
     constant_fold
     dead_code_elimination
     unused
+    no_effect
     peephole)
   (libraries util asm core)
   (preprocess (pps ppx_blob))
