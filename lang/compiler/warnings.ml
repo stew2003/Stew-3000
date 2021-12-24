@@ -10,6 +10,7 @@ type compiler_warn =
   | ConstantCondition of int * stmt
   | DeadCode of stmt list
   | UnusedFunction of func_defn
+  | UnusedVar of string * maybe_loc
 
 (* Type for a function that is passed into the compiler to handle warnings. *)
 type compiler_warn_handler = compiler_warn -> unit
@@ -63,4 +64,10 @@ let message_of_compiler_warn (warning : compiler_warn) (source_text : string)
         Option.map
           (fun loc -> string_of_src_loc loc source_text source_filename)
           defn.loc,
+        None )
+  | UnusedVar (var, loc) ->
+      ( sprintf "unused variable `%s`" var,
+        Option.map
+          (fun loc -> string_of_src_loc loc source_text source_filename)
+          loc,
         None )

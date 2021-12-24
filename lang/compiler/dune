@@ -17,6 +17,7 @@
     optimizations
     constant_fold
     dead_code_elimination
+    unused
     peephole)
   (libraries util asm core)
   (preprocess (pps ppx_blob))

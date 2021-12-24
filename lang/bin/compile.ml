@@ -76,6 +76,10 @@ let command =
               Dead_code_elimination.eliminate_dead_code
                 ~emit_warning:warning_handler pgrm
           in
+          let pgrm =
+            if disable_opt then pgrm
+            else Unused.eliminate_unused_vars ~emit_warning:warning_handler pgrm
+          in
 
           print_ast_if_stage_matches "opt" pgrm;
 
