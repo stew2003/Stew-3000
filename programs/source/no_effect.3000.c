@@ -1,7 +1,6 @@
 
-int f() { 
+void f() { 
     while (1) {} 
-    return 1; 
 }
 
 void main()
@@ -10,7 +9,6 @@ void main()
     print(-1);
     unsigned y = (unsigned)f() * 2;
     x + 1;
-
 
     int var = 0;
     int var2 = var;

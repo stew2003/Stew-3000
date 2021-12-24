@@ -8,12 +8,7 @@ open Util.Err
 let rec expr_has_no_effect (expr : expr) : bool =
   match expr with
   | NumLiteral _ | CharLiteral _ | Var _ -> true
-  | UnOp (_, exp, _)
-  | Deref (exp, _)
-  | AddrOf (exp, _)
-  | Cast (_, exp, _)
-  | PostfixInr (exp, _)
-  | PostfixDcr (exp, _) ->
+  | UnOp (_, exp, _) | Deref (exp, _) | AddrOf (exp, _) | Cast (_, exp, _) ->
       expr_has_no_effect exp
   | BinOp (_, left, right, _) ->
       expr_has_no_effect left && expr_has_no_effect right
@@ -21,8 +16,8 @@ let rec expr_has_no_effect (expr : expr) : bool =
      that prevents us from entering a cycle in the program's call graph.
      So, assume that all calls have side-effects. *)
   | Call _ -> false
-  (* Assignment has the effect of updating the value of a variable. *)
-  | Assign _ -> false
+  (* Assignment / postfix inr + dcr have the effect of updating the value of a variable. *)
+  | Assign _ | PostfixInr _ | PostfixDcr _ -> false
   | SPrefixInr _ | SPrefixDcr _ | SUpdate _ | SSubscript _ ->
       raise
         (InternalError
@@ -36,10 +31,11 @@ and stmt_has_no_effect (stmt : stmt) : bool =
   (* Whether declarations have any effect is determined by whether or not
      they are used in their scope, which will be handled by unused variable analysis *)
   | Declare _ | ArrayDeclare _ -> false
-  (* Loop causes non-termination, which is a side-effect. Return causes
-       change in control flow, and exit/assert can cause machine to halt.
-       Print functions cause observable output. *)
-  | Loop _ | Return _ | Exit _ | Assert _ | PrintDec _ | PrintLcd _ -> false
+  (* Loop causes non-termination, which is a side-effect. While has potential to
+     do the same. Return causes change in control flow, and exit/assert can
+     cause machine to halt. Print functions cause observable output. *)
+  | Loop _ | While _ | Return _ | Exit _ | Assert _ | PrintDec _ | PrintLcd _ ->
+      false
   | NopStmt _ -> true
   (* Everything else recurs on sub expressions/statements *)
   | If (cond, thn, _) -> expr_has_no_effect cond && stmt_list_has_no_effect thn
@@ -47,8 +43,6 @@ and stmt_has_no_effect (stmt : stmt) : bool =
       expr_has_no_effect cond
       && stmt_list_has_no_effect thn
       && stmt_list_has_no_effect els
-  | While (cond, body, _) ->
-      expr_has_no_effect cond && stmt_list_has_no_effect body
   | Block (body, _) -> stmt_list_has_no_effect body
   | ExprStmt (exp, _) -> expr_has_no_effect exp
 
