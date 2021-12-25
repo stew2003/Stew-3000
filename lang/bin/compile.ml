@@ -122,4 +122,4 @@ let command =
                 (Bytes.length assembled)
         with err -> handle_err err source_text src_file)
 
-let () = Command.run ~version:"1.1.0" command
+let () = Command.run ~version:"1.2.0" command
