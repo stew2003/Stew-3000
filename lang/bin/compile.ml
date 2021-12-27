@@ -76,7 +76,12 @@ let command =
               Dead_code_elimination.eliminate_dead_code
                 ~emit_warning:warning_handler pgrm
           in
-
+          let pgrm =
+            if disable_opt then pgrm
+            else
+              No_effect.eliminate_unused_vars_and_no_effects
+                ~emit_warning:warning_handler pgrm
+          in
           print_ast_if_stage_matches "opt" pgrm;
 
           (* not doing code generation, stop here *)
@@ -117,4 +122,4 @@ let command =
                 (Bytes.length assembled)
         with err -> handle_err err source_text src_file)
 
-let () = Command.run ~version:"1.1.0" command
+let () = Command.run ~version:"1.2.0" command
