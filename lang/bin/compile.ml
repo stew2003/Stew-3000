@@ -95,7 +95,7 @@ let command =
           (* print message about generated code *)
           Printf.printf "%s `%s` ==> `%s` (%d instructions)\n"
             (Colors.success "Success!")
-            src_file target_file (List.length instrs);
+            src_file target_file (count_instrs instrs);
 
           (* write binary also if requested *)
           match emit_binary with
@@ -113,7 +113,7 @@ let command =
               (* print message about assembled binary *)
               Printf.printf "%s `%s` (%d instructions) ==> `%s` (%d bytes)\n"
                 (Colors.success "Success!")
-                target_file (List.length instrs) bin_file
+                target_file (count_instrs instrs) bin_file
                 (Bytes.length assembled)
         with err -> handle_err err source_text src_file)
 

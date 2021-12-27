@@ -67,7 +67,7 @@ let command =
           (* print message and display assembled bytes *)
           Printf.printf "%s `%s` (%d instructions) ==> `%s` (%d bytes)\n"
             (Colors.success "Success!")
-            asm_filename (List.length instrs) binary_filename
+            asm_filename (count_instrs instrs) binary_filename
             (Bytes.length assembled);
           display_bytes assembled;
           (* print side-by-side view if indicated *)
