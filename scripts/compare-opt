@@ -1,0 +1,37 @@
+#!/usr/bin/env bash
+
+# Compare the compiler's optimized output with normal output for a 
+# given program.
+#
+# Expects an absolute path to the source file to compare as its only argument.
+# 
+# Note: This uses the compiler release binary (`stew3c`), NOT the development 
+# binary (`dune exec bin/compile.exe`). 
+
+SRC=$1
+WITH=/tmp/__with_opt.3000.s
+WITHOUT=/tmp/__without_opt.3000.s
+
+# Check correct number of arguments
+if [ "$#" -ne 1 ]; then
+    echo "Usage: compare-opt SOURCE_FILE" 
+    exit -1
+fi
+
+# Ensure source file does exist
+if [ ! -f "$SRC" ]; then
+    echo "File $SRC does not exist."
+    exit -1
+fi
+
+# Compile with optimizations and without 
+echo "Compiling $SRC with and without optimizations"
+stew3c $SRC $WITH >> /dev/null 2>&1 
+stew3c $SRC $WITHOUT -disable-opt >> /dev/null 2>&1 
+
+# Diff the generated code
+echo "Diffing results (unoptimized left, optimized right)"
+diff $WITHOUT $WITH --color=always --side-by-side --left-column 
+
+# Clean up
+rm $WITH $WITHOUT

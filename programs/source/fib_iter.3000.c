@@ -1,23 +1,19 @@
-
-#define MAX_FIB 13
-
 /**
- * This program computes fibonacci numbers, using iteration.
+ * This program computes Fibonacci numbers, using iteration.
  * 
  * NOTE: run this with the decimal display in unsigned mode.
  */
 void main() {
-    // calculate each fibonacci number recursively
     unsigned n = 0;
-    unsigned a = 0;
-    unsigned b = 1;
+    unsigned prev = 0;
+    unsigned cur = 1;
 
-    // now do it iteratively
-    while (n++ < MAX_FIB) {
-        print((int)b);
-        
-        unsigned tmp = a;
-        a = b;
-        b = tmp + b;
+    // prev will be <= cur until cur overflows
+    while (prev <= cur) {
+        print(cur);
+
+        unsigned tmp = prev;
+        prev = cur;
+        cur = tmp + cur;
     }
 }

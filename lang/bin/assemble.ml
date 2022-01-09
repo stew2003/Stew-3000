@@ -36,7 +36,7 @@ let command =
     let binary = List.rev binary in
     List.map2 instrs binary ~f:(fun ins (addr, byte_line) ->
         (* print address of line in hex, bytes for line, then text instruction *)
-        Printf.printf "%s %6s | %s\n"
+        Printf.printf "%s %9s | %s\n"
           (match addr with None -> "   " | Some addr -> sprintf "%02x:" addr)
           (string_of_byte_line byte_line)
           (string_of_instr ins))
@@ -67,7 +67,7 @@ let command =
           (* print message and display assembled bytes *)
           Printf.printf "%s `%s` (%d instructions) ==> `%s` (%d bytes)\n"
             (Colors.success "Success!")
-            asm_filename (List.length instrs) binary_filename
+            asm_filename (count_instrs instrs) binary_filename
             (Bytes.length assembled);
           display_bytes assembled;
           (* print side-by-side view if indicated *)

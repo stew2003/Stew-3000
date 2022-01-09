@@ -225,3 +225,10 @@ let loc_from_instr (ins : instr) : maybe_loc =
   | Out (_, loc)
   | Outi (_, loc) ->
       loc
+
+(* [count_instrs] counts the number of actual instructions in a list of
+    instructions (excluding labels). *)
+let count_instrs (instrs : instr list) : int =
+  instrs
+  |> List.filter (fun ins -> match ins with Label _ -> false | _ -> true)
+  |> List.length

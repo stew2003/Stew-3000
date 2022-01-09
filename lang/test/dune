@@ -10,7 +10,8 @@
     test_constant_folding
     test_dead_code_elim
     test_peephole
-    test_desugar)
+    test_desugar
+    test_no_effect)
   (libraries ounit2 asm emulator compiler util))
 
 (env

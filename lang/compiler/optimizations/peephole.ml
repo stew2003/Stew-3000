@@ -59,6 +59,8 @@ let rec replace_with_smaller (instrs : instr list) : instr list =
       Cmp (Z, reg, loc) :: replace_with_smaller rest
   | Cmpi (Reg reg, Imm 0, loc) :: rest ->
       Cmp (reg, Z, loc) :: replace_with_smaller rest
+  | Stsi (0, addr, loc) :: rest ->
+      Sts (Z, addr, loc) :: replace_with_smaller rest
   | first :: rest -> first :: replace_with_smaller rest
 
 (* [peephole_optimize] applies all peephole optimizations to the given program *)

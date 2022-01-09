@@ -182,4 +182,5 @@ let pretty_print (pgrm : prog) : string =
   [ defines ]
   @ List.map pretty_print_func_defn pgrm.funcs
   @ [ pretty_print_func_defn pgrm.main ]
+  |> List.filter (fun s -> s <> "")
   |> String.concat "\n\n"
